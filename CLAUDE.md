@@ -130,31 +130,42 @@ The page 07 code (layout, wiring table, QA and the Large text fixes) is `install
 
 ## Database schema
 
-Drizzle schema in `apps/api/src/database/schema/`, one file per area, all exported from `index.ts`. Every table has a uuid `id` (`gen_random_uuid()`), `created_at` and `updated_at`; columns are camelCase in TypeScript and snake_case in Postgres (`casing: 'snake_case'` in both the app and drizzle-kit); every fixed list is a Postgres enum.
+Drizzle schema in `apps/api/src/database/schema/`, one file per area, all exported from `index.ts`. Every table has a uuid `id` (`gen_random_uuid()`), `created_at` and `updated_at`; columns are camelCase in TypeScript and snake_case in Postgres (`casing: 'snake_case'` in both the app and drizzle-kit).
+
+- Enums only for lists the code branches on: statuses, kinds, decisions, organisation types, roles, funding routes. Lists the administrator edits on S5 are reference tables (`code`, `label`, `sort_order`, `active`) referenced by uuid foreign key: disciplines, asset_types, incident_types, return_reasons. Retire a value by setting `active = false`, never by deleting it.
+- Every unique constraint and index is named explicitly in snake_case: `<table>_<columns>_key` for unique, `<table>_<columns>_idx` for b-tree, `<table>_<column>_gist` for spatial.
 
 | Area (file) | Tables |
 | --- | --- |
-| Identity (`identity.ts`) | organisations, roles (the 18 built-in roles), users, devices, otp_codes, refresh_tokens |
+| Reference data (`reference.ts`) | disciplines, asset_types, incident_types, return_reasons |
+| Identity (`identity.ts`) | organisations, roles (the 18 built-in roles), users, invites, devices, otp_codes, refresh_tokens |
 | Projects (`projects.ts`) | projects, project_states, lots, assets (stations are an asset type), memberships |
 | Gates (`gates.ts`) | gate_templates (one per funding route), gate_template_steps (15 per template), project_gates, delegations |
 | Documents (`documents.ts`) | document_types (D01 to D30), documents, document_versions |
 | Field (`field.ts`) | submissions, submission_media, milestones, progress |
+| Design (`design.ts`) | design_packages, design_package_reviews |
 | Money (`money.ts`) | valuations, payment_certificates, disbursements |
-| Land and risk (`land-risk.ts`) | parcels, grievances, incidents, variations |
+| Land and risk (`land-risk.ts`) | parcels, grievances, site_sections, incidents, variations |
 | Workflow (`workflow.ts`) | tasks, approvals, audit_log |
-| Notifications (`notifications.ts`) | notifications, reminder_rules |
+| Notifications (`notifications.ts`) | notifications, notification_preferences, reminder_rules |
 
 - Money is integer kobo in `bigint` columns named `*_kobo` (N1 = 100 kobo), read as JavaScript `bigint`; never float or numeric. Payment certificates enforce net = gross − retention − advance recovery in a check constraint.
 - Distances and chainages are whole metres in `integer` columns named `*_m` (`length_m`, `chainage_from_m`, `accuracy_m`); never kilometres or decimals in the database. Format as km+m (`142+300`) only in the UI.
 - Geometry is PostGIS in SRID 4326 (`geometry.ts`): `lineString()` (projects.alignment), `point()` (assets, submissions, incidents) and `polygon()` (parcels.area), GeoJSON in TypeScript and hex EWKB on the wire, each with a GiST index. Measure lengths as `ST_Length(alignment::geography)` (metres on the spheroid).
 - `approvals` and `audit_log` are append-only: triggers in migration 0002 reject UPDATE, DELETE and TRUNCATE. They have `created_at` only. Corrections are new rows.
-- Migrations: `pnpm db:generate` (add `--custom --name=<name>` for hand-written SQL), review the SQL in `apps/api/drizzle/`, then `pnpm db:migrate`. It runs against the checked-out Neon branch and refuses `main` unless `ALLOW_MAIN_MIGRATIONS=1`. `0000_enable_postgis` must stay first.
-- `pnpm db:seed` loads reference data only (18 roles, 30 document types, 4 gate templates with 15 steps each) from `src/database/seed-data.ts`; it upserts, so re-running is safe, and refuses `main` unless `ALLOW_MAIN_SEED=1`.
+- Migrations: `pnpm db:generate` (add `--custom --name=<name>` for hand-written SQL), review the SQL in `apps/api/drizzle/`, then `pnpm db:migrate`. It runs against the checked-out Neon branch and refuses `main` unless `ALLOW_MAIN_MIGRATIONS=1`. `0000_enable_postgis` must stay first. When a change removes a column and adds another in the same table, `drizzle-kit generate` asks whether it is a rename and needs a terminal; answer deliberately (create or rename) and check the SQL. Applied so far: 0000_enable_postgis, 0001_schema, 0002_append_only_triggers, 0003_evidence_gates_reference_tables.
+- `pnpm db:seed` loads reference data only from `src/database/seed-data.ts`: the four reference lists, the service provider Schull Technologies, 18 roles, 30 document types, 4 gate templates with 15 steps each. It upserts, so re-running is safe, and refuses `main` unless `ALLOW_MAIN_SEED=1`.
 
-Modelling choices made with the schema (2 November 2026), open to change:
-- Gate approvers: gates 1, 2 and 4 to 11 Director, rail (gate 1 via Publish; the Minister's minute D02 is evidence); gate 3 executive viewer (the Minister's office records it); gates 12, 14, 15 NRC project engineer; gate 13 accounting officer (the last IPC step). Gate 4 is the only gate that differs by route (D07 budget, D08 loan, D09 PPP, none yet for state or private). Reminders: 5 days for approve-in-system gates, 14 for evidence gates.
+Modelling decisions (2 November 2026, revised the same day), open to change:
+- Gate kinds: gates 1 to 11 are attach-evidence and the Director, rail confirms them. Gate 1 needs D01 and D02, gate 2 D04 (the accepted feasibility study), gate 3 D02; the Minister's minute (D02) is the evidence for gates 1 and 3, uploaded by the project manager or the Minister's office (the template names the project manager as uploader). Gates 12 to 15 are approve-in-system: 12, 14 and 15 by the NRC project engineer, 13 by the accounting officer.
+- Gate 13 is a monthly loop per payment certificate: the RE recommends, the NRC engineer certifies, the Director, rail approves, the Permanent Secretary gives final approval, and Finance marks it paid with payment evidence. Each step is an `approvals` row; the template's approver is the final one.
+- Gate 4 is the only gate that differs by route (D07 budget, D08 loan, D09 PPP, none yet for state or private). Reminders: 14 days for evidence gates, 5 for approve-in-system gates.
 - Document uploaders follow the screen map's code list; D04, D05 and D09 (rail directorate in the register) go to the project manager, D25 to the contractor commercial manager, D27 has no uploader (system). Sensitivity: financial for D06 to D09, D12 to D15, D17, D19, D24, D26, D27, D30; security for D25; public for D16; internal for the rest.
-- Disciplines, asset types and incident types are enums although S5 lets the administrator edit them; turn them into reference tables if that is needed.
+- Organisations of type `service_provider` (Schull Technologies) can hold only the IT administrator role, which ministry units can also hold.
+- Invites are rows of their own: a resend revokes the previous invite, and invites to external organisations carry `requires_director_confirmation` until the Director confirms.
+- Site sections start blocked; a section becomes available only with the Director's sign-off (who and when), enforced by a check constraint.
+- Design packages point at their D21 document (`current_document_id`); each resubmission is a new document version, and every RE or NRC step is a `design_package_reviews` row.
+- Notification preferences are one row per user (channel, weekly digest, quiet hours in Lagos time).
 
 ## Code conventions
 

@@ -10,9 +10,9 @@ A project tracker for Nigeria's Federal Ministry of Transportation to track rail
 
 | Gate | Decision | Approving party | Kind |
 | --- | --- | --- | --- |
-| 1 Initiation | Corridor becomes a project; study authorised | Minister | Approve in system |
-| 2 Feasibility accepted | Study and preliminary design accepted | Permanent Secretary and Minister on NRC review | Approve in system |
-| 3 Funding route chosen | Budget, loan, PPP, or state/private | Minister (Finance ministry for loans; ICRC for PPP) | Approve in system |
+| 1 Initiation | Corridor becomes a project; study authorised | Minister (minute D02 is the evidence) | Attach evidence; Director confirms |
+| 2 Feasibility accepted | Study and preliminary design accepted | Permanent Secretary and Minister on NRC review (accepted study D04 is the evidence) | Attach evidence; Director confirms |
+| 3 Funding route chosen | Budget, loan, PPP, or state/private | Minister (Finance ministry for loans; ICRC for PPP); minute D02 is the evidence | Attach evidence; Director confirms |
 | 4 Funding approved | Money legally available | Budget: National Assembly. Loan: FEC, then Senate and House, lender board. PPP: ICRC certificates, then FEC or Project Approval Board | Attach evidence |
 | 5 Tender and evaluation | Method approved, bids evaluated | Ministerial Tenders Board (BPP for non-competitive methods) | Attach evidence |
 | 6 BPP no objection | Due process confirmed | Bureau of Public Procurement | Attach evidence |
@@ -22,7 +22,7 @@ A project tracker for Nigeria's Federal Ministry of Transportation to track rail
 | 10 Right-of-way | Land acquired, communities compensated | State governors under the Land Use Act; Finance releases funds | Attach evidence, register tracked inside |
 | 11 Financial close and mobilisation | Conditions met, advance paid, site handed over | Lender; Ministry; Accountant-General | Attach evidence |
 | 12 Detailed design approved | Packages approved per discipline | NRC engineer on the consultant's recommendation | Approve in system |
-| 13 Certify and pay (monthly loop) | Work measured, certified, paid; variations | Consultant RE, then NRC engineer, then Director, then Permanent Secretary; finance closes with payment evidence | Approve in system |
+| 13 Certify and pay (monthly loop) | Work measured, certified, paid; variations | Consultant RE recommends, NRC engineer certifies, Director approves, Permanent Secretary gives final approval; finance marks paid with payment evidence | Approve in system |
 | 14 Commissioning | Safe to operate | NRC technical acceptance | Approve in system |
 | 15 Handover and close-out | Asset taken over, defects cleared, accounts closed | Ministry, NRC, Auditor-General | Approve in system |
 
