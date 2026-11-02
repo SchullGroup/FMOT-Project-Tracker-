@@ -8,6 +8,9 @@
     "db:seed": "pnpm --filter api db:seed",
     "admin:create": "pnpm --filter api admin:create",
     "build": "pnpm -r build",
-    "db:load-boundaries": "pnpm --filter api db:load-boundaries"
+    "db:load-boundaries": "pnpm --filter api db:load-boundaries",
+    "web": "pnpm --filter web dev",
+    "dev": "pnpm --parallel --filter api --filter web run dev",
+    "tokens": "node tools/tokens-to-css.mjs"
   }
 }

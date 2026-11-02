@@ -1,0 +1,6 @@
+{
+  "version": 8,
+  "name": "Plain (offline fallback)",
+  "sources": {},
+  "layers": [{ "id": "background", "type": "background", "paint": { "background-color": "#dfe6f0" } }]
+}
