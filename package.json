@@ -1,0 +1,9 @@
+{
+  "name": "fmot-rail-tracker",
+  "private": true,
+  "scripts": {
+    "api": "pnpm --filter api start:dev",
+    "db:generate": "pnpm --filter api db:generate",
+    "db:migrate": "pnpm --filter api db:migrate"
+  }
+}

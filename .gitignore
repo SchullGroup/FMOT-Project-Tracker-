@@ -1,0 +1,8 @@
+.DS_Store
+node_modules/
+.env
+.env.*
+.neon
+dist
+!.env.example
+*.tsbuildinfo
