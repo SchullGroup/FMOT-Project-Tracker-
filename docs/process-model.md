@@ -83,4 +83,6 @@ Values the platform runs on today as placeholders; each needs a ministry decisio
 | Corridor width: how far from the alignment may a field photo be and still count as on the corridor? | 500 m either side of the line | `projects.corridor_buffer_m` (per project) |
 | Offline window: how late may a phone send a photo taken offline? | Warn after 24 h, refuse (flag) after 72 h; captures more than 5 minutes in the future are refused | `FIELD_MAX_AGE_HOURS`, `FIELD_MAX_FUTURE_MINUTES` |
 | Variation limits: up to what size may the Director, rail approve a variation or extension of time without BPP and FEC? | N500 million for a variation, 90 days for an extension of time | settings `variation.director_limit_kobo`, `variation.director_limit_days` (IT administrator, `PUT /api/admin/settings/:key`) |
+| Working days for the 16:00 no-photo reminder: which public holidays are skipped? | Monday to Friday; no holidays | reminder_rules `reminder.no_photo` (hour); holidays are not modelled yet |
+| Eyemark: which import template does the M&E unit use? | The tracker's own 21-column layout | `docs/eyemark-export.md`, `EYEMARK_COLUMNS` |
 | Project health on the map: when is a project behind, and when stalled? | Behind after 2 x the current gate's reminder days; stalled after 90 days at one gate | reminder_rules `health.behind_factor`, `health.stalled_days` |

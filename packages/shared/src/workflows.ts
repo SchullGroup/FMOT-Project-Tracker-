@@ -15,6 +15,9 @@ export const WORKFLOW_KEYS = [
   'confirm_lot',
   'confirm_member',
   'sign_off_section',
+  'baseline_revision',
+  'practical_completion',
+  'takeover',
 ] as const;
 export type WorkflowKey = (typeof WORKFLOW_KEYS)[number];
 
@@ -156,6 +159,30 @@ export const WORKFLOWS: Record<WorkflowKey, WorkflowDefinition> = {
     subjectTable: 'site_sections',
     returnTaskType: 'revise_submission',
     steps: [step({ key: 'sign_off', label: 'Sign off', action: 'sign_off', role: 'director_rail', relation: 'in_scope', stepUp: 'section.sign_off', decision: true, taskType: 'sign_off_section', dueHours: 120 })],
+  },
+  // A lot's programme baseline after the first: the project manager uploads it with a reason, the Director approves.
+  baseline_revision: {
+    key: 'baseline_revision',
+    label: 'Baseline revision',
+    subjectTable: 'baseline_revisions',
+    returnTaskType: 'revise_submission',
+    steps: [step({ key: 'approve', label: 'Approve', action: 'approve', role: 'director_rail', relation: 'in_scope', stepUp: 'baseline.approve', decision: true, taskType: 'approve_baseline_revision', dueHours: 120 })],
+  },
+  // Gate 13 closes when every lot reaches practical completion: the project manager records it (PIN), the Director confirms.
+  practical_completion: {
+    key: 'practical_completion',
+    label: 'Practical completion',
+    subjectTable: 'lots',
+    returnTaskType: 'revise_submission',
+    steps: [step({ key: 'confirm', label: 'Confirm', action: 'confirm', role: 'director_rail', relation: 'in_scope', stepUp: 'completion.confirm', decision: true, taskType: 'confirm_practical_completion', dueHours: 120 })],
+  },
+  // Gate 15: the NRC engineer records takeover with D29 (PIN), the Director confirms and the line becomes operational.
+  takeover: {
+    key: 'takeover',
+    label: 'Takeover',
+    subjectTable: 'project_gates',
+    returnTaskType: 'revise_submission',
+    steps: [step({ key: 'confirm', label: 'Confirm', action: 'confirm', role: 'director_rail', relation: 'in_scope', stepUp: 'takeover.confirm', decision: true, taskType: 'confirm_takeover', dueHours: 120 })],
   },
 };
 
