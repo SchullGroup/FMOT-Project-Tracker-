@@ -98,7 +98,7 @@ export const WORKFLOWS: Record<WorkflowKey, WorkflowDefinition> = {
       step({ key: 'certify', label: 'Certify', action: 'certify', role: 'nrc_project_engineer', relation: 'project_member', stepUp: 'certificate.certify', decision: true, taskType: 'certify_certificate', dueHours: 120 }),
       step({ key: 'approve', label: 'Approve', action: 'approve', role: 'director_rail', relation: 'in_scope', stepUp: 'certificate.approve', decision: true, taskType: 'approve_certificate', dueHours: 120 }),
       step({ key: 'final_approve', label: 'Final approval', action: 'final_approve', role: 'accounting_officer', relation: 'in_scope', stepUp: 'certificate.final_approve', decision: true, taskType: 'final_approve_certificate', dueHours: 120 }),
-      step({ key: 'mark_paid', label: 'Mark paid', action: 'mark_paid', role: 'finance_officer', relation: 'project_member', stepUp: null, decision: true, taskType: 'mark_paid', dueHours: 240, documents: ['D24'] }),
+      step({ key: 'mark_paid', label: 'Mark paid', action: 'mark_paid', role: 'finance_officer', relation: 'project_member', stepUp: 'certificate.mark_paid', decision: true, taskType: 'mark_paid', dueHours: 240, documents: ['D24'] }),
     ],
   },
   design_package: {

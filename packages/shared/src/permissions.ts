@@ -28,6 +28,8 @@ export const PERMISSIONS = [
   'submissions:escalate',
   'milestones:claim',
   'milestones:verify',
+  'progress:measure',
+  'progress:plan',
   'valuations:submit',
   'certificates:read',
   'certificates:recommend',
@@ -51,6 +53,7 @@ export const PERMISSIONS = [
   'reports:generate',
   'reports:export_eyemark',
   'audit:read',
+  'projects:read_activity',
   'finance:read_amounts',
   'security:read_detail',
   'security:manage_no_go',
@@ -87,6 +90,7 @@ export const ROLE_PERMISSIONS: Record<RoleCode, readonly Permission[]> = {
     'certificates:final_approve',
     'variations:approve',
     'incidents:read',
+    'projects:read_activity',
     'reports:generate',
     'finance:read_amounts',
     'security:read_detail',
@@ -107,6 +111,7 @@ export const ROLE_PERMISSIONS: Record<RoleCode, readonly Permission[]> = {
     'variations:approve',
     'land:sign_off',
     'incidents:read',
+    'projects:read_activity',
     'reports:generate',
     'finance:read_amounts',
     'field:read_live_positions',
@@ -124,7 +129,9 @@ export const ROLE_PERMISSIONS: Record<RoleCode, readonly Permission[]> = {
     'variations:raise',
     'variations:assess',
     'land:manage',
+    'progress:plan',
     'incidents:read',
+    'projects:read_activity',
     'reports:generate',
     'finance:read_amounts',
     'field:read_live_positions',
@@ -141,6 +148,7 @@ export const ROLE_PERMISSIONS: Record<RoleCode, readonly Permission[]> = {
     'certificates:read',
     'certificates:mark_paid',
     'finance:read_amounts',
+    'projects:read_activity',
   ],
   me_analyst: [...read, 'certificates:read', 'reports:generate', 'reports:export_eyemark'],
   nrc_project_engineer: [
@@ -151,6 +159,7 @@ export const ROLE_PERMISSIONS: Record<RoleCode, readonly Permission[]> = {
     'certificates:certify',
     'design:approve',
     'finance:read_amounts',
+    'projects:read_activity',
   ],
   nrc_asset_manager: ['tasks:read', 'projects:read', 'documents:read', 'assets:manage'],
   consultant_resident_engineer: [
@@ -163,12 +172,14 @@ export const ROLE_PERMISSIONS: Record<RoleCode, readonly Permission[]> = {
     'submissions:read',
     'submissions:verify',
     'milestones:verify',
+    'progress:measure',
     'certificates:read',
     'certificates:recommend',
     'design:review',
     'variations:assess',
     'incidents:report',
     'incidents:read',
+    'projects:read_activity',
   ],
   contractor_site_manager: ['tasks:read', 'submissions:create', 'submissions:read', 'milestones:claim', 'incidents:report'],
   contractor_commercial_manager: [
@@ -194,7 +205,7 @@ export const ROLE_PERMISSIONS: Record<RoleCode, readonly Permission[]> = {
     'field:read_live_positions',
   ],
   lender_viewer: ['projects:read', 'submissions:read', 'certificates:read', 'reports:read', 'finance:read_amounts'],
-  oversight_viewer: ['projects:read', 'gates:read', 'documents:read', 'reports:read', 'audit:read'],
+  oversight_viewer: ['projects:read', 'gates:read', 'documents:read', 'reports:read', 'audit:read', 'projects:read_activity'],
   public_viewer: ['projects:read_public'],
   it_administrator: [
     'tasks:read',
@@ -213,7 +224,8 @@ export const hasPermission = (role: RoleCode, permission: Permission): boolean =
   ROLE_PERMISSIONS[role].includes(permission);
 
 // Decisions that need the PIN step-up. The confirmation token names one action on one subject and works once.
-// Subjects: an invite id, a project id, "<project id>:<gate no>", a lot id, a site section id, a membership id.
+// Subjects: an invite id, a project id, "<project id>:<gate no>", a lot id, a site section id, a membership id,
+// or the certificate, design package or variation id for the steps of those chains.
 export const STEP_UP_ACTIONS = [
   'invite.confirm',
   'membership.confirm',
@@ -225,6 +237,7 @@ export const STEP_UP_ACTIONS = [
   'certificate.certify',
   'certificate.approve',
   'certificate.final_approve',
+  'certificate.mark_paid',
   'design.approve',
   'design.countersign',
   'variation.approve',
