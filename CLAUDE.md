@@ -128,9 +128,37 @@ The page 07 code (layout, wiring table, QA and the Large text fixes) is `install
 - Use the `neon` CLI (8.12+); `neonctl` is the old name and is not installed. The local `psql` is 17, which is fine for queries; `pg_dump` against the server needs 18.
 - Frankfurt is for development. The process model requires Nigerian hosting under the Nigeria Data Protection Act for production, which Neon does not offer, so production hosting is still open.
 
+## Database schema
+
+Drizzle schema in `apps/api/src/database/schema/`, one file per area, all exported from `index.ts`. Every table has a uuid `id` (`gen_random_uuid()`), `created_at` and `updated_at`; columns are camelCase in TypeScript and snake_case in Postgres (`casing: 'snake_case'` in both the app and drizzle-kit); every fixed list is a Postgres enum.
+
+| Area (file) | Tables |
+| --- | --- |
+| Identity (`identity.ts`) | organisations, roles (the 18 built-in roles), users, devices, otp_codes, refresh_tokens |
+| Projects (`projects.ts`) | projects, project_states, lots, assets (stations are an asset type), memberships |
+| Gates (`gates.ts`) | gate_templates (one per funding route), gate_template_steps (15 per template), project_gates, delegations |
+| Documents (`documents.ts`) | document_types (D01 to D30), documents, document_versions |
+| Field (`field.ts`) | submissions, submission_media, milestones, progress |
+| Money (`money.ts`) | valuations, payment_certificates, disbursements |
+| Land and risk (`land-risk.ts`) | parcels, grievances, incidents, variations |
+| Workflow (`workflow.ts`) | tasks, approvals, audit_log |
+| Notifications (`notifications.ts`) | notifications, reminder_rules |
+
+- Money is integer kobo in `bigint` columns named `*_kobo` (N1 = 100 kobo), read as JavaScript `bigint`; never float or numeric. Payment certificates enforce net = gross − retention − advance recovery in a check constraint.
+- Distances and chainages are whole metres in `integer` columns named `*_m` (`length_m`, `chainage_from_m`, `accuracy_m`); never kilometres or decimals in the database. Format as km+m (`142+300`) only in the UI.
+- Geometry is PostGIS in SRID 4326 (`geometry.ts`): `lineString()` (projects.alignment), `point()` (assets, submissions, incidents) and `polygon()` (parcels.area), GeoJSON in TypeScript and hex EWKB on the wire, each with a GiST index. Measure lengths as `ST_Length(alignment::geography)` (metres on the spheroid).
+- `approvals` and `audit_log` are append-only: triggers in migration 0002 reject UPDATE, DELETE and TRUNCATE. They have `created_at` only. Corrections are new rows.
+- Migrations: `pnpm db:generate` (add `--custom --name=<name>` for hand-written SQL), review the SQL in `apps/api/drizzle/`, then `pnpm db:migrate`. It runs against the checked-out Neon branch and refuses `main` unless `ALLOW_MAIN_MIGRATIONS=1`. `0000_enable_postgis` must stay first.
+- `pnpm db:seed` loads reference data only (18 roles, 30 document types, 4 gate templates with 15 steps each) from `src/database/seed-data.ts`; it upserts, so re-running is safe, and refuses `main` unless `ALLOW_MAIN_SEED=1`.
+
+Modelling choices made with the schema (2 November 2026), open to change:
+- Gate approvers: gates 1, 2 and 4 to 11 Director, rail (gate 1 via Publish; the Minister's minute D02 is evidence); gate 3 executive viewer (the Minister's office records it); gates 12, 14, 15 NRC project engineer; gate 13 accounting officer (the last IPC step). Gate 4 is the only gate that differs by route (D07 budget, D08 loan, D09 PPP, none yet for state or private). Reminders: 5 days for approve-in-system gates, 14 for evidence gates.
+- Document uploaders follow the screen map's code list; D04, D05 and D09 (rail directorate in the register) go to the project manager, D25 to the contractor commercial manager, D27 has no uploader (system). Sensitivity: financial for D06 to D09, D12 to D15, D17, D19, D24, D26, D27, D30; security for D25; public for D16; internal for the rest.
+- Disciplines, asset types and incident types are enums although S5 lets the administrator edit them; turn them into reference tables if that is needed.
+
 ## Code conventions
 
-- Repository: a pnpm workspace (`apps/*`, `packages/*`), Node 26 (`.nvmrc`). `apps/api` is the backend, `packages/shared` holds code shared by the API, web and mobile apps. Root scripts: `pnpm api` (API in watch mode), `pnpm db:generate`, `pnpm db:migrate` (both forward to the drizzle-kit scripts of the same name in `apps/api`, which also has `db:studio`). pnpm only runs install scripts that `allowBuilds` in `pnpm-workspace.yaml` approves: esbuild is allowed, `@scarf/scarf` (install analytics) is denied. Approve new ones with `pnpm approve-builds <pkg>`.
+- Repository: a pnpm workspace (`apps/*`, `packages/*`), Node 26 (`.nvmrc`). `apps/api` is the backend, `packages/shared` holds code shared by the API, web and mobile apps. Root scripts: `pnpm api` (API in watch mode), `pnpm db:generate`, `pnpm db:migrate`, `pnpm db:seed` (forward to the scripts of the same name in `apps/api`, which also has `db:studio`). pnpm only runs install scripts that `allowBuilds` in `pnpm-workspace.yaml` approves: esbuild is allowed, `@scarf/scarf` (install analytics) is denied. Approve new ones with `pnpm approve-builds <pkg>`.
 - `apps/api` is an ES module package (`"type": "module"`, `nodenext`): relative imports end in `.js` (`import { DB } from '../database/database.module.js'`). Routes sit under `/api`; Swagger at `/api/docs`; `GET /api/health` checks the database and PostGIS. Config loads `apps/api/.env` (port, CORS) and the root `.env.local` (database URLs from `neon checkout`), validated by the zod schema in `src/config/env.ts`. The app uses the pooled `DATABASE_URL`; drizzle-kit uses `DATABASE_URL_UNPOOLED`. `pnpm test:e2e` runs against the checked-out Neon branch.
 - API stack: Drizzle ORM with `pg` (drizzle-kit for migrations), `@nestjs/config` with zod for environment validation, class-validator and class-transformer for request DTOs, `@nestjs/swagger` for the OpenAPI document, helmet, and nestjs-pino logging (pino-pretty in development).
 - Backend: NestJS 12 (TypeScript, strict), PostgreSQL with PostGIS on Neon, JWT with role-based access; scope is a row filter on every query, never trusted from the client. It replaced the earlier Java and Spring Boot plan on 2 November 2026 so the API, web and mobile apps share one language. Tests run on Vitest, linting on oxlint.
