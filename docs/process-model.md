@@ -73,3 +73,13 @@ The ministry project manager creates it once the Minister's gate-1 minute exists
 ## The one UI pattern
 
 Open the app, see "Your tasks today", tap a task, one screen with only what is needed, one big button, Done. Phone number plus SMS code to log in, then a PIN. Photos and voice notes over typing; everything prefilled from last time; Send back always picks a reason from a list; Call support on every screen.
+
+## Open questions for the ministry
+
+Values the platform runs on today as placeholders; each needs a ministry decision before go-live.
+
+| Question | Placeholder in use | Where it is set |
+| --- | --- | --- |
+| Corridor width: how far from the alignment may a field photo be and still count as on the corridor? | 500 m either side of the line | `projects.corridor_buffer_m` (per project) |
+| Offline window: how late may a phone send a photo taken offline? | Warn after 24 h, refuse (flag) after 72 h; captures more than 5 minutes in the future are refused | `FIELD_MAX_AGE_HOURS`, `FIELD_MAX_FUTURE_MINUTES` |
+| Project health on the map: when is a project behind, and when stalled? | Behind after 2 x the current gate's reminder days; stalled after 90 days at one gate | reminder_rules `health.behind_factor`, `health.stalled_days` |

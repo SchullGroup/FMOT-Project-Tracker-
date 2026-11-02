@@ -222,6 +222,13 @@ export const STEP_UP_ACTIONS = [
   'gate.approve',
   'lot.confirm',
   'section.sign_off',
+  'certificate.certify',
+  'certificate.approve',
+  'certificate.final_approve',
+  'design.approve',
+  'design.countersign',
+  'variation.approve',
+  'variation.confirm',
 ] as const;
 
 export type StepUpAction = (typeof STEP_UP_ACTIONS)[number];
