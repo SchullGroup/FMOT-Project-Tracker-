@@ -5,6 +5,8 @@
     "api": "pnpm --filter api start:dev",
     "db:generate": "pnpm --filter api db:generate",
     "db:migrate": "pnpm --filter api db:migrate",
-    "db:seed": "pnpm --filter api db:seed"
+    "db:seed": "pnpm --filter api db:seed",
+    "admin:create": "pnpm --filter api admin:create",
+    "build": "pnpm -r build"
   }
 }
