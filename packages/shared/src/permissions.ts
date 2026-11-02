@@ -209,3 +209,17 @@ export const permissionsFor = (role: RoleCode): readonly Permission[] => ROLE_PE
 
 export const hasPermission = (role: RoleCode, permission: Permission): boolean =>
   ROLE_PERMISSIONS[role].includes(permission);
+
+// Decisions that need the PIN step-up. The confirmation token names one action on one subject and works once.
+// Subjects: an invite id, a project id, "<project id>:<gate no>", a lot id, a site section id, a membership id.
+export const STEP_UP_ACTIONS = [
+  'invite.confirm',
+  'membership.confirm',
+  'project.publish',
+  'gate.confirm',
+  'gate.approve',
+  'lot.confirm',
+  'section.sign_off',
+] as const;
+
+export type StepUpAction = (typeof STEP_UP_ACTIONS)[number];

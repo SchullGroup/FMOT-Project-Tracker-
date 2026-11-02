@@ -35,5 +35,9 @@ export const ALL_PROJECT_ROLES: readonly RoleCode[] = [
 // Contractor people only ever see their own lots, never a whole project.
 export const LOT_LIMITED_ROLES: readonly RoleCode[] = ['contractor_site_manager', 'contractor_commercial_manager'];
 
-// Lenders see the projects they finance.
+// Lenders see the projects their organisation finances (project_lenders).
 export const FINANCED_PROJECT_ROLES: readonly RoleCode[] = ['lender_viewer'];
+
+// The security desk covers every corridor, but its permissions stop at incidents, no-go segments and
+// live field positions: no financial, document or gate content.
+export const ALL_CORRIDOR_SECURITY_ROLES: readonly RoleCode[] = ['security_desk_officer'];
