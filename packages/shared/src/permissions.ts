@@ -158,6 +158,8 @@ export const ROLE_PERMISSIONS: Record<RoleCode, readonly Permission[]> = {
     'projects:read',
     'documents:read',
     'documents:upload',
+    // Verify on site: the RE's own photo of a milestone, and incidents.
+    'submissions:create',
     'submissions:read',
     'submissions:verify',
     'milestones:verify',
