@@ -4,7 +4,7 @@
  * difference. In sample-data mode (NEXT_PUBLIC_API_MOCK=1) the mock already speaks the screen shapes and nothing
  * is mapped.
  */
-import { roleLabel } from '@fmot/shared';
+import { type ApiBody, roleLabel, type RoleCode } from '@fmot/shared';
 import { api, MOCK, setAccessToken, upload } from './api';
 import type {
   ApiCard,
@@ -85,7 +85,7 @@ const body = <W, A>(screen: W, apiBody: A) => (MOCK ? screen : apiBody);
 
 const ROUTE_TO_API: Record<FundingRoute, ApiFundingRoute> = { loan: 'external_loan', budget: 'budget', ppp: 'ppp', state_private: 'state_private' };
 const routeFromApi = (r: ApiFundingRoute): FundingRoute => (r === 'external_loan' ? 'loan' : r);
-const ORIGIN_TO_API: Record<ProjectBasics['originKind'], string> = {
+const ORIGIN_TO_API: Record<ProjectBasics['originKind'], NonNullable<ApiBody<'CreateProjectDto'>['originReference']>> = {
   master_plan: 'master_plan',
   presidential_directive: 'directive',
   state_request: 'state_request',
@@ -422,6 +422,7 @@ export const getDocumentUrl = (documentId: string) => api<SignedMedia>(`/documen
 const basicsBody = (b: ProjectBasics) => {
   const from = TOWNS[b.startTown];
   const to = TOWNS[b.endTown];
+  // Every request body below is checked against the API's DTO (ApiBody, generated from its OpenAPI document).
   return {
     name: b.name,
     type: b.type,
@@ -431,24 +432,24 @@ const basicsBody = (b: ProjectBasics) => {
     originReference: ORIGIN_TO_API[b.originKind],
     originDetail: b.originReference || undefined,
     placeholder: from && to ? { from: { lon: from[0], lat: from[1] }, to: { lon: to[0], lat: to[1] } } : undefined,
-  };
+  } satisfies ApiBody<'CreateProjectDto'>;
 };
 
 export const createProject = (basics: ProjectBasics) => api<{ id: string }>('/projects', { method: 'POST', body: body(basics, basicsBody(basics)) });
 export const updateBasics = (id: string, basics: ProjectBasics) => {
   const { placeholder: _p, ...rest } = basicsBody(basics);
-  return api<void>(p(id, ''), { method: 'PUT', body: body(basics, rest) });
+  return api<void>(p(id, ''), { method: 'PUT', body: body(basics, rest satisfies ApiBody<'UpdateBasicsDto'>) });
 };
-export const setFundingRoute = (id: string, route: FundingRoute) => api<void>(p(id, '/funding-route'), { method: 'PUT', body: body({ route }, { fundingRoute: ROUTE_TO_API[route] }) });
+export const setFundingRoute = (id: string, route: FundingRoute) => api<void>(p(id, '/funding-route'), { method: 'PUT', body: body({ route }, { fundingRoute: ROUTE_TO_API[route] } satisfies ApiBody<'FundingRouteDto'>) });
 
 export const uploadAlignment = (id: string, file: File) =>
   viaApi<{ alignment: AlignmentResult['geometry']; lengthM: number; states: string[] }, AlignmentResult>(upload(p(id, '/alignment'), {}, file), (r) => ({ lengthM: r.lengthM, states: r.states, geometry: r.alignment }));
 
-export const addStation = (id: string, name: string, chainageM: number) => api<Station>(p(id, '/stations'), { method: 'POST', body: { name, chainageM } });
+export const addStation = (id: string, name: string, chainageM: number) => api<Station>(p(id, '/stations'), { method: 'POST', body: { name, chainageM } satisfies ApiBody<'StationDto'> });
 export const removeStation = (id: string, stationId: string) => api<void>(p(id, `/stations/${stationId}`), { method: 'DELETE' });
 export const findUsers = (role: string) => api<UserOption[]>(`/users?role=${encodeURIComponent(role)}`);
-export const addMember = (id: string, userId: string, role: string) =>
-  api<void>(p(id, '/members'), { method: 'POST', body: body({ userId, role }, { userId, projectRole: role }) });
+export const addMember = (id: string, userId: string, role: RoleCode) =>
+  api<void>(p(id, '/members'), { method: 'POST', body: body({ userId, role }, { userId, projectRole: role } satisfies ApiBody<'AddMemberDto'>) });
 
 export const uploadDocument = (id: string, code: string, gateNo: number, title: string, file: File) =>
   viaApi<{ documentId: string; code: string; version: number }, UploadedDocument>(
@@ -474,7 +475,7 @@ export const attachGateEvidence = (id: string, gateNo: number, documentIds: stri
     gate1Date(id, date);
     return Promise.resolve();
   }
-  return api<void>(p(id, `/gates/${gateNo}/evidence`), { method: 'POST', body: body({ documentIds, effectiveDate: date }, { documentIds, decisionDate: date }) });
+  return api<void>(p(id, `/gates/${gateNo}/evidence`), { method: 'POST', body: body({ documentIds, effectiveDate: date }, { documentIds, decisionDate: date } satisfies ApiBody<'GateEvidenceDto'>) });
 };
 
 export const getReview = (id: string) =>
@@ -501,7 +502,7 @@ export const getReview = (id: string) =>
   }));
 
 export const sendForPublishing = (id: string) =>
-  api<void>(p(id, '/send-for-publishing'), { method: 'POST', body: MOCK ? undefined : { gate1DecisionDate: gate1Date(id) ?? new Date().toISOString().slice(0, 10) } });
+  api<void>(p(id, '/send-for-publishing'), { method: 'POST', body: MOCK ? undefined : ({ gate1DecisionDate: gate1Date(id) ?? new Date().toISOString().slice(0, 10) } satisfies ApiBody<'SendForPublishingDto'>) });
 
 /* Task views */
 
@@ -653,12 +654,12 @@ export async function actOnTask(id: string, input: ActInput, pinConfirmation?: s
     if (task.subject.kind !== 'document_upload' || !task.project) throw new Error('This task cannot be submitted here');
     return api<void>(p(task.project.id, `/gates/${task.subject.gateNo}/evidence`), {
       method: 'POST',
-      body: { documentIds: input.documentId ? [input.documentId] : [], decisionDate: input.effectiveDate },
+      body: { documentIds: input.documentId ? [input.documentId] : [], decisionDate: input.effectiveDate ?? '' } satisfies ApiBody<'GateEvidenceDto'>,
     });
   }
   return api<void>(`/tasks/${encodeURIComponent(id)}/act`, {
     method: 'POST',
-    body: { action: input.action, returnReasonCode: input.returnReasonId, comment: input.comment, documentIds: input.documentId ? [input.documentId] : undefined },
+    body: { action: input.action as ApiBody<'ActDto'>['action'], returnReasonCode: input.returnReasonId, comment: input.comment, documentIds: input.documentId ? [input.documentId] : undefined } satisfies ApiBody<'ActDto'>,
     pinConfirmation,
   });
 }
@@ -669,17 +670,17 @@ export const uploadTaskDocument = (projectId: string, code: string, gateNo: numb
 /* Admin */
 
 export const getOrganisations = () => api<Organisation[]>('/admin/organisations');
-export const createOrganisation = (o: { name: string; type: OrganisationType; contactName: string; contactPhone: string }) => api<Organisation>('/admin/organisations', { method: 'POST', body: o });
+export const createOrganisation = (o: { name: string; type: OrganisationType; contactName: string; contactPhone: string }) => api<Organisation>('/admin/organisations', { method: 'POST', body: o satisfies ApiBody<'OrganisationDto'> });
 export const getAdminUsers = (search = '') => api<AdminUser[]>(`/admin/users${search ? `?search=${encodeURIComponent(search)}` : ''}`);
 export const createUser = (u: NewUser) =>
   api<AdminUser>('/admin/users', {
     method: 'POST',
-    body: body(u, { ...u, memberships: u.memberships.map((m) => ({ projectId: m.projectId, lotId: m.lotId ?? undefined })) }),
+    body: body(u, { ...u, role: u.role as RoleCode, memberships: u.memberships.map((m) => ({ projectId: m.projectId, lotId: m.lotId ?? undefined })) } satisfies ApiBody<'CreateUserDto'>),
   });
 export const resendInvite = (id: string) => api<void>(`/admin/users/${id}/resend-invite`, { method: 'POST' });
 export const resetPin = (id: string) => api<void>(`/admin/users/${id}/reset-pin`, { method: 'POST' });
 export const deactivateUser = (id: string, replacementUserId: string | null) =>
-  api<void>(`/admin/users/${id}/deactivate`, { method: 'POST', body: body({ replacementUserId }, replacementUserId ? { replacementUserId } : {}) });
+  api<void>(`/admin/users/${id}/deactivate`, { method: 'POST', body: body({ replacementUserId }, (replacementUserId ? { replacementUserId } : {}) satisfies ApiBody<'DeactivateUserDto'>) });
 export const getProjectsForPicker = () => api<Array<{ id: string; name: string; lots: Array<{ id: string; name: string }> }>>('/admin/projects');
 
 // Money settings are kept in kobo; the settings screen shows and takes whole naira.
@@ -718,7 +719,7 @@ export const getReminderRules = () =>
     })),
   );
 export const updateReminderRule = (key: string, value: number) =>
-  api<void>(`/admin/reminder-rules/${encodeURIComponent(key)}`, { method: 'PUT', body: body({ value }, { threshold: value }) });
+  api<void>(`/admin/reminder-rules/${encodeURIComponent(key)}`, { method: 'PUT', body: body({ value }, { threshold: value } satisfies ApiBody<'ReminderRuleDto'>) });
 
 export const getAuditLog = (query = '') => api<AuditEntry[]>(`/admin/audit${query}`);
 export const getNotificationLog = () =>
@@ -774,13 +775,13 @@ const report = (r: ApiReport): Report => ({
 
 export const getProjectReports = (id: string) => viaApi<ApiReport[], Report[]>(api(p(id, '/reports')), (rows) => rows.map(report));
 export const generateProjectReport = (id: string, kind: 'monthly' | 'lender', period: string) =>
-  viaApi<ApiReport, Report>(api(p(id, '/reports'), { method: 'POST', body: body({ kind, period }, { kind, periodMonth: period }) }), report);
+  viaApi<ApiReport, Report>(api(p(id, '/reports'), { method: 'POST', body: body({ kind, period }, { kind, periodMonth: period } satisfies ApiBody<'ProjectReportDto'>) }), report);
 export const getPortfolioReports = () => viaApi<ApiReport[], Report[]>(api('/reports/portfolio'), (rows) => rows.map(report));
-export const generatePortfolioReport = (format: 'pdf' | 'xlsx') => viaApi<ApiReport, Report>(api('/reports/portfolio', { method: 'POST', body: { format } }), report);
+export const generatePortfolioReport = (format: 'pdf' | 'xlsx') => viaApi<ApiReport, Report>(api('/reports/portfolio', { method: 'POST', body: { format } satisfies ApiBody<'PortfolioReportDto'> }), report);
 export const exportEyemark = () => viaApi<ApiReport, Report>(api('/reports/eyemark', { method: 'POST' }), report);
 export const getReportFile = (reportId: string) => api<SignedMedia>(`/reports/${encodeURIComponent(reportId)}/file`);
 export const getMyPreferences = () => api<NotificationPreferences>('/me/notification-preferences');
-export const saveMyPreferences = (prefs: Omit<NotificationPreferences, 'digestEligible'>) => api<void>('/me/notification-preferences', { method: 'PUT', body: prefs });
+export const saveMyPreferences = (prefs: Omit<NotificationPreferences, 'digestEligible'>) => api<void>('/me/notification-preferences', { method: 'PUT', body: prefs satisfies ApiBody<'PreferencesDto'> });
 
 const OBLIGATION_OWNER: Record<Obligation['kind'], string> = {
   performance_bond: 'Legal',

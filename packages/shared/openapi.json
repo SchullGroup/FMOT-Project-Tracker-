@@ -1,0 +1,5952 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/ready": {
+      "get": {
+        "operationId": "ReadyController_ready",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Ready"
+        ]
+      }
+    },
+    "/api/auth/otp/request": {
+      "post": {
+        "operationId": "AuthController_requestOtp",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhoneDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/otp/verify": {
+      "post": {
+        "operationId": "AuthController_verifyOtp",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyOtpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/pin/login": {
+      "post": {
+        "operationId": "AuthController_pinLogin",
+        "parameters": [
+          {
+            "name": "X-Client",
+            "in": "header",
+            "description": "\"mobile\" returns the refresh token in the body instead of a cookie",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PinLoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/pin/set": {
+      "post": {
+        "operationId": "AuthController_setPin",
+        "parameters": [
+          {
+            "name": "X-Client",
+            "in": "header",
+            "description": "\"mobile\" returns the refresh token in the body instead of a cookie",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPinDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [
+          {
+            "name": "X-Client",
+            "in": "header",
+            "description": "\"mobile\" returns the refresh token in the body instead of a cookie",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [
+          {
+            "name": "X-Client",
+            "in": "header",
+            "description": "\"mobile\" returns the refresh token in the body instead of a cookie",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/pin/confirm": {
+      "post": {
+        "operationId": "AuthController_confirmPin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PinConfirmDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/me": {
+      "get": {
+        "operationId": "MeController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/invites/{token}": {
+      "get": {
+        "operationId": "InvitesController_view",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "invites"
+        ]
+      }
+    },
+    "/api/invites/code": {
+      "post": {
+        "operationId": "InvitesController_code",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "invites"
+        ]
+      }
+    },
+    "/api/invites/accept": {
+      "post": {
+        "operationId": "InvitesController_accept",
+        "parameters": [
+          {
+            "name": "X-Client",
+            "in": "header",
+            "description": "\"mobile\" returns the refresh token in the body instead of a cookie",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptInviteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "invites"
+        ]
+      }
+    },
+    "/api/admin/users": {
+      "post": {
+        "operationId": "AdminController_createUser",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      },
+      "get": {
+        "operationId": "AdminDirectoryController_users",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Name or phone",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/users/{id}/resend-invite": {
+      "post": {
+        "operationId": "AdminController_resend",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/users/{id}/reset-pin": {
+      "post": {
+        "operationId": "AdminController_resetPin",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/users/{id}/deactivate": {
+      "post": {
+        "operationId": "AdminController_deactivate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeactivateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/invites/{id}/confirm": {
+      "post": {
+        "operationId": "AdminController_confirmInvite",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-pin-confirmation",
+            "in": "header",
+            "description": "Single-use token from POST /api/auth/pin/confirm with action \"invite.confirm\" (valid 2 minutes)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/organisations": {
+      "get": {
+        "operationId": "AdminDirectoryController_organisations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "operationId": "AdminDirectoryController_addOrganisation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganisationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/projects": {
+      "get": {
+        "operationId": "AdminDirectoryController_projects",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/audit": {
+      "get": {
+        "operationId": "AdminDirectoryController_audit",
+        "parameters": [
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "description": "Action name or its start",
+            "schema": {
+              "example": "auth.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 100,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/users": {
+      "get": {
+        "operationId": "DirectoryController_users",
+        "parameters": [
+          {
+            "name": "role",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "executive_viewer",
+                "accounting_officer",
+                "director_rail",
+                "ministry_project_manager",
+                "procurement_officer",
+                "legal_officer",
+                "finance_officer",
+                "me_analyst",
+                "nrc_project_engineer",
+                "nrc_asset_manager",
+                "consultant_resident_engineer",
+                "contractor_site_manager",
+                "contractor_commercial_manager",
+                "security_desk_officer",
+                "lender_viewer",
+                "oversight_viewer",
+                "public_viewer",
+                "it_administrator"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "directory"
+        ]
+      }
+    },
+    "/api/reference/return-reasons": {
+      "get": {
+        "operationId": "DirectoryController_returnReasons",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "directory"
+        ]
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "operationId": "ProjectsController_list",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Name or town",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "identified",
+                "funded",
+                "contracted",
+                "under_construction",
+                "commissioned",
+                "operational",
+                "stalled",
+                "closed"
+              ]
+            }
+          },
+          {
+            "name": "fundingRoute",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "budget",
+                "external_loan",
+                "ppp",
+                "state_private"
+              ]
+            }
+          },
+          {
+            "name": "contractor",
+            "required": false,
+            "in": "query",
+            "description": "Contractor organisation id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "abia",
+                "adamawa",
+                "akwa_ibom",
+                "anambra",
+                "bauchi",
+                "bayelsa",
+                "benue",
+                "borno",
+                "cross_river",
+                "delta",
+                "ebonyi",
+                "edo",
+                "ekiti",
+                "enugu",
+                "fct",
+                "gombe",
+                "imo",
+                "jigawa",
+                "kaduna",
+                "kano",
+                "katsina",
+                "kebbi",
+                "kogi",
+                "kwara",
+                "lagos",
+                "nasarawa",
+                "niger",
+                "ogun",
+                "ondo",
+                "osun",
+                "oyo",
+                "plateau",
+                "rivers",
+                "sokoto",
+                "taraba",
+                "yobe",
+                "zamfara"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      },
+      "post": {
+        "operationId": "ProjectsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}": {
+      "put": {
+        "operationId": "ProjectsController_updateBasics",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBasicsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/stations/{stationId}": {
+      "delete": {
+        "operationId": "ProjectsController_removeStation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "stationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/funding-route": {
+      "put": {
+        "operationId": "ProjectsController_fundingRoute",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FundingRouteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/alignment": {
+      "post": {
+        "operationId": "ProjectsController_alignment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/stations": {
+      "post": {
+        "operationId": "ProjectsController_station",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/members": {
+      "post": {
+        "operationId": "ProjectsController_addMember",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddMemberDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/members/{membershipId}/confirm": {
+      "post": {
+        "operationId": "ProjectsController_confirmMember",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "membershipId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-pin-confirmation",
+            "in": "header",
+            "description": "Single-use token from POST /api/auth/pin/confirm with action \"membership.confirm\" (valid 2 minutes)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/review": {
+      "get": {
+        "operationId": "ProjectsController_review",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/send-for-publishing": {
+      "post": {
+        "operationId": "ProjectsController_send",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendForPublishingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/publish": {
+      "post": {
+        "operationId": "ProjectsController_publish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-pin-confirmation",
+            "in": "header",
+            "description": "Single-use token from POST /api/auth/pin/confirm with action \"project.publish\" (valid 2 minutes)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/return-draft": {
+      "post": {
+        "operationId": "ProjectsController_returnDraft",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReturnDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/card": {
+      "get": {
+        "operationId": "ProjectsController_card",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/documents": {
+      "get": {
+        "operationId": "ProjectsController_listDocuments",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      },
+      "post": {
+        "operationId": "ProjectsController_uploadDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "typeCode": {
+                    "type": "string",
+                    "description": "Register code, D01 to D30"
+                  },
+                  "gateNo": {
+                    "type": "integer",
+                    "description": "Defaults to the code's gate"
+                  },
+                  "lotId": {
+                    "type": "string",
+                    "description": "The lot it belongs to; required for people limited to lots"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "effectiveDate": {
+                    "type": "string",
+                    "description": "YYYY-MM-DD"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "description": "Required from version 2"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/people": {
+      "get": {
+        "operationId": "ProjectsController_people",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/activity": {
+      "get": {
+        "operationId": "ProjectsController_activity",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "description": "Action name or its start",
+            "schema": {
+              "example": "workflow.payment_certificate",
+              "type": "string"
+            }
+          },
+          {
+            "name": "actorUserId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entity",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "payment_certificates",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2027-01-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2027-01-31T23:59:59Z",
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "description": "Next page: the nextBefore of the previous one",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 50,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/gates": {
+      "get": {
+        "operationId": "ProjectsController_listGates",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/gates/{no}/evidence": {
+      "post": {
+        "operationId": "ProjectsController_evidence",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "no",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GateEvidenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/gates/{no}/confirm": {
+      "post": {
+        "operationId": "ProjectsController_confirmGate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "no",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "x-pin-confirmation",
+            "in": "header",
+            "description": "Single-use token from POST /api/auth/pin/confirm with action \"gate.confirm\" (valid 2 minutes)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/gates/{no}/return": {
+      "post": {
+        "operationId": "ProjectsController_returnGate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "no",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReturnDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/gates/{no}/delegate": {
+      "post": {
+        "operationId": "ProjectsController_delegate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "no",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DelegateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/gates/{no}/approve": {
+      "post": {
+        "operationId": "ProjectsController_approveGate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "no",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "x-pin-confirmation",
+            "in": "header",
+            "description": "Single-use token from POST /api/auth/pin/confirm with action \"gate.approve\" (valid 2 minutes)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/lots/{lotId}/practical-completion": {
+      "post": {
+        "operationId": "ProjectsController_practicalCompletion",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-pin-confirmation",
+            "in": "header",
+            "description": "Single-use token from POST /api/auth/pin/confirm with action \"completion.record\" (valid 2 minutes)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticalCompletionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/lots": {
+      "get": {
+        "operationId": "ProjectsController_listLots",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      },
+      "post": {
+        "operationId": "ProjectsController_createLot",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLotDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/lots/{lotId}/confirm": {
+      "post": {
+        "operationId": "ProjectsController_confirmLot",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-pin-confirmation",
+            "in": "header",
+            "description": "Single-use token from POST /api/auth/pin/confirm with action \"lot.confirm\" (valid 2 minutes)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/sections": {
+      "get": {
+        "operationId": "ProjectsController_listSections",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      },
+      "post": {
+        "operationId": "ProjectsController_createSection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/projects/{id}/sections/{sectionId}/sign-off": {
+      "post": {
+        "operationId": "ProjectsController_signOff",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sectionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-pin-confirmation",
+            "in": "header",
+            "description": "Single-use token from POST /api/auth/pin/confirm with action \"section.sign_off\" (valid 2 minutes)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/map/projects": {
+      "get": {
+        "operationId": "MapController_projects",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "map"
+        ]
+      }
+    },
+    "/api/map/counters": {
+      "get": {
+        "operationId": "MapController_counters",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "map"
+        ]
+      }
+    },
+    "/api/documents/{id}/versions": {
+      "get": {
+        "operationId": "DocumentsController_versions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "documents"
+        ]
+      },
+      "post": {
+        "operationId": "DocumentsController_addVersion",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "description": "Why this version replaces the last (required)"
+                  },
+                  "effectiveDate": {
+                    "type": "string",
+                    "description": "YYYY-MM-DD"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/documents/{id}/download": {
+      "get": {
+        "operationId": "DocumentsController_download",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "required": false,
+            "in": "query",
+            "description": "Defaults to the current version",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/documents/{id}/link-gate": {
+      "post": {
+        "operationId": "DocumentsController_link",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkGateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/portfolio": {
+      "get": {
+        "operationId": "PortfolioController_portfolio",
+        "parameters": [
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "days_at_gate",
+                "name",
+                "physical",
+                "financial"
+              ]
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "portfolio"
+        ]
+      }
+    },
+    "/api/field/submissions": {
+      "post": {
+        "operationId": "FieldController_submit",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "metadata"
+                ],
+                "properties": {
+                  "metadata": {
+                    "type": "string",
+                    "description": "JSON: client_id, kind, lot_id, discipline_code, captured_at, latitude, longitude, accuracy_m, heading, device_id, mock_location, integrity_verdict, supersedes_id, details"
+                  },
+                  "photo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JPEG or WebP, up to 15 MB; two parts for a milestone claim"
+                  },
+                  "voice": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "M4A or AAC, up to 5 MB"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "field"
+        ]
+      }
+    },
+    "/api/field/context": {
+      "get": {
+        "operationId": "FieldController_context",
+        "parameters": [
+          {
+            "name": "lat",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 12.55,
+              "type": "number"
+            }
+          },
+          {
+            "name": "lon",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 8,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "field"
+        ]
+      }
+    },
+    "/api/field/my-submissions": {
+      "get": {
+        "operationId": "FieldController_mine",
+        "parameters": [
+          {
+            "name": "since",
+            "required": false,
+            "in": "query",
+            "description": "ISO time of the last sync",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "field"
+        ]
+      }
+    },
+    "/api/field/review-queue": {
+      "get": {
+        "operationId": "FieldController_queue",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "field"
+        ]
+      }
+    },
+    "/api/field/submissions/{id}": {
+      "get": {
+        "operationId": "FieldController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "field"
+        ]
+      }
+    },
+    "/api/field/submissions/{id}/verify": {
+      "post": {
+        "operationId": "FieldController_verify",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "field"
+        ]
+      }
+    },
+    "/api/field/submissions/{id}/send-back": {
+      "post": {
+        "operationId": "FieldController_sendBack",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReturnDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "field"
+        ]
+      }
+    },
+    "/api/field/projects/{id}/submissions": {
+      "get": {
+        "operationId": "FieldController_forProject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "field"
+        ]
+      }
+    },
+    "/api/media/{id}": {
+      "get": {
+        "operationId": "MediaController_url",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "size",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "thumb",
+                "web",
+                "original"
+              ],
+              "type": "string",
+              "default": "web"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "field"
+        ]
+      }
+    },
+    "/api/media/{id}/content": {
+      "get": {
+        "operationId": "MediaController_content",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "size",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "thumb",
+                "web",
+                "original"
+              ]
+            }
+          },
+          {
+            "name": "exp",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "sig",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "field"
+        ]
+      }
+    },
+    "/api/lots/{id}/payment-settings": {
+      "put": {
+        "operationId": "ContractsController_paymentSettings",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "payments"
+        ]
+      }
+    },
+    "/api/lots/{id}/valuations": {
+      "post": {
+        "operationId": "ContractsController_valuation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file",
+                  "periodMonth",
+                  "grossKobo",
+                  "quantities"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "The valuation, PDF or XLSX"
+                  },
+                  "periodMonth": {
+                    "type": "string",
+                    "example": "2026-10"
+                  },
+                  "grossKobo": {
+                    "type": "string",
+                    "example": "1000000000"
+                  },
+                  "quantities": {
+                    "type": "string",
+                    "description": "JSON: [{ discipline, item, unit, quantity, rateKobo? }]"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "payments"
+        ]
+      }
+    },
+    "/api/lots/{id}/certificates": {
+      "get": {
+        "operationId": "ContractsController_certificates",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "payments"
+        ]
+      }
+    },
+    "/api/certificates/{id}": {
+      "get": {
+        "operationId": "ContractsController_certificate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "payments"
+        ]
+      }
+    },
+    "/api/projects/{id}/variations": {
+      "post": {
+        "operationId": "ContractsController_raise",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VariationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "payments"
+        ]
+      },
+      "get": {
+        "operationId": "ContractsController_variations",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "payments"
+        ]
+      }
+    },
+    "/api/admin/settings": {
+      "get": {
+        "operationId": "SettingsController_settings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/settings/{key}": {
+      "put": {
+        "operationId": "SettingsController_updateSetting",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/tasks": {
+      "get": {
+        "operationId": "TasksController_inbox",
+        "parameters": [
+          {
+            "name": "overdue",
+            "required": false,
+            "in": "query",
+            "description": "Only tasks past their due time",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/api/tasks/{id}": {
+      "get": {
+        "operationId": "TasksController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/api/tasks/{id}/act": {
+      "post": {
+        "operationId": "TasksController_act",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-pin-confirmation",
+            "in": "header",
+            "description": "Needed when the step asks for the PIN (approve, certify, confirm, publish, final approve)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/api/lots/{id}/measurements": {
+      "post": {
+        "operationId": "ProgressController_measure",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeasurementSheetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "progress"
+        ]
+      },
+      "get": {
+        "operationId": "ProgressController_measurementList",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "periodMonth",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2027-01",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "progress"
+        ]
+      }
+    },
+    "/api/lots/{id}/discipline-weights": {
+      "put": {
+        "operationId": "ProgressController_weights",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeightsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "progress"
+        ]
+      }
+    },
+    "/api/lots/{id}/baseline": {
+      "post": {
+        "operationId": "ProgressController_baseline",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "CSV: discipline,month,planned_percent"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "description": "Required for a revision (any upload after the first)"
+                  },
+                  "variationId": {
+                    "type": "string",
+                    "description": "The approved extension of time behind the revision, if any"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "progress"
+        ]
+      }
+    },
+    "/api/lots/{id}/design-requirements": {
+      "get": {
+        "operationId": "ProgressController_requirements",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "progress"
+        ]
+      },
+      "put": {
+        "operationId": "ProgressController_setRequirements",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequirementsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "progress"
+        ]
+      }
+    },
+    "/api/lots/{id}/baseline/revisions": {
+      "get": {
+        "operationId": "ProgressController_revisions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "progress"
+        ]
+      }
+    },
+    "/api/lots/{id}/valuations/prefill": {
+      "get": {
+        "operationId": "ProgressController_prefill",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "periodMonth",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "2027-01",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "progress"
+        ]
+      }
+    },
+    "/api/lots/{id}/milestones": {
+      "post": {
+        "operationId": "ProgressController_milestone",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MilestoneDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "progress"
+        ]
+      }
+    },
+    "/api/projects/{id}/assets": {
+      "post": {
+        "operationId": "ProgressController_asset",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "progress"
+        ]
+      }
+    },
+    "/api/projects/{id}/progress": {
+      "get": {
+        "operationId": "ProgressController_progress",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "progress"
+        ]
+      }
+    },
+    "/api/projects/{id}/strip-map": {
+      "get": {
+        "operationId": "ProgressController_stripMap",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "progress"
+        ]
+      }
+    },
+    "/api/projects/{id}/corridor": {
+      "get": {
+        "operationId": "ProgressController_corridor",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lotId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "discipline",
+            "required": false,
+            "in": "query",
+            "description": "Photo pins of one discipline",
+            "schema": {
+              "example": "track",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "progress"
+        ]
+      }
+    },
+    "/api/projects/{id}/parcels": {
+      "get": {
+        "operationId": "LandController_parcels",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "land"
+        ]
+      },
+      "post": {
+        "operationId": "LandController_createParcel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParcelDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "land"
+        ]
+      }
+    },
+    "/api/parcels/{id}/status": {
+      "post": {
+        "operationId": "LandController_status",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParcelStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "land"
+        ]
+      }
+    },
+    "/api/projects/{id}/grievances": {
+      "get": {
+        "operationId": "LandController_grievances",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "land"
+        ]
+      },
+      "post": {
+        "operationId": "LandController_log",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GrievanceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "land"
+        ]
+      }
+    },
+    "/api/grievances/{id}": {
+      "patch": {
+        "operationId": "LandController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GrievanceUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "land"
+        ]
+      }
+    },
+    "/api/grievances/{id}/resolve": {
+      "post": {
+        "operationId": "LandController_resolve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "land"
+        ]
+      }
+    },
+    "/api/incidents": {
+      "get": {
+        "operationId": "SecurityController_list",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "under_review",
+                "closed"
+              ]
+            }
+          },
+          {
+            "name": "projectId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "security"
+        ]
+      }
+    },
+    "/api/incidents/{id}": {
+      "get": {
+        "operationId": "SecurityController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "security"
+        ]
+      }
+    },
+    "/api/incidents/{id}/actions": {
+      "post": {
+        "operationId": "SecurityController_action",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "security"
+        ]
+      }
+    },
+    "/api/incidents/{id}/close": {
+      "post": {
+        "operationId": "SecurityController_close",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "security"
+        ]
+      }
+    },
+    "/api/projects/{id}/no-go-segments": {
+      "get": {
+        "operationId": "SecurityController_noGo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "security"
+        ]
+      },
+      "post": {
+        "operationId": "SecurityController_addNoGo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoGoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "security"
+        ]
+      }
+    },
+    "/api/no-go-segments/{id}/lift": {
+      "post": {
+        "operationId": "SecurityController_lift",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "security"
+        ]
+      }
+    },
+    "/api/lots/{id}/design-packages": {
+      "post": {
+        "operationId": "DesignController_submit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file",
+                  "discipline",
+                  "title"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "The drawings (PDF, or a ZIP of sheets), stored as D21"
+                  },
+                  "discipline": {
+                    "type": "string",
+                    "example": "structures"
+                  },
+                  "title": {
+                    "type": "string",
+                    "example": "Culverts km 30 to km 45, issue A"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "design"
+        ]
+      },
+      "get": {
+        "operationId": "DesignController_list",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "design"
+        ]
+      }
+    },
+    "/api/design-packages/{id}": {
+      "get": {
+        "operationId": "DesignController_view",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "design"
+        ]
+      }
+    },
+    "/api/me/notification-preferences": {
+      "get": {
+        "operationId": "NotifyController_myPreferences",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notifications"
+        ]
+      },
+      "put": {
+        "operationId": "NotifyController_setMyPreferences",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferencesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/admin/reminder-rules": {
+      "get": {
+        "operationId": "NotifyController_rules",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/admin/reminder-rules/{code}": {
+      "put": {
+        "operationId": "NotifyController_updateRule",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReminderRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/admin/sms-templates": {
+      "get": {
+        "operationId": "NotifyController_templates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/admin/sms-templates/{code}": {
+      "put": {
+        "operationId": "NotifyController_updateTemplate",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/admin/notifications": {
+      "get": {
+        "operationId": "NotifyController_log",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "queued",
+                "sent",
+                "failed",
+                "cancelled",
+                "merged"
+              ]
+            }
+          },
+          {
+            "name": "userId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "task",
+                "reminder",
+                "report",
+                "system",
+                "secret"
+              ]
+            }
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "description": "Next page: the nextBefore of the previous one",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 50,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/projects/{id}/obligations": {
+      "get": {
+        "operationId": "NotifyController_obligations",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notifications"
+        ]
+      },
+      "post": {
+        "operationId": "NotifyController_addObligation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObligationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/admin/holidays": {
+      "get": {
+        "operationId": "HolidaysController_list",
+        "parameters": [
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 2026,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "operationId": "HolidaysController_add",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HolidayDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/holidays/{id}": {
+      "delete": {
+        "operationId": "HolidaysController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/projects/{id}/reports": {
+      "post": {
+        "operationId": "ReportsController_requestProject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "reports"
+        ]
+      },
+      "get": {
+        "operationId": "ReportsController_projectReports",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/reports/portfolio": {
+      "post": {
+        "operationId": "ReportsController_requestPortfolio",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortfolioReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "reports"
+        ]
+      },
+      "get": {
+        "operationId": "ReportsController_portfolioReports",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/reports/eyemark": {
+      "post": {
+        "operationId": "ReportsController_requestEyemark",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/reports/{id}/file": {
+      "get": {
+        "operationId": "ReportsController_file",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "reports"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "FMoT Rail Tracker API",
+    "description": "Sign-in is phone + SMS code + 4-digit PIN. Decisions (approve, certify, confirm, publish) also need X-Pin-Confirmation from POST /api/auth/pin/confirm.",
+    "version": "0.1",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "PhoneDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "08030000000",
+            "description": "Any Nigerian or international format; stored as E.164 (+234...)"
+          }
+        },
+        "required": [
+          "phone"
+        ]
+      },
+      "VerifyOtpDto": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "description": "Stable id of this browser or phone install",
+            "example": "web-8f2c1a..."
+          },
+          "phone": {
+            "type": "string",
+            "example": "08030000000",
+            "description": "Any Nigerian or international format; stored as E.164 (+234...)"
+          },
+          "code": {
+            "type": "string",
+            "example": "123456"
+          }
+        },
+        "required": [
+          "deviceId",
+          "phone",
+          "code"
+        ]
+      },
+      "PinLoginDto": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "description": "Stable id of this browser or phone install",
+            "example": "web-8f2c1a..."
+          },
+          "phone": {
+            "type": "string",
+            "example": "08030000000",
+            "description": "Any Nigerian or international format; stored as E.164 (+234...)"
+          },
+          "pin": {
+            "type": "string",
+            "example": "2580"
+          },
+          "ticket": {
+            "type": "string",
+            "description": "OTP ticket; required when this device is not yet bound"
+          }
+        },
+        "required": [
+          "deviceId",
+          "phone",
+          "pin"
+        ]
+      },
+      "SetPinDto": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "description": "Stable id of this browser or phone install",
+            "example": "web-8f2c1a..."
+          },
+          "phone": {
+            "type": "string",
+            "example": "08030000000",
+            "description": "Any Nigerian or international format; stored as E.164 (+234...)"
+          },
+          "ticket": {
+            "type": "string"
+          },
+          "pin": {
+            "type": "string",
+            "example": "2580"
+          }
+        },
+        "required": [
+          "deviceId",
+          "phone",
+          "ticket",
+          "pin"
+        ]
+      },
+      "RefreshDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "Mobile only (X-Client: mobile); the web sends the httpOnly cookie"
+          }
+        }
+      },
+      "PinConfirmDto": {
+        "type": "object",
+        "properties": {
+          "pin": {
+            "type": "string",
+            "example": "2580"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "invite.confirm",
+              "membership.confirm",
+              "project.publish",
+              "gate.confirm",
+              "gate.approve",
+              "lot.confirm",
+              "section.sign_off",
+              "certificate.certify",
+              "certificate.approve",
+              "certificate.final_approve",
+              "certificate.mark_paid",
+              "baseline.approve",
+              "completion.record",
+              "completion.confirm",
+              "takeover.confirm",
+              "design.approve",
+              "design.countersign",
+              "variation.approve",
+              "variation.confirm"
+            ],
+            "description": "The decision the PIN is entered for"
+          },
+          "subjectId": {
+            "type": "string",
+            "description": "Its subject: invite, project, lot, section or membership id, or \"<project id>:<gate no>\""
+          }
+        },
+        "required": [
+          "pin",
+          "action",
+          "subjectId"
+        ]
+      },
+      "InviteTokenDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "AcceptInviteDto": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "description": "Stable id of this browser or phone install",
+            "example": "web-8f2c1a..."
+          },
+          "token": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "example": "123456"
+          },
+          "pin": {
+            "type": "string",
+            "example": "2580"
+          }
+        },
+        "required": [
+          "deviceId",
+          "token",
+          "code",
+          "pin"
+        ]
+      },
+      "MembershipInput": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string"
+          },
+          "lotId": {
+            "type": "string"
+          },
+          "projectRole": {
+            "type": "string",
+            "enum": [
+              "executive_viewer",
+              "accounting_officer",
+              "director_rail",
+              "ministry_project_manager",
+              "procurement_officer",
+              "legal_officer",
+              "finance_officer",
+              "me_analyst",
+              "nrc_project_engineer",
+              "nrc_asset_manager",
+              "consultant_resident_engineer",
+              "contractor_site_manager",
+              "contractor_commercial_manager",
+              "security_desk_officer",
+              "lender_viewer",
+              "oversight_viewer",
+              "public_viewer",
+              "it_administrator"
+            ],
+            "description": "Defaults to the user's role"
+          }
+        },
+        "required": [
+          "projectId"
+        ]
+      },
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Emeka Nwosu"
+          },
+          "phone": {
+            "type": "string",
+            "example": "08030000000",
+            "description": "Any Nigerian or international format; stored as E.164 (+234...)"
+          },
+          "organisationId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "executive_viewer",
+              "accounting_officer",
+              "director_rail",
+              "ministry_project_manager",
+              "procurement_officer",
+              "legal_officer",
+              "finance_officer",
+              "me_analyst",
+              "nrc_project_engineer",
+              "nrc_asset_manager",
+              "consultant_resident_engineer",
+              "contractor_site_manager",
+              "contractor_commercial_manager",
+              "security_desk_officer",
+              "lender_viewer",
+              "oversight_viewer",
+              "public_viewer",
+              "it_administrator"
+            ]
+          },
+          "memberships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MembershipInput"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "organisationId",
+          "role"
+        ]
+      },
+      "DeactivateUserDto": {
+        "type": "object",
+        "properties": {
+          "replacementUserId": {
+            "type": "string",
+            "description": "Who takes over the open tasks"
+          }
+        }
+      },
+      "OrganisationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "China Civil Engineering Construction Corporation"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "ministry_unit",
+              "nrc",
+              "contractor",
+              "consultant",
+              "lender",
+              "state",
+              "oversight",
+              "public",
+              "service_provider"
+            ]
+          },
+          "contactName": {
+            "type": "string"
+          },
+          "contactPhone": {
+            "type": "string",
+            "example": "0803 123 4567"
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ]
+      },
+      "LonLat": {
+        "type": "object",
+        "properties": {
+          "lon": {
+            "type": "number",
+            "example": 8.5167
+          },
+          "lat": {
+            "type": "number",
+            "example": 12
+          }
+        },
+        "required": [
+          "lon",
+          "lat"
+        ]
+      },
+      "PlaceholderLine": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/LonLat"
+          },
+          "to": {
+            "$ref": "#/components/schemas/LonLat"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ]
+      },
+      "CreateProjectDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Kano–Maradi SGR"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "new_line",
+              "rehabilitation",
+              "extension",
+              "station"
+            ]
+          },
+          "gauge": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "narrow"
+            ]
+          },
+          "startTown": {
+            "type": "string",
+            "example": "Kano"
+          },
+          "endTown": {
+            "type": "string",
+            "example": "Maradi"
+          },
+          "originReference": {
+            "type": "string",
+            "enum": [
+              "master_plan",
+              "directive",
+              "state_request",
+              "unsolicited_proposal"
+            ]
+          },
+          "originDetail": {
+            "type": "string",
+            "example": "NRMP 2025, item 14",
+            "description": "The origin's own reference (a master-plan item, a directive's number)"
+          },
+          "placeholder": {
+            "description": "The two towns picked on the map: drawn as a dashed placeholder until the alignment is uploaded",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlaceholderLine"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "gauge",
+          "startTown",
+          "endTown"
+        ]
+      },
+      "UpdateBasicsDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Kano–Maradi SGR"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "new_line",
+              "rehabilitation",
+              "extension",
+              "station"
+            ]
+          },
+          "gauge": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "narrow"
+            ]
+          },
+          "startTown": {
+            "type": "string",
+            "example": "Kano"
+          },
+          "endTown": {
+            "type": "string",
+            "example": "Maradi"
+          },
+          "originReference": {
+            "type": "string",
+            "enum": [
+              "master_plan",
+              "directive",
+              "state_request",
+              "unsolicited_proposal"
+            ]
+          },
+          "originDetail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "type",
+          "gauge",
+          "startTown",
+          "endTown"
+        ]
+      },
+      "FundingRouteDto": {
+        "type": "object",
+        "properties": {
+          "fundingRoute": {
+            "type": "string",
+            "enum": [
+              "budget",
+              "external_loan",
+              "ppp",
+              "state_private"
+            ]
+          }
+        },
+        "required": [
+          "fundingRoute"
+        ]
+      },
+      "StationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Katsina"
+          },
+          "chainageM": {
+            "type": "number",
+            "example": 190000,
+            "description": "Metres from the start of the line"
+          }
+        },
+        "required": [
+          "name",
+          "chainageM"
+        ]
+      },
+      "AddMemberDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "lotId": {
+            "type": "string"
+          },
+          "projectRole": {
+            "type": "string",
+            "enum": [
+              "executive_viewer",
+              "accounting_officer",
+              "director_rail",
+              "ministry_project_manager",
+              "procurement_officer",
+              "legal_officer",
+              "finance_officer",
+              "me_analyst",
+              "nrc_project_engineer",
+              "nrc_asset_manager",
+              "consultant_resident_engineer",
+              "contractor_site_manager",
+              "contractor_commercial_manager",
+              "security_desk_officer",
+              "lender_viewer",
+              "oversight_viewer",
+              "public_viewer",
+              "it_administrator"
+            ],
+            "description": "Defaults to the user's role"
+          }
+        },
+        "required": [
+          "userId"
+        ]
+      },
+      "SendForPublishingDto": {
+        "type": "object",
+        "properties": {
+          "gate1DecisionDate": {
+            "type": "string",
+            "example": "2026-10-20",
+            "description": "Date of the Minister's minute (gate 1 decision date)"
+          }
+        },
+        "required": [
+          "gate1DecisionDate"
+        ]
+      },
+      "ReturnDto": {
+        "type": "object",
+        "properties": {
+          "returnReasonCode": {
+            "type": "string",
+            "example": "missing_document",
+            "description": "A return_reasons code"
+          },
+          "reasonText": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "returnReasonCode"
+        ]
+      },
+      "GateEvidenceDto": {
+        "type": "object",
+        "properties": {
+          "documentIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "decisionDate": {
+            "type": "string",
+            "example": "2026-10-28",
+            "description": "Date of the external decision"
+          }
+        },
+        "required": [
+          "documentIds",
+          "decisionDate"
+        ]
+      },
+      "DelegateDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "userId"
+        ]
+      },
+      "PracticalCompletionDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2028-06-30",
+            "description": "The date of practical completion on the certificate"
+          }
+        },
+        "required": [
+          "date"
+        ]
+      },
+      "CreateLotDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Lot 1"
+          },
+          "contractRef": {
+            "type": "string",
+            "example": "FMOT/RAIL/KM/001"
+          },
+          "contractorOrgId": {
+            "type": "string"
+          },
+          "consultantOrgId": {
+            "type": "string"
+          },
+          "chainageFromM": {
+            "type": "number",
+            "example": 0
+          },
+          "chainageToM": {
+            "type": "number",
+            "example": 120000
+          },
+          "contractSumKobo": {
+            "type": "string",
+            "example": "125000000000000",
+            "description": "Contract sum in kobo, as a string of digits"
+          },
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "contractRef",
+          "contractorOrgId",
+          "chainageFromM",
+          "chainageToM"
+        ]
+      },
+      "CreateSectionDto": {
+        "type": "object",
+        "properties": {
+          "lotId": {
+            "type": "string"
+          },
+          "chainageFromM": {
+            "type": "number",
+            "example": 140000
+          },
+          "chainageToM": {
+            "type": "number",
+            "example": 152000
+          },
+          "note": {
+            "type": "string",
+            "example": "Compensation unpaid for 14 parcels"
+          }
+        },
+        "required": [
+          "chainageFromM",
+          "chainageToM"
+        ]
+      },
+      "LinkGateDto": {
+        "type": "object",
+        "properties": {
+          "gateNo": {
+            "type": "number",
+            "example": 10
+          }
+        },
+        "required": [
+          "gateNo"
+        ]
+      },
+      "PaymentSettingsDto": {
+        "type": "object",
+        "properties": {
+          "retentionBp": {
+            "type": "number",
+            "example": 500,
+            "description": "Retention held from each certificate, basis points (500 = 5%)"
+          },
+          "advancePaymentKobo": {
+            "type": "string",
+            "example": "1500000000000",
+            "description": "Advance paid at mobilisation, kobo"
+          },
+          "advanceRecoveryBp": {
+            "type": "number",
+            "example": 1000,
+            "description": "Share of each gross that recovers the advance, basis points"
+          }
+        },
+        "required": [
+          "retentionBp",
+          "advancePaymentKobo",
+          "advanceRecoveryBp"
+        ]
+      },
+      "VariationDto": {
+        "type": "object",
+        "properties": {
+          "lotId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "variation",
+              "extension_of_time"
+            ]
+          },
+          "amountKobo": {
+            "type": "string",
+            "example": "10000000000",
+            "description": "Kobo; required for a variation"
+          },
+          "days": {
+            "type": "number",
+            "example": 30,
+            "description": "Days; required for an extension of time"
+          },
+          "description": {
+            "type": "string",
+            "example": "Additional culvert at km 33+400 after the flood survey"
+          }
+        },
+        "required": [
+          "lotId",
+          "type",
+          "description"
+        ]
+      },
+      "SettingDto": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "description": "A number, text or true/false",
+            "oneOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          },
+          "confirmedByMinistry": {
+            "type": "boolean",
+            "description": "Set when the ministry has confirmed the value"
+          }
+        },
+        "required": [
+          "value"
+        ]
+      },
+      "ActDto": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "recommend",
+              "certify",
+              "approve",
+              "final_approve",
+              "mark_paid",
+              "countersign",
+              "assess",
+              "attach_evidence",
+              "confirm",
+              "publish",
+              "sign_off",
+              "return",
+              "resubmit"
+            ],
+            "description": "The current step's verb, 'return', or 'resubmit' on a returned item"
+          },
+          "returnReasonCode": {
+            "type": "string",
+            "example": "missing_document",
+            "description": "Required for return"
+          },
+          "comment": {
+            "type": "string"
+          },
+          "documentIds": {
+            "description": "Documents the step needs (D24 to mark paid; BPP and FEC evidence)",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "data": {
+            "type": "object",
+            "description": "Step data, e.g. { source: \"lender\", lenderOrgId } when marking paid"
+          }
+        },
+        "required": [
+          "action"
+        ]
+      },
+      "MeasurementLineDto": {
+        "type": "object",
+        "properties": {
+          "discipline": {
+            "type": "string",
+            "example": "earthworks"
+          },
+          "chainageFromM": {
+            "type": "number",
+            "example": 12000,
+            "description": "Linear disciplines: start of the range"
+          },
+          "chainageToM": {
+            "type": "number",
+            "example": 14500,
+            "description": "Linear disciplines: end of the range"
+          },
+          "assetId": {
+            "type": "string",
+            "description": "Point disciplines: the station or structure"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "in_progress",
+              "complete"
+            ]
+          },
+          "evidenceSubmissionIds": {
+            "description": "Verified field submissions in this lot that show the work",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "note": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "example": "Embankment slipped after the rains; being rebuilt",
+            "description": "Required when the line takes complete work back to in progress (rework)"
+          }
+        },
+        "required": [
+          "discipline",
+          "state",
+          "evidenceSubmissionIds"
+        ]
+      },
+      "MeasurementSheetDto": {
+        "type": "object",
+        "properties": {
+          "periodMonth": {
+            "type": "string",
+            "example": "2027-01"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeasurementLineDto"
+            }
+          }
+        },
+        "required": [
+          "periodMonth",
+          "lines"
+        ]
+      },
+      "WeightDto": {
+        "type": "object",
+        "properties": {
+          "discipline": {
+            "type": "string",
+            "example": "track"
+          },
+          "weight": {
+            "type": "number",
+            "example": 40
+          }
+        },
+        "required": [
+          "discipline",
+          "weight"
+        ]
+      },
+      "WeightsDto": {
+        "type": "object",
+        "properties": {
+          "weights": {
+            "description": "Replaces the lot weights; a measured discipline left out counts zero",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeightDto"
+            }
+          }
+        },
+        "required": [
+          "weights"
+        ]
+      },
+      "RequirementDto": {
+        "type": "object",
+        "properties": {
+          "discipline": {
+            "type": "string",
+            "example": "structures"
+          },
+          "required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "discipline",
+          "required"
+        ]
+      },
+      "RequirementsDto": {
+        "type": "object",
+        "properties": {
+          "requirements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequirementDto"
+            }
+          }
+        },
+        "required": [
+          "requirements"
+        ]
+      },
+      "MilestoneDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Track laid to Katsina"
+          },
+          "discipline": {
+            "type": "string",
+            "example": "track"
+          },
+          "chainageM": {
+            "type": "number",
+            "example": 190000
+          },
+          "plannedDate": {
+            "type": "string",
+            "example": "2027-06-30"
+          }
+        },
+        "required": [
+          "name",
+          "chainageM"
+        ]
+      },
+      "AssetDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "bridge",
+            "description": "An asset type code"
+          },
+          "name": {
+            "type": "string",
+            "example": "River Kano bridge"
+          },
+          "chainageM": {
+            "type": "number",
+            "example": 48200
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "chainageM"
+        ]
+      },
+      "ParcelDto": {
+        "type": "object",
+        "properties": {
+          "parcelRef": {
+            "type": "string",
+            "example": "KM-P-0142"
+          },
+          "chainageFromM": {
+            "type": "number",
+            "example": 141200
+          },
+          "chainageToM": {
+            "type": "number",
+            "example": 141650
+          },
+          "ownerReference": {
+            "type": "string",
+            "example": "Dawakin Tofa community",
+            "description": "The owner's reference or community name, never a personal ID number"
+          },
+          "valuationKobo": {
+            "type": "string",
+            "example": "450000000",
+            "description": "Compensation valuation, kobo"
+          }
+        },
+        "required": [
+          "parcelRef",
+          "chainageFromM",
+          "chainageToM",
+          "ownerReference"
+        ]
+      },
+      "ParcelStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "unpaid",
+              "disputed",
+              "queried",
+              "paid"
+            ]
+          },
+          "documentId": {
+            "type": "string",
+            "description": "The D17 payment record; required to mark paid"
+          },
+          "paidKobo": {
+            "type": "string",
+            "example": "450000000",
+            "description": "Amount paid, kobo; defaults to the valuation"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "GrievanceDto": {
+        "type": "object",
+        "properties": {
+          "complainantReference": {
+            "type": "string",
+            "example": "Village head, Dawakin Tofa"
+          },
+          "summary": {
+            "type": "string",
+            "example": "Access road to the market blocked by the embankment"
+          },
+          "chainageM": {
+            "type": "number",
+            "example": 141400
+          },
+          "parcelId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "complainantReference",
+          "summary"
+        ]
+      },
+      "GrievanceUpdateDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "in_progress"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "chainageM": {
+            "type": "number"
+          }
+        }
+      },
+      "ResolveDto": {
+        "type": "object",
+        "properties": {
+          "resolution": {
+            "type": "string",
+            "example": "Temporary crossing built at km 141+400"
+          }
+        },
+        "required": [
+          "resolution"
+        ]
+      },
+      "NoteDto": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "example": "Police patrol requested for the night shift"
+          }
+        },
+        "required": [
+          "note"
+        ]
+      },
+      "NoGoDto": {
+        "type": "object",
+        "properties": {
+          "chainageFromM": {
+            "type": "number",
+            "example": 61000
+          },
+          "chainageToM": {
+            "type": "number",
+            "example": 64500
+          },
+          "reason": {
+            "type": "string",
+            "example": "Armed robbery reported on the access road; no staff until cleared"
+          }
+        },
+        "required": [
+          "chainageFromM",
+          "chainageToM",
+          "reason"
+        ]
+      },
+      "PreferencesDto": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string",
+            "enum": [
+              "sms",
+              "push",
+              "email"
+            ],
+            "description": "Push and email come later; until then messages go by SMS"
+          },
+          "weeklyDigest": {
+            "type": "boolean"
+          },
+          "quietFrom": {
+            "type": "string",
+            "nullable": true,
+            "example": "21:00",
+            "description": "Lagos time; null clears quiet hours"
+          },
+          "quietTo": {
+            "type": "string",
+            "nullable": true,
+            "example": "07:00"
+          }
+        }
+      },
+      "ReminderRuleDto": {
+        "type": "object",
+        "properties": {
+          "threshold": {
+            "type": "number",
+            "example": 16,
+            "description": "Hours for ages and expiries; the hour of day for the photo reminder and digest; a multiple for task due"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "template": {
+            "type": "string",
+            "example": "reminder.no_photo",
+            "description": "An SMS template code"
+          }
+        }
+      },
+      "TemplateDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "example": "FMoT Rail: no site photo from you today on {lot}. Please send one: {link}"
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "ObligationDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "performance_bond",
+              "advance_payment_guarantee",
+              "insurance",
+              "eia_condition"
+            ]
+          },
+          "reference": {
+            "type": "string",
+            "example": "PB/2026/0142"
+          },
+          "description": {
+            "type": "string"
+          },
+          "expiresOn": {
+            "type": "string",
+            "example": "2027-03-31"
+          },
+          "lotId": {
+            "type": "string"
+          },
+          "documentId": {
+            "type": "string",
+            "description": "The bond, policy or certificate in the register"
+          }
+        },
+        "required": [
+          "kind",
+          "reference",
+          "expiresOn"
+        ]
+      },
+      "HolidayDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-03-20",
+            "description": "Lagos calendar date"
+          },
+          "name": {
+            "type": "string",
+            "example": "Eid el-Fitr"
+          }
+        },
+        "required": [
+          "date",
+          "name"
+        ]
+      },
+      "ProjectReportDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "monthly",
+              "lender"
+            ]
+          },
+          "periodMonth": {
+            "type": "string",
+            "example": "2026-10"
+          }
+        },
+        "required": [
+          "kind",
+          "periodMonth"
+        ]
+      },
+      "PortfolioReportDto": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "enum": [
+              "pdf",
+              "xlsx"
+            ]
+          }
+        },
+        "required": [
+          "format"
+        ]
+      }
+    }
+  }
+}

@@ -6,11 +6,13 @@
     "db:generate": "pnpm --filter api db:generate",
     "db:migrate": "pnpm --filter api db:migrate",
     "db:seed": "pnpm --filter api db:seed",
+    "db:seed:demo": "pnpm --filter api db:seed:demo",
     "admin:create": "pnpm --filter api admin:create",
     "build": "pnpm -r build",
     "db:load-boundaries": "pnpm --filter api db:load-boundaries",
     "web": "pnpm --filter web dev",
     "dev": "pnpm --parallel --filter api --filter web run dev",
-    "tokens": "node tools/tokens-to-css.mjs"
+    "tokens": "node tools/tokens-to-css.mjs",
+    "api:types": "pnpm --filter api openapi && pnpm --filter @fmot/shared api-types && pnpm --filter @fmot/shared build"
   }
 }

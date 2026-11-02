@@ -2,6 +2,16 @@
 import { expect, test } from '@playwright/test';
 import { choosePin, noErrors, signIn } from './helpers';
 
+// Every walkthrough runs under the Content Security Policy (src/proxy.ts): anything it blocks fails the test.
+let violations: string[] = [];
+test.beforeEach(({ page }) => {
+  violations = [];
+  page.on('console', (m) => {
+    if (/Content Security Policy|Refused to (load|execute|apply|connect|create)/i.test(m.text())) violations.push(m.text());
+  });
+});
+test.afterEach(() => expect(violations).toEqual([]));
+
 test('1. sign in, map home, find a project, tasks', async ({ page }) => {
   await page.goto('/sign-in');
   await page.getByLabel('Your mobile number').fill('0803 123 4567');

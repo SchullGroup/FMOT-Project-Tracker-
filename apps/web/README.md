@@ -23,7 +23,7 @@ style (no key). For the satellite look in the designs, use MapTiler's satellite-
 - Create the key in the MapTiler Cloud account and restrict it to the web app's domains (MapTiler, Account, Keys,
   Allowed HTTP origins), since the key is visible in the browser.
 - The free plan's monthly map loads are enough for development and a pilot; check the usage page before go-live.
-- The content security policy must allow `api.maptiler.com` (styles, tiles, fonts) when this style is used.
+- The content security policy (`src/proxy.ts`) allows the style URL's own origin, so `api.maptiler.com` (styles, tiles, fonts) is allowed by setting the style. A style that loads from other hosts needs them in `MAP_EXTRA_ORIGINS` (comma separated).
 - `public/map-style-plain.json` is an offline style (a plain background) for when no tile server can be reached.
 
 Every map carries the CC BY 4.0 credit for the state boundaries (GRID3 Nigeria via geoBoundaries,

@@ -3,7 +3,10 @@
  * these in endpoints.ts (and the sample data in mock*.ts is written in them).
  * Money is kobo; the API sends it as a string of digits (bigint), which
  * formatNaira accepts.
+ * Types that are the same on both sides come from @fmot/shared (generated from
+ * the API's OpenAPI document).
  */
+import type { ApiBody, OrganisationType } from '@fmot/shared';
 
 export type ProjectStatus =
   | 'draft'
@@ -275,12 +278,13 @@ export interface ActivityItem {
 /* ---------- Create-project wizard (Web Step 3) ---------- */
 
 export type FundingRoute = 'budget' | 'loan' | 'ppp' | 'state_private';
-export type ProjectType = 'new_line' | 'rehabilitation' | 'extension' | 'station';
+// From the API's OpenAPI document (@fmot/shared): the same values on both sides.
+export type ProjectType = ApiBody<'CreateProjectDto'>['type'];
 
 export interface ProjectBasics {
   name: string;
   type: ProjectType;
-  gauge: 'standard' | 'narrow';
+  gauge: ApiBody<'CreateProjectDto'>['gauge'];
   startTown: string;
   endTown: string;
   originKind: 'master_plan' | 'presidential_directive' | 'state_request' | 'unsolicited_proposal';
@@ -410,7 +414,7 @@ export interface ReturnReason {
 
 /* ---------- Admin (Web Step 4) ---------- */
 
-export type OrganisationType = 'ministry_unit' | 'nrc' | 'contractor' | 'consultant' | 'lender' | 'state' | 'oversight' | 'public' | 'service_provider';
+export type { OrganisationType };
 
 export interface Organisation {
   id: string;
@@ -440,7 +444,7 @@ export interface NewUser {
   name: string;
   phone: string;
   organisationId: string;
-  role: string;
+  role: string; // '' until the form has a role; endpoints.ts sends it as the API's role code
   memberships: Array<{ projectId: string; lotId: string | null }>;
 }
 
