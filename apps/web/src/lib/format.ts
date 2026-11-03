@@ -3,6 +3,7 @@ export function formatNaira(kobo: number | string | null | undefined, opts: { co
   if (kobo === null || kobo === undefined) return '–';
   const naira = Number(kobo) / 100;
   if (opts.compact) {
+    if (Math.abs(naira) >= 1e12) return `₦${(Math.round((naira / 1e12) * 100) / 100).toLocaleString('en-NG')}tn`;
     if (Math.abs(naira) >= 1e9) return `₦${trim(naira / 1e9)}bn`;
     if (Math.abs(naira) >= 1e6) return `₦${trim(naira / 1e6)}m`;
   }
@@ -25,6 +26,9 @@ export function nairaToKobo(input: string): string | null {
   const kobo = BigInt(m[1]!) * 100n + BigInt((m[2] ?? '').padEnd(2, '0'));
   return kobo.toString();
 }
+
+/** A state as the API sends it ("akwa_ibom", "fct") -> its name ("Akwa Ibom", "FCT"). */
+export const stateName = (code: string) => (code === 'fct' ? 'FCT' : code.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '));
 
 /** 142300 -> "km 142+300", the way engineers write chainage. */
 export function formatChainage(m: number | null | undefined): string {
@@ -50,3 +54,12 @@ export function formatMonth(ym: string): string {
  * but leave abbreviations alone ("BPP no objection", "FEC award").
  */
 export const lowerFirst = (t: string) => (/^[A-Z]{2}/.test(t) ? t : t.charAt(0).toLowerCase() + t.slice(1));
+
+/**
+ * A role name inside a sentence: titles keep their capitals ("the Permanent
+ * Secretary", "the Director, rail", "the NRC project engineer"); ordinary
+ * roles are lower-cased ("the resident engineer", "the finance officer").
+ */
+export function roleInSentence(role: string): string {
+  return /^(Permanent Secretary|Director|Minister|NRC|IT administrator)/.test(role) ? role : lowerFirst(role);
+}

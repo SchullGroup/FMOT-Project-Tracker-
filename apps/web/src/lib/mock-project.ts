@@ -248,6 +248,7 @@ export function mockProjectRoute(route: string): unknown | undefined {
   }));
   const table: Record<string, unknown> = {
     gates: isDraft ? draftGates : gates,
+    review: isDraft ? { id: projectId, status: 'draft', locked: true, basics: null, fundingRoute: 'loan', alignment: { lengthM: 393_000, states: ['Kano', 'Katsina'], geometry: { type: 'LineString', coordinates: [[8.52, 12.0], [8.0, 12.5], [7.6, 12.99], [7.1, 13.5]] } }, stations: [{ id: 's1', name: 'Kano', chainageM: 0 }, { id: 's2', name: 'Katsina', chainageM: 190_000 }, { id: 's3', name: 'Maradi', chainageM: 393_000 }], members: [], documents: [], gate1PassedOn: null, returnReason: null } : undefined,
     'strip-map': stripMap,
     progress,
     corridor,

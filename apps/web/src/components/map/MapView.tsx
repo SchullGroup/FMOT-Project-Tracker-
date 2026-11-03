@@ -12,8 +12,8 @@ import {
   type MapLayerMouseEvent,
 } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
-import { CATEGORY_COLOUR, categoryOf, type MapCategory } from '@/lib/status';
-import type { MapProjectsResponse } from '@/lib/types';
+import { CATEGORY_COLOUR, categoryOf } from '@/lib/status';
+import type { MapLayerName, MapProjectsResponse } from '@/lib/types';
 
 const NIGERIA: LngLatBoundsLike = [
   [2.6, 4.2],
@@ -24,12 +24,16 @@ setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
 
 
 interface Props {
+  /** Projects to draw, already filtered by the chips. */
   data: MapProjectsResponse | undefined;
-  visible: Set<MapCategory>;
+  /** Optional layers switched on in the Layers panel. */
+  overlays: Partial<Record<MapLayerName, GeoJSON.FeatureCollection>>;
   selectedId: string | null;
   focusId: string | null;
   onSelect: (id: string) => void;
 }
+
+const OVERLAY_NAMES: MapLayerName[] = ['state-boundaries', 'legacy-lines', 'lots', 'no-go', 'stations'];
 
 const colourExpression = [
   'match',
@@ -43,7 +47,7 @@ const colourExpression = [
  * coloured by category (the same colours as the legend and cards); drafts
  * are dashed. Clicking a line selects the project.
  */
-export function MapView({ data, visible, selectedId, focusId, onSelect }: Props) {
+export function MapView({ data, overlays, selectedId, focusId, onSelect }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MlMap | null>(null);
   const ready = useRef(false);
@@ -59,14 +63,21 @@ export function MapView({ data, visible, selectedId, focusId, onSelect }: Props)
       style: STYLE_URL,
       bounds: NIGERIA,
       // Room for the top bar of controls; the legend sits over the empty north-west.
-      fitBoundsOptions: { padding: { top: 110, bottom: 30, left: 30, right: 30 } },
+      fitBoundsOptions: { padding: { top: 150, bottom: 30, left: 230, right: 30 } },
       attributionControl: ATTRIBUTION,
       cooperativeGestures: false,
     });
+    // Redraw when the box changes size (a map created in a box still being laid out comes out squashed).
+    const ro = new ResizeObserver(() => m.resize());
+    if (m.getContainer().parentElement) ro.observe(m.getContainer().parentElement!);
     m.addControl(new NavigationControl({ showCompass: false }), 'bottom-right');
     map.current = m;
 
     m.on('load', () => {
+      const empty: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] };
+      for (const n of OVERLAY_NAMES) m.addSource(`ov-${n}`, { type: 'geojson', data: empty });
+      m.addLayer({ id: 'ov-state-boundaries', type: 'line', source: 'ov-state-boundaries', paint: { 'line-color': '#4a5565', 'line-width': 1.2, 'line-dasharray': [3, 2] } });
+      m.addLayer({ id: 'ov-legacy-lines', type: 'line', source: 'ov-legacy-lines', paint: { 'line-color': '#8d6e4a', 'line-width': 2.5, 'line-dasharray': [1, 1.5] } });
       m.addSource('projects', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       m.addLayer({
         id: 'projects-casing',
@@ -100,6 +111,20 @@ export function MapView({ data, visible, selectedId, focusId, onSelect }: Props)
         paint: { 'line-color': colourExpression, 'line-width': 5, 'line-dasharray': [2, 1.5] },
       });
 
+      m.addLayer({ id: 'ov-lots', type: 'line', source: 'ov-lots', paint: { 'line-color': '#0b2545', 'line-width': 2, 'line-offset': 7 } });
+      m.addLayer({ id: 'ov-no-go', type: 'line', source: 'ov-no-go', layout: { 'line-cap': 'round' }, paint: { 'line-color': '#b00020', 'line-width': 12, 'line-opacity': 0.45 } });
+      m.addLayer({ id: 'ov-stations', type: 'circle', source: 'ov-stations', paint: { 'circle-radius': 5, 'circle-color': '#ffffff', 'circle-stroke-color': '#0b2545', 'circle-stroke-width': 2 } });
+      // Station names need the style to provide fonts (glyphs); the plain offline style does not.
+      if (m.getStyle().glyphs) {
+        m.addLayer({
+          id: 'ov-stations-label',
+          type: 'symbol',
+          source: 'ov-stations',
+          layout: { 'text-field': ['get', 'name'], 'text-size': 13, 'text-offset': [0.8, 0], 'text-anchor': 'left' },
+          paint: { 'text-color': '#1b2430', 'text-halo-color': '#ffffff', 'text-halo-width': 1.6 },
+        });
+      }
+
       for (const layer of ['projects-line', 'projects-draft', 'projects-casing']) {
         m.on('click', layer, (e: MapLayerMouseEvent) => {
           const id = e.features?.[0]?.properties?.id as string | undefined;
@@ -113,6 +138,7 @@ export function MapView({ data, visible, selectedId, focusId, onSelect }: Props)
     });
 
     return () => {
+      ro.disconnect();
       ready.current = false;
       pending.current = [];
       m.remove();
@@ -129,12 +155,22 @@ export function MapView({ data, visible, selectedId, focusId, onSelect }: Props)
         .map((f) => ({
           ...f,
           properties: { ...f.properties, category: categoryOf(f.properties.status, f.properties.health) },
-        }))
-        .filter((f) => visible.has(f.properties.category));
+        }));
       (m.getSource('projects') as GeoJSONSource | undefined)?.setData({ type: 'FeatureCollection', features });
     };
     whenReady(apply);
-  }, [data, visible]);
+  }, [data]);
+
+  // Optional layers
+  useEffect(() => {
+    const m = map.current;
+    if (!m) return;
+    whenReady(() => {
+      for (const n of OVERLAY_NAMES) {
+        (m.getSource(`ov-${n}`) as GeoJSONSource | undefined)?.setData(overlays[n] ?? { type: 'FeatureCollection', features: [] });
+      }
+    });
+  }, [overlays]);
 
   // Selection highlight
   useEffect(() => {

@@ -5,14 +5,14 @@ import Link from 'next/link';
 import { getTasks } from '@/lib/endpoints';
 import { formatAge } from '@/lib/status';
 
-/** "Your tasks today": the five oldest open tasks, and a link to the rest. */
+/** "Your tasks today": the four oldest open tasks, and a link to the rest. */
 export function TasksPanel() {
   const tasks = useQuery({ queryKey: ['tasks'], queryFn: getTasks });
 
   const all = (tasks.data?.groups ?? [])
     .flatMap((g) => g.tasks.map((t) => ({ ...t, project: g.project })))
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  const shown = all.slice(0, 5);
+  const shown = all.slice(0, 4);
 
   return (
     <section aria-labelledby="tasks-heading" className="flex flex-col gap-3 p-5">

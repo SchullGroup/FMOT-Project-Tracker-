@@ -20,6 +20,9 @@ export function PreviewMap({ line, stations }: { line: [number, number][] | null
   useEffect(() => {
     if (!box.current) return;
     const m = new MlMap({ container: box.current, style: STYLE_URL, bounds: [[2.6, 4.2], [14.7, 13.9]], fitBoundsOptions: { padding: 20 }, attributionControl: ATTRIBUTION });
+    // Redraw when the box changes size (a map created in a box still being laid out comes out squashed).
+    const ro = new ResizeObserver(() => m.resize());
+    if (m.getContainer().parentElement) ro.observe(m.getContainer().parentElement!);
     map.current = m;
     m.on('load', () => {
       m.addSource('line', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
@@ -32,6 +35,7 @@ export function PreviewMap({ line, stations }: { line: [number, number][] | null
       pending.current = null;
     });
     return () => {
+      ro.disconnect();
       ready.current = false;
       m.remove();
     };

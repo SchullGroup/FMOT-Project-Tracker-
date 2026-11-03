@@ -30,7 +30,7 @@ import type {
   ApiValuationPrefill,
 } from './api-shapes';
 import { getDeviceId } from './device';
-import { formatChainage } from './format';
+import { formatChainage, stateName } from './format';
 import { TOWNS } from './towns';
 import type {
   ActivityItem,
@@ -52,6 +52,7 @@ import type {
   InvitePreview,
   Lot,
   MapCounters,
+  MapLayerName,
   MapProjectsResponse,
   Me,
   NewLot,
@@ -197,7 +198,18 @@ export const getMapProjects = () =>
     features: fc.features.map((f) => ({
       type: 'Feature',
       geometry: f.geometry,
-      properties: { id: f.properties.id, name: f.properties.name, status: f.properties.status, health: f.properties.health, currentGate: f.properties.currentGate?.gateNo ?? null, daysAtGate: f.properties.daysAtGate },
+      properties: {
+        id: f.properties.id,
+        name: f.properties.name,
+        status: f.properties.status,
+        health: f.properties.health,
+        currentGate: f.properties.currentGate?.gateNo ?? null,
+        daysAtGate: f.properties.daysAtGate,
+        // For the filter chips.
+        fundingRoute: f.properties.fundingRoute ? routeFromApi(f.properties.fundingRoute) : null,
+        contractors: f.properties.contractors,
+        states: f.properties.states.map(stateName),
+      },
     })),
   }));
 
@@ -231,7 +243,7 @@ export const getProjectCard = (id: string) =>
       name: c.name,
       type: c.type,
       lengthM: c.lengthM,
-      states: c.states,
+      states: c.states.map(stateName),
       status: c.status,
       health: c.health,
       currentGate: c.currentGate ? { no: c.currentGate.gateNo, name: c.currentGate.name } : null,
@@ -343,7 +355,7 @@ export const getSubmissions = (id: string, query = '') =>
   });
 
 const chainSteps = (chain: ApiChain | undefined): ChainStep[] =>
-  (chain?.steps ?? []).map((s) => ({ step: s.label, role: s.role, actor: s.actedBy?.name ?? null, at: s.actedBy?.at ?? null, current: s.state === 'current' }));
+  (chain?.steps ?? []).map((s) => ({ step: s.label, role: roleLabel(s.role), actor: s.actedBy?.name ?? null, at: s.actedBy?.at ?? null, current: s.state === 'current' }));
 
 const certificate = (c: ApiCertificate): Certificate => ({
   id: c.id,
@@ -513,7 +525,7 @@ export const getReview = (id: string) =>
       originReference: r.basics.originDetail ?? '',
     },
     fundingRoute: r.fundingRoute ? routeFromApi(r.fundingRoute.route) : null,
-    alignment: r.geography.alignment && !r.geography.isPlaceholder ? { lengthM: r.geography.lengthM ?? 0, states: r.geography.states, geometry: r.geography.alignment } : null,
+    alignment: r.geography.alignment && !r.geography.isPlaceholder ? { lengthM: r.geography.lengthM ?? 0, states: r.geography.states.map(stateName), geometry: r.geography.alignment } : null,
     stations: r.geography.stations.map((s) => ({ id: s.id, name: s.name, chainageM: s.chainageM })),
     members: r.people.members.map((m) => ({ name: m.name, role: m.projectRole, organisation: m.organisation, confirmed: m.confirmed })),
     documents: r.documents.map((d) => ({ id: d.documentId, code: d.code, title: d.title, version: d.version })),
@@ -930,3 +942,6 @@ export const addLot = (id: string, lot: NewLot) =>
 
 // W5.7 The lot's contractor sends a design package: discipline code, title and the D21 file.
 export const submitDesignPackage = (lotId: string, discipline: string, title: string, file: File) => upload<unknown>(lotPath(lotId, '/design-packages'), { discipline, title }, file);
+
+/* Map layers (Web Step 9): each a GeoJSON FeatureCollection in the person's scope; no-go only with security:read_detail. */
+export const getMapLayer = (name: MapLayerName) => api<GeoJSON.FeatureCollection>(`/map/layers/${name}`);

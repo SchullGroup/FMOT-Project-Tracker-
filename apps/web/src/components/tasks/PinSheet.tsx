@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
-import { PinInput } from '@/components/PinInput';
+import { useState } from 'react';
+import { PinPad } from '@/components/PinPad';
 import { Button } from '@/components/ui/Button';
 import { confirmPin } from '@/lib/endpoints';
 import { messageFor } from '@/lib/messages';
 import { Sheet } from './Sheet';
 
 /*
- * The PIN step-up. The PIN is exchanged for a single-use confirmation bound
- * to this action on this record; the caller then sends the decision with it.
+ * The PIN step-up, as in the design: what you are approving, four dots, a
+ * keypad. The PIN is exchanged for a single-use confirmation bound to this
+ * action on this record; the caller sends the decision with it.
  */
 export function PinSheet(props: {
   open: boolean;
@@ -24,30 +25,34 @@ export function PinSheet(props: {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
+  async function confirm(value = pin) {
+    if (value.length !== 4 || busy) return;
     setBusy(true);
     setError(null);
     try {
-      const { token } = await confirmPin(pin, props.action, props.subjectId);
+      const { token } = await confirmPin(value, props.action, props.subjectId);
       await props.onConfirmed(token);
       setPin('');
     } catch (err) {
       setError(messageFor(err));
+      setPin('');
     } finally {
       setBusy(false);
     }
   }
 
+  const close = () => { setPin(''); setError(null); props.onClose(); };
+
   return (
-    <Sheet open={props.open} title={`${props.actionLabel}: enter your PIN`} onClose={() => { setPin(''); setError(null); props.onClose(); }}>
-      <form onSubmit={submit} className="flex flex-col gap-5">
-        <p className="text-lg">{props.summary}</p>
-        <PinInput label="Your PIN" value={pin} onChange={setPin} error={error} autoFocus />
-        <Button type="submit" busy={busy} disabled={pin.length !== 4} wide>
+    <Sheet open={props.open} title="Enter your PIN" onClose={close}>
+      <div className="flex flex-col items-center gap-5">
+        <p className="text-center text-lg">{props.summary}</p>
+        <PinPad value={pin} onChange={(v) => { setPin(v); setError(null); }} onComplete={(v) => void confirm(v)} error={error} autoFocus />
+        <Button busy={busy} disabled={pin.length !== 4} wide onClick={() => void confirm()}>
           {props.actionLabel}
         </Button>
-      </form>
+        <Button variant="quiet" onClick={close}>Cancel</Button>
+      </div>
     </Sheet>
   );
 }

@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { actOnTask, getDocumentUrl, getTask, uploadTaskDocument, type ActInput } from '@/lib/endpoints';
-import { formatDate, lowerFirst } from '@/lib/format';
+import { formatDate, formatNairaExact, lowerFirst } from '@/lib/format';
+import { afterText, whyText } from '@/lib/task-copy';
 import { messageFor } from '@/lib/messages';
 import { formatAge } from '@/lib/status';
 import type { TaskAction, TaskDetail } from '@/lib/types';
@@ -88,9 +89,11 @@ export function TaskView({ id, onDone }: { id: string; onDone: (message: string)
     <article aria-labelledby="task-title" className="flex flex-col gap-6 p-6">
       <header>
         {t.project && (
-          <Link href={`/projects/${t.project.id}`} className="text-base text-brand-800 underline underline-offset-4">
-            {t.project.name}
-          </Link>
+          <p className="text-sm text-ink-muted">
+            <Link href={`/projects/${t.project.id}`} className="text-brand-800 underline underline-offset-4">{t.project.name}</Link>
+            <span aria-hidden> · </span>
+            {t.subject.kind === 'gate' || t.subject.kind === 'document_upload' ? `Gate ${t.subject.gateNo}, ${lowerFirst(t.subject.gateName)}` : t.subject.kind === 'certificate' ? 'Gate 13, certify and pay' : t.subject.kind === 'publish' ? 'Gate 1, initiation' : 'Tasks'}
+          </p>
         )}
         <h1 id="task-title" className="mt-1 text-2xl font-semibold text-brand-900">{t.title}</h1>
         <p className="mt-1 text-lg">{t.reason}</p>
@@ -99,6 +102,8 @@ export function TaskView({ id, onDone }: { id: string; onDone: (message: string)
         </p>
       </header>
 
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="flex min-w-0 flex-col gap-6">
       <section className="rounded-md bg-surface p-5 ring-1 ring-line">
         <SubjectPanel subject={t.subject} upload={needsUpload ? { file, date, onFile: setFile, onDate: setDate } : undefined} />
       </section>
@@ -126,9 +131,11 @@ export function TaskView({ id, onDone }: { id: string; onDone: (message: string)
         </section>
       )}
 
+        </div>
+        <aside className="flex flex-col gap-4">
       {t.chain.length > 0 && (
-        <section>
-          <h2 className="mb-2 text-lg font-semibold">Approval steps</h2>
+        <section className="rounded-md bg-surface p-4 ring-1 ring-line">
+          <h2 className="mb-2 text-lg font-semibold">Approval chain</h2>
           <ol className="flex flex-col gap-1">
             {t.chain.map((c, i) => (
               <li key={c.step} className={`grid grid-cols-[2rem_1fr] items-start gap-2 rounded-md px-2 py-2 ${c.current ? 'bg-brand-50' : ''}`}>
@@ -145,17 +152,27 @@ export function TaskView({ id, onDone }: { id: string; onDone: (message: string)
         </section>
       )}
 
+          {whyText(t) && (
+            <section className="rounded-md bg-surface p-4 ring-1 ring-line">
+              <h2 className="mb-1 font-semibold">Why you</h2>
+              <p>{whyText(t)}</p>
+            </section>
+          )}
+        </aside>
+      </div>
+
       {t.blockedReason ? (
         <p className="rounded-md bg-[#fbecd9] p-4">{t.blockedReason}</p>
       ) : (
         <div className="sticky bottom-0 -mx-6 flex flex-wrap items-center gap-3 border-t border-line bg-surface px-6 py-4">
+          {primary[0] && afterText(t, primary[0].label) && <p className="w-full text-sm text-ink-muted xl:w-auto xl:flex-1">{afterText(t, primary[0].label)}</p>}
           {returns.map((a) => (
-            <Button key={a.action} variant="secondary" onClick={() => setReturnFor(a)}>
+            <Button key={a.action} variant="secondary" className="ml-auto xl:ml-0" onClick={() => setReturnFor(a)}>
               {a.label}
             </Button>
           ))}
           {primary.map((a) => (
-            <Button key={a.action} className="ml-auto min-w-48" busy={busy} onClick={() => onPrimary(a)}>
+            <Button key={a.action} className="min-w-48" busy={busy} onClick={() => onPrimary(a)}>
               {a.label}
               {a.needsPin && <span className="text-sm font-normal opacity-80">(PIN)</span>}
             </Button>
@@ -170,7 +187,7 @@ export function TaskView({ id, onDone }: { id: string; onDone: (message: string)
           action={pinFor.action}
           actionLabel={pinFor.label}
           subjectId={t.subjectId}
-          summary={`${pinFor.label}: ${lowerFirst(t.title)}${t.project ? `, ${t.project.name}` : ''}.`}
+          summary={[t.title, t.subject.kind === 'certificate' && t.subject.netKobo !== null ? formatNairaExact(t.subject.netKobo) : t.subject.kind === 'variation' && t.subject.amountKobo !== null ? formatNairaExact(t.subject.amountKobo) : null, t.project?.name].filter(Boolean).join(' · ')}
           onClose={() => setPinFor(null)}
           onConfirmed={async (token) => send(pinFor, await prepare(pinFor), token)}
         />

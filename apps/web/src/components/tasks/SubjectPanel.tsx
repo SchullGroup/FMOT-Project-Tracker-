@@ -68,23 +68,41 @@ export function SubjectPanel(props: {
     case 'certificate':
       return (
         <div className="flex flex-col gap-5">
-          <p className="text-lg">Certificate {s.number}, {s.lotName}, for {formatMonth(s.period)}.</p>
+          <p className="text-ink-muted">Certificate {s.number}, {s.lotName}, for {formatMonth(s.period)}.</p>
           {s.netKobo !== null ? (
-            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Money label="Gross" kobo={s.grossKobo} />
-              <Money label="Retention" kobo={s.retentionKobo} />
-              <Money label="Advance recovery" kobo={s.advanceRecoveryKobo} />
-              <Money label="Net to pay" kobo={s.netKobo} strong />
-            </dl>
+            <div>
+              <p className="text-sm font-semibold text-ink-muted">Amount for approval</p>
+              <p className="tabular text-3xl font-semibold">{formatNairaExact(s.netKobo)}</p>
+              <p className="text-sm text-ink-muted">Net payable after deductions</p>
+            </div>
           ) : (
             <p className="text-ink-muted">Amounts are shown only to people with the financial permission.</p>
           )}
-          <div>
-            <h3 className="mb-2 font-semibold">Work measured this period</h3>
-            <ul className="flex flex-col gap-1">
-              {s.measurement.map((m) => <li key={m.discipline}><span className="font-medium">{m.discipline}:</span> {m.done}</li>)}
-            </ul>
-            <p className="mt-2 text-ink-muted"><span className="tabular font-semibold text-ink">{s.verifiedPhotos}</span> verified photos back this measurement.</p>
+          <div className="grid gap-5 lg:grid-cols-2">
+            <div>
+              <h3 className="mb-2 font-semibold">Work measured this period</h3>
+              <table className="w-full text-left">
+                <tbody className="[&>tr]:border-b [&>tr]:border-line [&_td]:py-2 [&_td]:pr-3 [&_td]:align-top">
+                  {s.measurement.map((m) => (
+                    <tr key={m.discipline}><td className="text-ink-muted">{m.discipline}</td><td>{m.done}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="mt-2 text-sm text-ink-muted"><span className="tabular font-semibold text-ink">{s.verifiedPhotos}</span> verified photos back this measurement.</p>
+            </div>
+            {s.netKobo !== null && (
+              <div>
+                <h3 className="mb-2 font-semibold">Deductions</h3>
+                <table className="w-full text-left">
+                  <tbody className="[&>tr]:border-b [&>tr]:border-line [&_td]:py-2 [&_td:last-child]:text-right">
+                    <tr><td className="text-ink-muted">Gross value</td><td className="tabular">{formatNairaExact(s.grossKobo)}</td></tr>
+                    <tr><td className="text-ink-muted">Retention</td><td className="tabular">− {formatNairaExact(s.retentionKobo)}</td></tr>
+                    <tr><td className="text-ink-muted">Advance recovery</td><td className="tabular">− {formatNairaExact(s.advanceRecoveryKobo)}</td></tr>
+                    <tr className="font-semibold"><td>Net payable</td><td className="tabular">{formatNairaExact(s.netKobo)}</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       );
@@ -172,15 +190,6 @@ export function SubjectPanel(props: {
         </div>
       );
   }
-}
-
-function Money({ label, kobo, strong }: { label: string; kobo: number | string | null; strong?: boolean }) {
-  return (
-    <div>
-      <dt className="text-sm text-ink-muted">{label}</dt>
-      <dd className={`tabular ${strong ? 'text-2xl font-semibold' : 'text-xl'}`}>{formatNairaExact(kobo)}</dd>
-    </div>
-  );
 }
 
 /** Where the photo was taken across the corridor: the line, the band, the dot. */

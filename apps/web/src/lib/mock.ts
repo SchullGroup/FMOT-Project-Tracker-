@@ -20,31 +20,31 @@ const me: Me = {
   role: 'director_rail',
   organisation: { id: 'o-fmot', name: 'Federal Ministry of Transportation', type: 'ministry_unit' },
   // Sample mode shows every area; on the real API only the IT administrator has the admin permissions.
-  permissions: ['projects:create', 'projects:read', 'reports:read', 'reports:generate', 'finance:read_amounts', 'tasks:read', 'admin:users', 'admin:organisations', 'admin:reminders', 'audit:read', 'reports:export_eyemark', 'progress:plan', 'completion:record', 'obligations:manage', 'valuations:submit', 'lots:manage', 'members:manage', 'design:submit'],
+  permissions: ['projects:create', 'projects:read', 'reports:read', 'reports:generate', 'finance:read_amounts', 'tasks:read', 'admin:users', 'admin:organisations', 'admin:reminders', 'audit:read', 'reports:export_eyemark', 'progress:plan', 'completion:record', 'obligations:manage', 'valuations:submit', 'lots:manage', 'members:manage', 'design:submit', 'security:read_detail'],
 };
 
 const projects: MapProjectsResponse = {
   type: 'FeatureCollection',
   features: [
-    feature('p-kk', 'Kaduna–Kano SGR', 'under_construction', 'on_track', 13, 12, [
+    featureX('loan', ['CCECC'], ['Kaduna', 'Kano'], 'p-kk', 'Kaduna–Kano SGR', 'under_construction', 'on_track', 13, 12, [
       [7.43, 10.52], [7.71, 11.08], [8.1, 11.55], [8.52, 12.0],
     ]),
-    feature('p-km', 'Kano–Katsina–Maradi SGR', 'draft', null, 1, 2, [
+    featureX('loan', [], ['Kano', 'Katsina'], 'p-km', 'Kano–Katsina–Maradi SGR', 'draft', null, 1, 2, [
       [8.52, 12.0], [8.0, 12.5], [7.6, 12.99], [7.1, 13.5],
     ]),
-    feature('p-ak', 'Abuja–Kaduna SGR', 'operational', 'on_track', null, null, [
+    featureX('loan', ['CCECC'], ['FCT', 'Kaduna'], 'p-ak', 'Abuja–Kaduna SGR', 'operational', 'on_track', null, null, [
       [7.4, 9.05], [7.3, 9.6], [7.43, 10.52],
     ]),
-    feature('p-li', 'Lagos–Ibadan SGR', 'operational', 'on_track', null, null, [
+    featureX('loan', ['CCECC'], ['Lagos', 'Ogun', 'Oyo'], 'p-li', 'Lagos–Ibadan SGR', 'operational', 'on_track', null, null, [
       [3.38, 6.45], [3.6, 6.9], [3.9, 7.38],
     ]),
-    feature('p-wi', 'Warri–Itakpe SGR', 'operational', 'on_track', null, null, [
+    featureX('budget', ['Julius Berger'], ['Delta', 'Edo', 'Kogi'], 'p-wi', 'Warri–Itakpe SGR', 'operational', 'on_track', null, null, [
       [5.75, 5.52], [6.0, 6.6], [6.3, 7.62],
     ]),
-    feature('p-pm', 'Port Harcourt–Maiduguri rehabilitation', 'stalled', 'stalled', 10, 41, [
+    featureX('budget', ['CCECC'], ['Rivers', 'Enugu', 'Benue', 'Plateau', 'Bauchi', 'Borno'], 'p-pm', 'Port Harcourt–Maiduguri rehabilitation', 'stalled', 'stalled', 10, 41, [
       [7.03, 4.82], [7.51, 6.44], [8.54, 7.73], [8.89, 9.9], [10.3, 10.6], [13.16, 11.85],
     ]),
-    feature('p-lc', 'Lagos–Calabar coastal line', 'funded', 'behind', 5, 63, [
+    featureX('ppp', [], ['Lagos', 'Edo', 'Delta', 'Rivers', 'Cross River'], 'p-lc', 'Lagos–Calabar coastal line', 'funded', 'behind', 5, 63, [
       [3.38, 6.45], [5.63, 6.34], [5.75, 5.52], [7.03, 4.82], [8.33, 4.96],
     ]),
   ],
@@ -95,6 +95,11 @@ const tasks: TaskInbox = {
     },
   ],
 };
+
+function featureX(fundingRoute: MapProjectsResponse['features'][number]['properties']['fundingRoute'], contractors: string[], states: string[], ...rest: Parameters<typeof feature>): MapProjectsResponse['features'][number] {
+  const f = feature(...rest);
+  return { ...f, properties: { ...f.properties, fundingRoute, contractors, states } };
+}
 
 function feature(
   id: string,
@@ -183,6 +188,8 @@ export async function mockFetch(path: string, init: RequestInit): Promise<Respon
   if (route === '/me') return json(200, me);
   if (route === '/map/projects') return json(200, projects);
   if (route === '/map/counters') return json(200, counters);
+  const layer = /^\/map\/layers\/(.+)$/.exec(route);
+  if (layer?.[1]) return json(200, MAP_LAYERS[layer[1]] ?? { type: 'FeatureCollection', features: [] });
   if (route === '/tasks') return json(200, mockTaskInbox());
   if (route.startsWith('/media/')) return json(404);
 
@@ -251,3 +258,18 @@ export async function mockUpload(path: string, fields: Record<string, string>, f
   if (baseline) return baseline;
   return { id: `doc-${Date.now()}`, code: fields.code ?? 'D00', title: fields.title || file.name, version: 1 };
 }
+
+/* Sample map layers. Rough shapes for demonstration only. */
+const line = (name: string, coords: [number, number][], kind = '') => ({ type: 'Feature' as const, properties: { name, kind }, geometry: { type: 'LineString' as const, coordinates: coords } });
+const point = (name: string, c: [number, number]) => ({ type: 'Feature' as const, properties: { name }, geometry: { type: 'Point' as const, coordinates: c } });
+const box = (name: string, w: number, s: number, e: number, n: number) => ({ type: 'Feature' as const, properties: { name }, geometry: { type: 'Polygon' as const, coordinates: [[[w, s], [e, s], [e, n], [w, n], [w, s]]] } });
+const MAP_LAYERS: Record<string, GeoJSON.FeatureCollection> = {
+  'legacy-lines': { type: 'FeatureCollection', features: [
+    line('Lagos–Kano narrow gauge', [[3.38, 6.45], [3.9, 7.38], [4.55, 8.5], [5.6, 9.4], [7.43, 10.52], [7.71, 11.08], [8.52, 12.0]]),
+    line('Port Harcourt–Maiduguri narrow gauge', [[7.03, 4.82], [7.51, 6.44], [8.54, 7.73], [8.89, 9.9], [10.3, 10.6], [13.16, 11.85]]),
+  ] },
+  'state-boundaries': { type: 'FeatureCollection', features: [box('Kano', 7.7, 10.9, 9.4, 12.6), box('Kaduna', 6.1, 9.0, 8.8, 11.3), box('Katsina', 6.9, 11.1, 8.6, 13.4), box('Lagos', 2.7, 6.3, 4.4, 6.7)] },
+  stations: { type: 'FeatureCollection', features: [point('Lagos', [3.38, 6.45]), point('Ibadan', [3.9, 7.38]), point('Abuja', [7.4, 9.05]), point('Kaduna', [7.43, 10.52]), point('Zaria', [7.71, 11.08]), point('Kano', [8.52, 12.0]), point('Katsina', [7.6, 12.99]), point('Maradi', [7.1, 13.5]), point('Warri', [5.75, 5.52]), point('Itakpe', [6.3, 7.62]), point('Port Harcourt', [7.03, 4.82]), point('Enugu', [7.51, 6.44]), point('Jos', [8.89, 9.9]), point('Maiduguri', [13.16, 11.85]), point('Calabar', [8.33, 4.96])] },
+  lots: { type: 'FeatureCollection', features: [line('Lot 1', [[7.43, 10.52], [7.71, 11.08]]), line('Lot 2', [[7.71, 11.08], [8.1, 11.55]]), line('Lot 3', [[8.1, 11.55], [8.52, 12.0]])] },
+  'no-go': { type: 'FeatureCollection', features: [line('No-go: km 140 to 152', [[8.2, 11.66], [8.3, 11.78]])] },
+};

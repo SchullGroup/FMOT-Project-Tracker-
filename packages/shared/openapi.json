@@ -2158,6 +2158,34 @@
         ]
       }
     },
+    "/api/map/layers/{name}": {
+      "get": {
+        "operationId": "MapController_layer",
+        "parameters": [
+          {
+            "name": "name",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "map"
+        ]
+      }
+    },
     "/api/documents/{id}/versions": {
       "get": {
         "operationId": "DocumentsController_versions",

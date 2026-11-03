@@ -89,10 +89,18 @@ async function toApiError(res: Response): Promise<ApiError> {
   return new ApiError(res.status, code, message);
 }
 
+// A 401 is an ended session only when its code says so; a wrong PIN or code is a 401 too, and retrying it after a
+// refresh would count the same wrong PIN twice towards the lock.
+async function sessionEnded(res: Response): Promise<boolean> {
+  if (res.status !== 401) return false;
+  const { code } = await toApiError(res.clone());
+  return code === 'unauthorized' || code === 'http_401';
+}
+
 export async function api<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   let res = await rawFetch(path, opts);
 
-  if (res.status === 401 && !opts.noRefresh) {
+  if (!opts.noRefresh && (await sessionEnded(res))) {
     const ok = await refreshSession();
     if (!ok) throw new SignedOutError();
     res = await rawFetch(path, opts);
@@ -122,7 +130,7 @@ export async function upload<T>(path: string, fields: Record<string, string>, fi
     });
   };
   let res = await send();
-  if (res.status === 401) {
+  if (await sessionEnded(res)) {
     if (!(await refreshSession())) throw new SignedOutError();
     res = await send();
   }

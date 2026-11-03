@@ -26,7 +26,7 @@ test('1. sign in, map home, find a project, tasks', async ({ page }) => {
 
   // The map lists the corridors (also as buttons for keyboard and screen readers).
   await expect(page.getByRole('button', { name: /Kaduna–Kano/ }).first()).toBeAttached();
-  await page.getByPlaceholder('Find a project or town').fill('Kaduna');
+  await page.getByPlaceholder('Search project, town or state').fill('Kaduna');
   await page.getByRole('button', { name: 'Find', exact: true }).click();
   await expect(page.getByText('Kaduna–Kano SGR').first()).toBeVisible();
   await noErrors(page);
@@ -92,15 +92,13 @@ test('4. tasks: send back a photo, approve a certificate with the PIN, upload a 
   await page.getByRole('button', { name: /send back/i }).last().click();
   await expect(page.getByText(/sent back with your reason/i).first()).toBeVisible();
 
-  // Certificate 14: an easy PIN is refused, then 2580 approves it.
+  // Certificate 14: an easy PIN on the keypad is refused (four digits send it), then 2580 typed on the keyboard approves it.
   await page.goto('/tasks?task=t-cert');
   await page.getByRole('button', { name: /approve/i }).first().click();
-  const pinBox = page.getByRole('dialog').getByLabel(/PIN/);
-  await pinBox.fill('1111');
-  await page.getByRole('dialog').getByRole('button', { name: /approve|confirm/i }).last().click();
-  await expect(page.getByRole('dialog').getByRole('alert')).toBeVisible();
-  await pinBox.fill('2580');
-  await page.getByRole('dialog').getByRole('button', { name: /approve|confirm/i }).last().click();
+  const sheet = page.getByRole('dialog');
+  for (const d of '1111') await sheet.getByRole('button', { name: d, exact: true }).click();
+  await expect(sheet.getByRole('alert')).toBeVisible();
+  await page.keyboard.type('2580');
   await expect(page.getByText(/approved/i).first()).toBeVisible();
 
   // The upload task needs the file and its date.
@@ -217,8 +215,8 @@ test('7. design requirements, programme revisions, practical completion, obligat
   // Lot 1's practical completion, recorded with the PIN, waits for the Director.
   await lotSection(1).getByLabel('Completed on').fill('2026-10-30');
   await lotSection(1).getByRole('button', { name: /Record practical completion/ }).click();
-  await page.getByRole('dialog').getByLabel(/PIN/).fill('2580');
-  await page.getByRole('dialog').getByRole('button', { name: 'Record practical completion' }).click();
+  await expect(page.getByRole('dialog').getByText('Enter your PIN')).toBeVisible();
+  await page.keyboard.type('2580');
   await expect(page.getByRole('dialog')).toBeHidden();
   await expect(lotSection(1).getByText('Waiting for the Director')).toBeVisible();
   await noErrors(page);
@@ -246,8 +244,8 @@ test('8. valuation, lots, members, design packages, exact amounts, draft state',
 
   // Payments: a valuation for Lot 2 is made against the month's verified work, and the amount reads back exactly.
   await page.goto('/projects/p-kk/payments');
-  await expect(page.getByText('Net to pay').first()).toBeVisible();
-  await expect(page.locator('dd').filter({ hasText: /^₦[\d,]+\.\d{2}$/ }).first()).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Net payable' })).toBeVisible();
+  await expect(page.getByRole('cell', { name: /^₦[\d,]+\.\d{2}$/ }).first()).toBeVisible();
   await page.getByRole('button', { name: 'New valuation' }).click();
   await drawer.getByLabel('Lot').selectOption({ label: 'Lot 2, FMOT/RL/KK/02' });
   await expect(drawer.getByText(/Work measured and verified for/)).toBeVisible();
@@ -311,15 +309,17 @@ test('8. valuation, lots, members, design packages, exact amounts, draft state',
   await expect(drawer).toBeHidden();
   await expect(page.getByRole('status').filter({ hasText: '"Challawa river bridge" is sent' })).toBeVisible();
 
-  // Tasks: certificate 14 shows the exact amount to pay.
+  // Tasks: certificate 14 shows the exact amount for approval.
   await page.goto('/tasks?task=t-cert');
-  await expect(page.getByText('₦1,785,000,000.00')).toBeVisible();
+  await expect(page.getByText('Amount for approval')).toBeVisible();
+  await expect(page.getByText('₦1,785,000,000.00').first()).toBeVisible();
 
-  // A draft says so on every section, and its overview has nothing to measure.
+  // A draft says so on every section; its overview has the draft corridor and what publishing does.
   await page.goto('/projects/p-km');
   await expect(page.getByRole('note')).toContainText('Not published.');
   await expect(page.getByRole('link', { name: 'Review the draft' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Nothing to measure yet' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Corridor (draft)' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'What publishing does' })).toBeVisible();
   await page.goto('/projects/p-km/gates');
   await expect(page.getByRole('note')).toContainText('Not published.');
   await noErrors(page);
@@ -339,4 +339,69 @@ test('8. valuation, lots, members, design packages, exact amounts, draft state',
   await page.waitForTimeout(300);
   const [box, bar] = [await lastBox.boundingBox(), await footer.boundingBox()];
   expect(box!.y + box!.height).toBeLessThanOrEqual(bar!.y);
+});
+
+test('9. the Penpot design: map filters and layers, task layout, PIN keypad, payments, overview', async ({ page }) => {
+  await signIn(page);
+
+  // Map: the chips filter what is drawn, the Drafts chip hides drafts, and a layer switch is remembered on the device.
+  await page.goto('/');
+  const onMap = page.getByRole('navigation', { name: 'Projects on the map' }).getByRole('button');
+  await expect(onMap).toHaveCount(7);
+  const chip = async (label: string, option: string) => {
+    await page.locator('summary', { hasText: label }).click();
+    await page.getByRole('checkbox', { name: option }).check();
+    await page.locator('summary', { hasText: label }).click();
+  };
+  await chip('Status', 'Stalled');
+  await expect(page.getByRole('status').filter({ hasText: 'Showing 1 of 6 projects.' })).toBeVisible();
+  await expect(onMap).toHaveCount(1);
+  await page.getByRole('button', { name: 'Clear filters' }).click();
+  await chip('Phase', 'Construction (gate 13)');
+  await expect(onMap).toHaveCount(1);
+  await expect(onMap.first()).toContainText('Kaduna–Kano SGR');
+  await page.getByRole('button', { name: 'Clear filters' }).click();
+  await expect(onMap).toHaveCount(7);
+  await page.getByRole('button', { name: 'Drafts (1)' }).click();
+  await expect(onMap).toHaveCount(6);
+  const legacy = page.getByRole('switch', { name: 'Legacy lines' });
+  await expect(legacy).toHaveAttribute('aria-checked', 'false');
+  await legacy.click();
+  await expect(legacy).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('switch', { name: 'No-go segments' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('switch', { name: 'Legacy lines' })).toHaveAttribute('aria-checked', 'true');
+  await noErrors(page);
+
+  // Task: certificate 14 with the chain and "Why you" beside it, the next step in the bar, and the keypad.
+  await page.goto('/tasks?task=t-cert');
+  await expect(page.getByRole('heading', { name: 'Why you' })).toBeVisible();
+  await expect(page.getByText(/sends it to the Permanent Secretary/)).toBeVisible();
+  await page.getByRole('button', { name: /approve/i }).first().click();
+  const sheet = page.getByRole('dialog');
+  await expect(sheet.getByText('Enter your PIN')).toBeVisible();
+  await expect(sheet).toContainText('Approve payment certificate 14 · ₦1,785,000,000.00 · Kaduna–Kano SGR');
+  for (const d of '1111') await sheet.getByRole('button', { name: d, exact: true }).click();
+  await expect(sheet.getByRole('alert')).toBeVisible();
+  await page.keyboard.type('2580');
+  await expect(sheet).toBeHidden();
+
+  // Payments: the certificates in one table; IPC 14 opens to its deductions; the contract to date beside it.
+  await page.goto('/projects/p-kk/payments');
+  const rows = page.getByRole('row').filter({ has: page.getByRole('button', { name: 'Open' }) });
+  await expect(rows).toHaveCount(4);
+  await rows.filter({ hasText: 'IPC 14' }).getByRole('button', { name: 'Open' }).click();
+  await expect(page.getByRole('table', { name: 'Deductions' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Contract to date' })).toBeVisible();
+
+  // Overview: the alert bar, the figures beside the gates, the small corridor map.
+  await page.goto('/projects/p-kk');
+  await expect(page.getByRole('alert').filter({ hasText: /open alerts?/ })).toBeVisible();
+  await expect(page.getByText('Planned by now')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Map of the project corridor' })).toBeVisible();
+
+  // A draft shows what publishing does.
+  await page.goto('/projects/p-km');
+  await expect(page.getByRole('heading', { name: 'What publishing does' })).toBeVisible();
+  await noErrors(page);
 });

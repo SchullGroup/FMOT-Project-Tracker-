@@ -53,7 +53,13 @@ export interface MapProjectProperties {
   health: Health | null;
   currentGate: number | null;
   daysAtGate: number | null;
+  /** For the filter chips (Web Step 9). */
+  fundingRoute?: 'loan' | 'budget' | 'ppp' | 'state_private' | null;
+  contractors?: string[];
+  states?: string[];
 }
+
+export type MapLayerName = 'legacy-lines' | 'state-boundaries' | 'stations' | 'lots' | 'no-go';
 
 export interface MapProjectsResponse {
   type: 'FeatureCollection';

@@ -23,7 +23,17 @@ export interface ApiMapFeature {
   type: 'Feature';
   id: string;
   geometry: { type: 'LineString'; coordinates: [number, number][] };
-  properties: { id: string; name: string; status: ProjectStatus; health: Health | null; currentGate: ApiGateRef | null; daysAtGate: number | null };
+  properties: {
+    id: string;
+    name: string;
+    status: ProjectStatus;
+    health: Health | null;
+    currentGate: ApiGateRef | null;
+    daysAtGate: number | null;
+    fundingRoute: ApiFundingRoute | null;
+    contractors: string[];
+    states: string[];
+  };
 }
 
 interface ApiCardCommon {
