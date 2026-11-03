@@ -1916,6 +1916,7 @@ export interface components {
             subjectId: string;
         };
         InviteTokenDto: {
+            /** @description The token from the invite link, or the short code (ABCD-2345) */
             token: string;
         };
         AcceptInviteDto: {
@@ -1924,6 +1925,7 @@ export interface components {
              * @example web-8f2c1a...
              */
             deviceId: string;
+            /** @description The token from the invite link, or the short code (ABCD-2345) */
             token: string;
             /** @example 123456 */
             code: string;

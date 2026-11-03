@@ -68,7 +68,15 @@ export async function getDeviceId(store: KeyStore, random: () => number = Math.r
   return id;
 }
 
-export function createApi(deps: { baseUrl: () => string; store: KeyStore; fetch?: typeof fetch; onSignedOut?: () => void; random?: () => number }) {
+export function createApi(deps: {
+  baseUrl: () => string;
+  store: KeyStore;
+  fetch?: typeof fetch;
+  /** For multipart uploads with files (expo/fetch on the phone, whose FormData takes expo-file-system files). */
+  uploadFetch?: (url: string, init: { method: string; headers: Record<string, string>; body: FormData }) => Promise<Response>;
+  onSignedOut?: () => void;
+  random?: () => number;
+}) {
   const doFetch = deps.fetch ?? ((...args: Parameters<typeof fetch>) => fetch(...args));
   let accessToken: string | null = null;
   let refreshing: Promise<boolean> | null = null;
@@ -157,6 +165,32 @@ export function createApi(deps: { baseUrl: () => string; store: KeyStore; fetch?
     return (await res.json()) as T;
   }
 
+  /*
+   * A multipart upload (a field submission). The body is made fresh for each try, since a sent FormData cannot be
+   * sent again. An ended session is refreshed once, as for any request; the caller decides what a failure means.
+   */
+  async function upload(path: string, makeBody: () => FormData): Promise<Response> {
+    const send = () => {
+      const headers: Record<string, string> = { Accept: 'application/json', 'X-Client': 'mobile' };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+      const init = { method: 'POST', headers, body: makeBody() };
+      return deps.uploadFetch ? deps.uploadFetch(`${deps.baseUrl()}${path}`, init) : doFetch(`${deps.baseUrl()}${path}`, init);
+    };
+    let res: Response;
+    try {
+      res = await send();
+      if (await sessionEnded(res)) {
+        if (!(await refresh())) return signedOut();
+        res = await send();
+        if (await sessionEnded(res)) return signedOut();
+      }
+    } catch (error) {
+      if (error instanceof SignedOutError) throw error;
+      throw new OfflineError((error as Error).message || 'Could not reach the tracker');
+    }
+    return res;
+  }
+
   const device = () => getDeviceId(deps.store, deps.random);
   const signedIn = async (tokens: Tokens, phone: string) => {
     await keep(tokens);
@@ -165,6 +199,8 @@ export function createApi(deps: { baseUrl: () => string; store: KeyStore; fetch?
 
   return {
     request,
+    upload,
+    errorOf: toError,
     deviceId: device,
     /** True when this phone holds a session (it may still need the PIN or fingerprint to open). */
     hasSession: async () => (await deps.store.get(KEYS.refresh)) !== null,

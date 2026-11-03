@@ -1,9 +1,16 @@
 import { ladder, lagosToday, reportSentToday, type MySubmission } from './field';
 import { formatChainage, greetingName, inviteToken, localNumber, lotsLabel } from './format';
 
-const item = (over: Partial<MySubmission>): MySubmission => ({ id: 'x', kind: 'photo', status: 'pending_re', supersedesId: null, reportDate: null, receivedAt: '2026-11-03T09:00:00Z', returnReason: null, ...over });
+const item = (over: Partial<MySubmission>): MySubmission => ({
+  id: 'x', clientId: 'c', chainageM: null, chainage: null, discipline: null, capturedAt: '2026-11-03T08:59:00Z', reviewedBy: null, reviewedAt: null, lotId: 'l',
+  kind: 'photo', status: 'pending_re', supersedesId: null, reportDate: null, receivedAt: '2026-11-03T09:00:00Z', returnReason: null, ...over,
+});
 
 describe('format', () => {
+  it('takes the short invite code however it is typed', () => {
+    expect(inviteToken('abcd 2345')).toBe('ABCD-2345');
+    expect(inviteToken(' ABCD-2345 ')).toBe('ABCD-2345');
+  });
   it('takes the invite code from a pasted link or the code itself', () => {
     expect(inviteToken('Emeka, you have been invited. Open https://tracker.example/invite/0b2e.AbC_d-9 within 72 hours')).toBe('0b2e.AbC_d-9');
     expect(inviteToken('  0b2e.AbC_d-9 \n')).toBe('0b2e.AbC_d-9');

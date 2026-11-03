@@ -10,7 +10,7 @@ import { colour } from '@/theme';
 type Preview = { name: string; role: string; organisation: string; phoneMasked: string };
 
 /*
- * M1 with an invite: paste the link (or its code) from the invite text message, then the same steps as the M1 board:
+ * M1 with an invite: the short code from the invite text message (or the pasted link), then the same steps as the M1 board:
  * "Welcome, <name>", the SMS code, a 4-digit PIN set twice. Deep links from the message come in a later step, because
  * they are unreliable in Expo Go.
  */
@@ -60,10 +60,10 @@ export default function Invite() {
 
   if (!preview) {
     return (
-      <Screen footer={<><Button label={s.invite.check} busy={busy} disabled={token.length < 10} onPress={() => void run(async () => setPreview(await api.invitePreview(token)))} /><SupportButton /></>}>
+      <Screen footer={<><Button label={s.invite.check} busy={busy} disabled={token.length < 9} onPress={() => void run(async () => setPreview(await api.invitePreview(token)))} /><SupportButton /></>}>
         <T variant="title" accessibilityRole="header">{s.invite.title}</T>
         {error && <Notice tone="error">{error}</Notice>}
-        <Field label={s.invite.pasteLabel} hint={s.invite.pasteHint} value={text} onChangeText={setText} autoCapitalize="none" autoCorrect={false} multiline />
+        <Field label={s.invite.pasteLabel} hint={s.invite.pasteHint} value={text} onChangeText={setText} autoCapitalize="characters" autoCorrect={false} autoComplete="off" />
         <Button kind="quiet" label={s.common.back} onPress={() => router.back()} />
       </Screen>
     );

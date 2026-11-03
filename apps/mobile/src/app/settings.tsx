@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Card, Chip, Screen, SupportButton, T, Toggle } from '@/components/ui';
 import { LANGUAGES } from '@/i18n';
+import { confirm } from '@/lib/confirm';
 import { localNumber } from '@/lib/format';
+import { useOutbox } from '@/outbox/OutboxProvider';
 import { useSession } from '@/session/session';
 import { colour, space } from '@/theme';
 
@@ -11,6 +13,13 @@ import { colour, space } from '@/theme';
 export default function Settings() {
   const { strings: s, prefs, setPrefs, me, signOut, biometricAvailable, checkBiometric } = useSession();
   const [canBiometric, setCanBiometric] = useState(false);
+  const { unsent } = useOutbox();
+
+  // Unsent photos stay on the phone for this person only; say so before signing out.
+  const leave = async () => {
+    if (unsent > 0 && !(await confirm(s.settings.unsentTitle, s.settings.unsentBody(unsent), s.settings.signOutAnyway, s.common.cancel))) return;
+    await signOut();
+  };
 
   useEffect(() => {
     void biometricAvailable().then(setCanBiometric);
@@ -25,7 +34,7 @@ export default function Settings() {
     <Screen
       footer={
         <>
-          <Button kind="danger" label={s.settings.signOut} hint={s.settings.signOutHint} onPress={() => void signOut()} />
+          <Button kind="danger" label={s.settings.signOut} hint={s.settings.signOutHint} onPress={() => void leave()} />
           <Button kind="quiet" label={s.common.back} onPress={() => router.back()} />
         </>
       }

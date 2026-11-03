@@ -1,10 +1,17 @@
 /** "+2348031234567" as people write it: "08031234567". */
 export const localNumber = (e164: string) => (e164.startsWith('+234') ? `0${e164.slice(4)}` : e164);
 
-/** The invite text message holds a link ending in /invite/<code>: take the code from a pasted link, or the code itself. */
+/**
+ * What the person entered from the invite text message: the short code (ABCD-2345, typed in any case, with or without
+ * the hyphen or spaces), or the long code from a pasted link (the part after /invite/).
+ */
 export function inviteToken(text: string): string {
   const t = text.trim();
-  return (/\/invite\/([A-Za-z0-9._~-]+)/.exec(t)?.[1] ?? t).replace(/[^A-Za-z0-9._~-]/g, '');
+  const link = /\/invite\/([A-Za-z0-9._~-]+)/.exec(t)?.[1];
+  if (link) return link;
+  const short = t.toUpperCase().replace(/[\s-]/g, '');
+  if (/^[A-HJ-NP-Z2-9]{8}$/.test(short)) return `${short.slice(0, 4)}-${short.slice(4)}`;
+  return t.replace(/[^A-Za-z0-9._~-]/g, '');
 }
 
 /** 142300 -> "km 142+300", the way engineers write chainage. */

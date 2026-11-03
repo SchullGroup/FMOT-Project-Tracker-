@@ -4,6 +4,7 @@ import { stringsFor, type Language, type Strings } from '@/i18n';
 import { createApi, type Me } from '@/lib/api';
 import { apiBaseUrl } from '@/lib/config';
 import { prefsStore, secureStore } from '@/lib/storage';
+import { uploadFetch } from '@/outbox/device';
 
 /*
  * Who is using the app and how far they are: first run (welcome and permissions), signed out, locked (a session is
@@ -28,7 +29,7 @@ export const FIELD_ROLES = ['contractor_site_manager', 'consultant_resident_engi
 
 // When a refresh fails in the middle of using the app, the provider sends the person back to sign-in.
 let onSignedOut: (() => void) | null = null;
-export const api = createApi({ baseUrl: () => apiBaseUrl(), store: secureStore, onSignedOut: () => onSignedOut?.() });
+export const api = createApi({ baseUrl: () => apiBaseUrl(), store: secureStore, uploadFetch, onSignedOut: () => onSignedOut?.() });
 
 interface Session {
   status: Status;

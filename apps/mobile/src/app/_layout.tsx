@@ -4,6 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { OutboxProvider } from '@/outbox/OutboxProvider';
 import { SessionProvider, useSession } from '@/session/session';
 import { colour } from '@/theme';
 
@@ -40,6 +41,9 @@ function Routes() {
       <Stack.Protected guard={status === 'open'}>
         <Stack.Screen name="biometric" />
         <Stack.Screen name="home" />
+        <Stack.Screen name="capture" options={{ contentStyle: { backgroundColor: '#000' } }} />
+        <Stack.Screen name="outbox" />
+        <Stack.Screen name="sent-back" />
         <Stack.Screen name="re-home" />
         <Stack.Screen name="settings" />
         <Stack.Screen name="coming-soon" />
@@ -53,8 +57,10 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <SessionProvider>
-        <StatusBar style="dark" />
-        <Routes />
+        <OutboxProvider>
+          <StatusBar style="dark" />
+          <Routes />
+        </OutboxProvider>
       </SessionProvider>
     </SafeAreaProvider>
   );

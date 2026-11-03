@@ -21,6 +21,15 @@ export interface FieldContext {
 
 export interface MySubmission {
   id: string;
+  clientId: string;
+  chainageM: number | null;
+  /** "km 142+300", from the server. */
+  chainage: string | null;
+  discipline: string | null;
+  capturedAt: string;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  lotId: string;
   kind: 'photo' | 'daily_report' | 'milestone_claim' | 'incident';
   status: 'queued' | 'sent' | 'checked' | 'pending_re' | 'verified' | 'sent_back';
   supersedesId: string | null;
@@ -37,7 +46,8 @@ export interface ReviewQueue {
 
 export const getContext = (api: Api, at?: { lat: number; lon: number }) =>
   api.request<FieldContext>(`/field/context${at ? `?lat=${at.lat}&lon=${at.lon}` : ''}`);
-export const getMySubmissions = (api: Api) => api.request<{ serverTime: string; items: MySubmission[] }>('/field/my-submissions');
+export const getMySubmissions = (api: Api, since?: string) =>
+  api.request<{ serverTime: string; items: MySubmission[] }>(`/field/my-submissions${since ? `?since=${encodeURIComponent(since)}` : ''}`);
 export const getReviewQueue = (api: Api) => api.request<ReviewQueue>('/field/review-queue');
 
 /**

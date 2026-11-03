@@ -1,5 +1,6 @@
 import * as Location from 'expo-location';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { Camera, ChevronRight, FileText, Flag } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Button, Card, Notice, Screen, SupportButton, T } from '@/components/ui';
@@ -8,6 +9,7 @@ import { getContext, getMySubmissions, ladder, reportSentToday, type FieldLot } 
 import { formatTime, greetingName, partOfDay } from '@/lib/format';
 import { prefsStore } from '@/lib/storage';
 import { useLoad } from '@/lib/useLoad';
+import { useOutbox } from '@/outbox/OutboxProvider';
 import { api, useSession } from '@/session/session';
 import { colour, radius, space, touch } from '@/theme';
 
@@ -26,6 +28,9 @@ const soon = (title: string) => router.push({ pathname: '/coming-soon', params: 
 /** M2 Home for site managers (screens/m2-home). */
 export default function Home() {
   const { strings: s, me } = useSession();
+  const { items: local, unsent, lastSentAt, lastSyncedAt } = useOutbox();
+  const { saved } = useLocalSearchParams<{ saved?: string }>();
+  const [toastFor, setToastFor] = useState<string | null>(null);
   const [lotId, setLotId] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
   const data = useLoad(async () => {
@@ -37,10 +42,18 @@ export default function Home() {
   useEffect(() => {
     void prefsStore.get(LOT_KEY).then(setLotId);
   }, []);
+  // After Send on the camera: "Photo sent, km 142+300" once the API has it, until then "Saved ...".
+  useEffect(() => {
+    if (saved) setToastFor(saved);
+  }, [saved]);
+  const savedItem = toastFor ? local.find((i) => i.clientId === toastFor) : undefined;
 
   const lots = data.data?.context.lots ?? [];
   const lot: FieldLot | undefined = lots.find((l) => l.id === lotId) ?? lots[0];
-  const counts = ladder(data.data?.mine.items ?? []);
+  // The server's word for what it has, the outbox for what is still on the phone; a retake on the phone already answers its sent-back item.
+  const retakenHere = new Set(local.map((i) => i.supersedesId).filter((x): x is string => !!x));
+  const counts = ladder((data.data?.mine.items ?? []).filter((i) => !(i.status === 'sent_back' && retakenHere.has(i.id))), unsent);
+  const lastSync = lastSentAt ?? (lastSyncedAt ? Date.parse(lastSyncedAt) : null) ?? data.data?.syncedAt.getTime() ?? null;
   const reportSent = reportSentToday(data.data?.mine.items ?? []);
   const firstName = greetingName(me?.user.name ?? '');
 
@@ -79,26 +92,39 @@ export default function Home() {
           <Button key={l.id} kind={l.id === lot?.id ? 'primary' : 'secondary'} label={`${l.name} · ${l.projectName}`} onPress={() => choose(l.id)} />
         ))}
 
-      <Pressable accessibilityRole="button" accessibilityHint={s.home.takePhotoHint} onPress={() => soon(s.home.takePhoto)} style={({ pressed }) => [styles.photo, pressed && { opacity: 0.9 }]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityHint={s.home.takePhotoHint}
+        disabled={!lot}
+        onPress={() => lot && router.push({ pathname: '/capture', params: { lotId: lot.id, lotName: lot.name, ...(lot.nearest?.inLot ? { chainageM: String(lot.nearest.chainageM) } : {}) } })}
+        style={({ pressed }) => [styles.photo, pressed && { opacity: 0.9 }, !lot && { opacity: 0.5 }]}
+      >
+        <Camera size={32} color={colour.primaryFg} />
         <T variant="title" colour={colour.primaryFg}>{s.home.takePhoto}</T>
         <T colour={colour.primaryFg} style={styles.center}>{s.home.takePhotoHint}</T>
       </Pressable>
 
       <View style={styles.row}>
         <Card style={styles.half} onPress={() => soon(s.home.todaysReport)} label={s.home.todaysReport}>
-          <T variant="heading">{s.home.todaysReport}</T>
+          <View style={styles.iconTitle}>
+            <FileText size={22} color={colour.text} />
+            <T variant="heading" style={styles.flex}>{s.home.todaysReport}</T>
+          </View>
           <T variant="bodyStrong" colour={reportSent ? colour.successFg : colour.text}>{reportSent ? s.home.reportSent : s.home.reportNotSent}</T>
           <T variant="small" colour={colour.textSecondary}>{s.home.reportDue}</T>
         </Card>
         <Card style={styles.half} onPress={() => soon(s.home.milestones)} label={s.home.milestones}>
-          <T variant="heading">{s.home.milestones}</T>
+          <View style={styles.iconTitle}>
+            <Flag size={22} color={colour.text} />
+            <T variant="heading" style={styles.flex}>{s.home.milestones}</T>
+          </View>
           <T variant="small" colour={colour.textSecondary}>{s.home.milestonesHint}</T>
         </Card>
       </View>
 
       <Button kind="danger" label={s.home.reportIncident} onPress={() => soon(s.home.reportIncident)} />
 
-      <Card style={styles.sentBack} onPress={() => soon(s.home.sentBack)} label={s.home.sentBack}>
+      <Card style={styles.sentBack} onPress={() => router.push('/sent-back')} label={s.home.sentBack}>
         <T variant="heading">{s.home.sentBack}</T>
         {counts.sentBack > 0 && (
           <View style={styles.badge}>
@@ -108,13 +134,13 @@ export default function Home() {
         <T variant="small" colour={colour.textSecondary} style={styles.flex} numberOfLines={2}>
           {counts.sentBack ? s.home.sentBackMore(counts.firstReason ?? '', counts.sentBack - 1) : s.home.sentBackNone}
         </T>
-        <T variant="title">›</T>
+        <ChevronRight size={26} color={colour.text} />
       </Card>
 
-      <Card style={styles.photosCard}>
+      <Card style={styles.photosCard} onPress={() => router.push('/outbox')} label={s.home.yourPhotos}>
         <View style={styles.between}>
           <T variant="heading">{s.home.yourPhotos}</T>
-          <T variant="small" colour={colour.textSecondary}>{data.data ? s.home.lastSync(formatTime(data.data.syncedAt)) : s.home.notSynced}</T>
+          <T variant="small" colour={colour.textSecondary}>{lastSync ? `${s.home.lastSync(formatTime(new Date(lastSync)))} ›` : s.home.notSynced}</T>
         </View>
         <View style={styles.chips}>
           <Status label={s.home.queued(counts.queued)} bg={colour.raised} fg={colour.text} dashed />
@@ -125,6 +151,16 @@ export default function Home() {
       </Card>
 
       <SupportButton />
+      {toastFor && (
+        <View style={styles.toast} accessibilityLiveRegion="polite" accessibilityRole="alert">
+          <T colour={colour.textInverse} style={styles.flex}>
+            {savedItem?.status === 'sent' ? (savedItem.chainageLabel ? s.home.toastSent(savedItem.chainageLabel) : s.home.toastSentNoPlace) : s.home.toastSaved}
+          </T>
+          <Pressable accessibilityRole="button" onPress={() => setToastFor(null)} style={styles.toastOk}>
+            <T variant="label" colour={colour.textInverse}>{s.home.ok}</T>
+          </Pressable>
+        </View>
+      )}
     </Screen>
   );
 }
@@ -158,6 +194,9 @@ const styles = StyleSheet.create({
   sentBack: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   badge: { minWidth: 28, height: 28, borderRadius: 14, backgroundColor: colour.dangerBg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   photosCard: { gap: space.md },
+  iconTitle: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
+  toast: { flexDirection: 'row', alignItems: 'center', gap: space.md, backgroundColor: colour.text, borderRadius: radius.md, paddingLeft: space.lg, paddingRight: space.xs, minHeight: touch.large },
+  toastOk: { minWidth: touch.min, minHeight: touch.min, alignItems: 'center', justifyContent: 'center' },
   between: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space.sm, flexWrap: 'wrap' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   status: { minHeight: touch.min, paddingHorizontal: space.md, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
