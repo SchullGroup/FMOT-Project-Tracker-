@@ -258,6 +258,8 @@ export interface Variation {
   amountKobo: string | null;
   days: number | null;
   status: string;
+  /** Approved, so a revised programme can name it. */
+  approved: boolean;
   raisedBy: string;
   raisedAt: string;
 }
@@ -525,4 +527,45 @@ export interface Obligation {
   expiresOn: string;
   owner: string;
   documentCode: string | null;
+}
+
+/* ---------- Design requirements, programme, practical completion, obligations (Web Step 7) ---------- */
+
+/** One discipline of a lot for gate 12: whether its design must be approved for construction, and how far it has got. */
+export interface DesignRequirement {
+  disciplineCode: string;
+  disciplineName: string;
+  required: boolean;
+  /** The best status among the lot's design packages for the discipline; none when there is no package. */
+  status: 'none' | DesignPackage['status'];
+}
+
+/** One upload of a lot's programme. Revision 1 is the first programme and is used at once. */
+export interface BaselineRevision {
+  id: string;
+  revision: number;
+  uploadedAt: string;
+  uploadedBy: string;
+  reason: string | null;
+  /** The approved extension of time behind a revision, if any. */
+  extensionOfTimeId: string | null;
+  status: 'pending' | 'approved' | 'returned' | 'superseded';
+}
+
+export interface PracticalCompletion {
+  lotId: string;
+  completedOn: string | null;
+  recordedBy: string | null;
+  status: 'not_recorded' | 'waiting_for_director' | 'confirmed';
+}
+
+export interface NewObligation {
+  kind: Obligation['kind'];
+  /** The bond, policy or certificate number. */
+  reference: string;
+  description: string;
+  expiresOn: string;
+  lotId: string | null;
+  /** The bond, policy or certificate in the register. */
+  documentId: string | null;
 }

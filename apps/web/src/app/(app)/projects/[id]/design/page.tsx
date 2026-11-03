@@ -1,6 +1,7 @@
 'use client';
 
 import { useQueries, useQuery } from '@tanstack/react-query';
+import { DesignRequirements } from '@/components/forms/DesignRequirements';
 import { useProjectId } from '@/components/project/ProjectFrame';
 import { StatusPill } from '@/components/ui/Pill';
 import { QueryState, Section, Table } from '@/components/ui/Section';
@@ -15,6 +16,15 @@ export default function DesignPage() {
   const all = packs.flatMap((q) => q.data ?? []);
 
   return (
+    <div className="flex flex-col gap-5">
+      {(lots.data ?? []).length > 0 && (
+        <Section title="What each lot needs approved">
+          <p className="mb-4 text-ink-muted">Gate 12 passes by itself once every required design, in every lot, is approved for construction.</p>
+          <div className="flex flex-col gap-8">
+            {lots.data!.map((l) => <DesignRequirements key={l.id} lotId={l.id} lotName={l.name} />)}
+          </div>
+        </Section>
+      )}
     <Section title="Design packages">
       <QueryState loading={lots.isPending} error={lots.isError} empty={lots.isSuccess && all.length === 0} emptyText="No design packages submitted yet." />
       {all.length > 0 && (
@@ -32,5 +42,6 @@ export default function DesignPage() {
         </Table>
       )}
     </Section>
+    </div>
   );
 }

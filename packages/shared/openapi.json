@@ -1782,6 +1782,40 @@
       }
     },
     "/api/projects/{id}/lots/{lotId}/practical-completion": {
+      "get": {
+        "operationId": "ProjectsController_practicalCompletionState",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "projects"
+        ]
+      },
       "post": {
         "operationId": "ProjectsController_practicalCompletion",
         "parameters": [

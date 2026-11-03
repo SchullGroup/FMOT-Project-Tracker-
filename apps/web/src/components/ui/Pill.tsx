@@ -35,6 +35,7 @@ export const toneFor: Record<string, Tone> = {
   // design
   submitted: 'info',
   under_review: 'info',
+  approved_for_construction: 'good',
   // land
   unpaid: 'bad',
   disputed: 'bad',
@@ -65,6 +66,7 @@ export const labelFor: Record<string, string> = {
   returned: 'Returned',
   submitted: 'Submitted',
   under_review: 'Under review',
+  approved_for_construction: 'Approved for construction',
   unpaid: 'Unpaid',
   disputed: 'Disputed',
   queried: 'Queried',

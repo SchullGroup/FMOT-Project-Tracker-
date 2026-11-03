@@ -3,6 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useProjectId } from '@/components/project/ProjectFrame';
 import { StripMapChart } from '@/components/project/StripMapChart';
+import { BaselinePanel } from '@/components/forms/BaselinePanel';
+import { PracticalCompletionPanel } from '@/components/forms/PracticalCompletionPanel';
 import { QueryState, Section, Table } from '@/components/ui/Section';
 import { getProgress, getStripMap } from '@/lib/endpoints';
 import { formatMonth } from '@/lib/format';
@@ -52,6 +54,10 @@ export default function ProgressPage() {
             ))}
           </Table>
           <p className="mt-2 text-sm text-ink-muted">The dark mark is where the programme says this discipline should be now.</p>
+          <div className="mt-5 grid gap-6 border-t border-line pt-5 xl:grid-cols-2">
+            <BaselinePanel projectId={id} lotId={lot.id} lotName={lot.name.split(',')[0]!} />
+            <PracticalCompletionPanel projectId={id} lotId={lot.id} lotName={lot.name.split(',')[0]!} />
+          </div>
         </Section>
       ))}
 

@@ -110,7 +110,7 @@ Every push runs `.github/workflows/ci.yml`:
 
 - **Lint, unit tests, types:** oxlint on the API, its unit tests, a web typecheck, and a check that `packages/shared/openapi.json` and the
   generated types match the code (`pnpm api:types`, then `git diff --exit-code`).
-- **Web walkthroughs:** the six Playwright walkthroughs on sample data, under the Content Security Policy.
+- **Web walkthroughs:** the seven Playwright walkthroughs on sample data, under the Content Security Policy.
 - **Deploy to staging:** only on `main`, after both pass, and one deploy at a time:
   1. API: `flyctl deploy` builds the image. The release command (`node dist/scripts/migrate.js`) applies the migrations
      on `main`, and only then do the API machines move to the new image, one at a time, each routed once `/api/ready`

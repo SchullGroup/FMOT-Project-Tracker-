@@ -188,3 +188,41 @@ export interface ApiReport {
   requestedBy?: string | null;
   scheduled: boolean;
 }
+
+export interface ApiDesignRequirement {
+  discipline: string;
+  label: string;
+  required: boolean;
+  designStatus: string | null;
+}
+
+export interface ApiBaselineRevision {
+  id: string;
+  revision: number;
+  status: 'pending' | 'approved' | 'returned' | 'superseded';
+  reason: string | null;
+  variationId: string | null;
+  sha256: string;
+  uploadedBy: string;
+  uploadedAt: string;
+  approvedBy: string | null;
+  approvedAt: string | null;
+}
+
+export interface ApiPracticalCompletion {
+  lotId: string;
+  status: 'not_recorded' | 'awaiting_confirmation' | 'confirmed';
+  date: string | null;
+  recordedBy: string | null;
+  confirmedAt: string | null;
+  confirmedBy: string | null;
+}
+
+export interface ApiObligation {
+  id: string;
+  kind: 'performance_bond' | 'advance_payment_guarantee' | 'insurance' | 'eia_condition';
+  reference: string;
+  description: string | null;
+  expiresOn: string;
+  documentCode?: string | null;
+}

@@ -3,6 +3,7 @@
  * mode. A requested report is "generating" for a few seconds, then ready,
  * as the real background job would be.
  */
+import { mockObligations } from './mock-forms';
 import type { NotificationPreferences, Obligation, PortfolioRow, Report } from './types';
 
 const KEY = 'fmot.mockReports';
@@ -47,7 +48,8 @@ function add(kind: Report['kind'], period: string | null, format: Report['format
 
 export function mockReports(route: string, method: string, body: Record<string, unknown>): { status: number; body?: unknown } | undefined {
   if (route === '/portfolio') return { status: 200, body: portfolio };
-  if (/^\/projects\/[^/]+\/obligations$/.test(route)) return { status: 200, body: obligations };
+  const ob = mockObligations(route, method, body, obligations);
+  if (ob) return ob;
   if (/^\/projects\/[^/]+\/reports$/.test(route)) {
     if (method === 'POST') return { status: 201, body: add(body.kind as Report['kind'], String(body.period), 'pdf') };
     return { status: 200, body: load().filter((r) => r.kind === 'monthly' || r.kind === 'lender').map(settle) };

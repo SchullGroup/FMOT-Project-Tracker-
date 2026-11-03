@@ -186,8 +186,9 @@ const incidents: Incident[] = [
 ];
 
 const variations: Variation[] = [
-  { id: 'v1', type: 'variation', title: 'Additional culverts at km 160 to 165', amountKobo: N(380_000_000), days: null, status: 'Recommended, with the Director', raisedBy: 'CCECC commercial', raisedAt: day(9) },
-  { id: 'v2', type: 'extension_of_time', title: 'Delay from unpaid compensation, km 140 to 152', amountKobo: null, days: 60, status: 'Assessed by the resident engineer', raisedBy: 'CCECC commercial', raisedAt: day(5) },
+  { id: 'v1', type: 'variation', title: 'Additional culverts at km 160 to 165', amountKobo: N(380_000_000), days: null, status: 'Recommended, with the Director', approved: false, raisedBy: 'CCECC commercial', raisedAt: day(9) },
+  { id: 'v2', type: 'extension_of_time', title: 'Delay from unpaid compensation, km 140 to 152', amountKobo: null, days: 60, status: 'Assessed by the resident engineer', approved: false, raisedBy: 'CCECC commercial', raisedAt: day(5) },
+  { id: 'v3', type: 'extension_of_time', title: 'Rains at the Rigasa cutting, km 70 to 74', amountKobo: null, days: 45, status: 'Approved by the Director', approved: true, raisedBy: 'CCECC commercial', raisedAt: day(70) },
 ];
 
 const people: PeopleView = {

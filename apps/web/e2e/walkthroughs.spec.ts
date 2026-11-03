@@ -176,3 +176,66 @@ test('6. portfolio, reports and message settings', async ({ page }) => {
   await page.getByRole('button', { name: /save/i }).first().click();
   await expect(page.getByText(/saved/i).first()).toBeVisible();
 });
+
+test('7. design requirements, programme revisions, practical completion, obligations', async ({ page }) => {
+  await signIn(page);
+
+  // Design: Lot 3 no longer needs three disciplines; the choice survives a reload.
+  await page.goto('/projects/p-kk/design');
+  const lot3 = ['Earthworks', 'Bridges and culverts', 'Stations'].map((d) => page.getByLabel(`${d} required for Lot 3`));
+  for (const box of lot3) await expect(box).toBeChecked();
+  for (const box of lot3) await box.uncheck();
+  await page.getByRole('button', { name: 'Save what is required' }).nth(2).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
+  await page.reload();
+  for (const box of lot3) await expect(box).not.toBeChecked();
+  await noErrors(page);
+
+  // Progress: Lot 3's first programme is used at once.
+  await page.goto('/projects/p-kk/progress');
+  const csv = { name: 'programme.csv', mimeType: 'text/csv', buffer: Buffer.from('discipline,month,planned_percent\nearthworks,2026-11,50\nearthworks,2026-12,60\n') };
+  const lotSection = (n: number) => page.locator('section', { has: page.getByRole('heading', { name: new RegExp(`^Lot ${n},`) }) });
+  // The blank template is made in the page (a blob: link), which the CSP allows.
+  const download = page.waitForEvent('download');
+  await lotSection(3).getByRole('button', { name: 'Get a blank template' }).click();
+  expect((await download).suggestedFilename()).toBe('programme-lot-3.csv');
+  await lotSection(3).locator('input[type=file]').setInputFiles(csv);
+  await lotSection(3).getByRole('button', { name: 'Save the programme' }).click();
+  await expect(lotSection(3).getByText('Programme saved. Planned figures now use it.')).toBeVisible();
+  await expect(lotSection(3).getByText('First programme')).toBeVisible();
+
+  // Lot 2's revision is refused without a reason, then sent with one and the approved extension of time.
+  await lotSection(2).locator('input[type=file]').setInputFiles(csv);
+  await lotSection(2).getByRole('button', { name: 'Send to the Director' }).click();
+  await expect(lotSection(2).getByRole('alert')).toHaveText('Say why the programme is changing.');
+  await lotSection(2).getByLabel('Why is it changing?').fill('Rains at the Rigasa cutting held the earthworks back six weeks.');
+  await lotSection(2).getByLabel('Linked extension of time (optional)').selectOption({ label: 'Rains at the Rigasa cutting, km 70 to 74 (45 days)' });
+  await lotSection(2).getByRole('button', { name: 'Send to the Director' }).click();
+  await expect(lotSection(2).getByText(/sent to the Director/)).toBeVisible();
+  await expect(lotSection(2).getByText('Follows: Rains at the Rigasa cutting, km 70 to 74')).toBeVisible();
+
+  // Lot 1's practical completion, recorded with the PIN, waits for the Director.
+  await lotSection(1).getByLabel('Completed on').fill('2026-10-30');
+  await lotSection(1).getByRole('button', { name: /Record practical completion/ }).click();
+  await page.getByRole('dialog').getByLabel(/PIN/).fill('2580');
+  await page.getByRole('dialog').getByRole('button', { name: 'Record practical completion' }).click();
+  await expect(page.getByRole('dialog')).toBeHidden();
+  await expect(lotSection(1).getByText('Waiting for the Director')).toBeVisible();
+  await noErrors(page);
+
+  // Documents: an insurance with its expiry date joins the list.
+  await page.goto('/projects/p-kk/documents');
+  const expiring = page.locator('section', { has: page.getByRole('heading', { name: 'Bonds, guarantees and conditions that expire' }) }).locator('tbody tr');
+  await expect(expiring.first()).toBeVisible();
+  const before = await expiring.count();
+  await page.getByRole('button', { name: 'Add one' }).click();
+  await page.getByRole('dialog').getByLabel('Kind').selectOption('insurance');
+  await page.getByRole('dialog').getByLabel('Reference').fill('CAR/2026/5531');
+  await page.getByRole('dialog').getByLabel('What it covers (optional)').fill("Contractor's all risks, Lot 3");
+  await page.getByRole('dialog').getByLabel('Expires on').fill('2027-03-31');
+  await page.getByRole('dialog').getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeHidden();
+  await expect(expiring).toHaveCount(before + 1);
+  await expect(page.getByText("CAR/2026/5531: Contractor's all risks, Lot 3")).toBeVisible();
+  await noErrors(page);
+});

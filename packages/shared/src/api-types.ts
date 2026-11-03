@@ -731,7 +731,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["ProjectsController_practicalCompletionState"];
         put?: never;
         post: operations["ProjectsController_practicalCompletion"];
         delete?: never;
@@ -3379,6 +3379,26 @@ export interface operations {
             path: {
                 id: string;
                 no: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ProjectsController_practicalCompletionState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                lotId: string;
             };
             cookie?: never;
         };

@@ -1,7 +1,11 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { ObligationForm } from '@/components/forms/ObligationForm';
 import { useProjectId } from '@/components/project/ProjectFrame';
+import { useCan } from '@/components/Session';
+import { Button } from '@/components/ui/Button';
 import { QueryState, Section, Table } from '@/components/ui/Section';
 import { getDocumentUrl, getDocuments, getObligations } from '@/lib/endpoints';
 import { formatDate, lowerFirst } from '@/lib/format';
@@ -14,6 +18,8 @@ export default function DocumentsPage() {
   const id = useProjectId();
   const groups = useQuery({ queryKey: ['documents', id], queryFn: () => getDocuments(id) });
   const obligations = useQuery({ queryKey: ['obligations', id], queryFn: () => getObligations(id), retry: false });
+  const canAddObligation = useCan('obligations:manage');
+  const [adding, setAdding] = useState(false);
 
   async function open(documentId: string) {
     const { url } = await getDocumentUrl(documentId);
@@ -22,8 +28,13 @@ export default function DocumentsPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      {obligations.data && obligations.data.length > 0 && (
-        <Section title="Bonds, guarantees and conditions that expire">
+      {(canAddObligation || (obligations.data && obligations.data.length > 0)) && (
+        <Section
+          title="Bonds, guarantees and conditions that expire"
+          aside={canAddObligation ? <Button variant="secondary" onClick={() => setAdding(true)}>Add one</Button> : undefined}
+        >
+          {obligations.data?.length === 0 && <p className="text-ink-muted">Nothing recorded yet. Add each bond, guarantee, insurance and EIA condition with its expiry date.</p>}
+          {obligations.data && obligations.data.length > 0 && (<>
           <Table head={['What', 'Expires', 'Left', 'Looked after by']}>
             {[...obligations.data].sort((a, b) => a.expiresOn.localeCompare(b.expiresOn)).map((o) => {
               const days = Math.ceil((new Date(o.expiresOn).getTime() - Date.now()) / 86_400_000);
@@ -39,8 +50,10 @@ export default function DocumentsPage() {
             })}
           </Table>
           <p className="mt-2 text-sm text-ink-muted">The owner gets a text 30 days and 7 days before each expiry.</p>
+          </>)}
         </Section>
       )}
+      <ObligationForm projectId={id} open={adding} onClose={() => setAdding(false)} />
       <QueryState loading={groups.isPending} error={groups.isError} empty={groups.data?.length === 0} emptyText="No documents yet." />
       {groups.data?.map((g) => (
         <Section key={g.gateNo ?? g.gateName} title={g.gateNo ? `Gate ${g.gateNo}, ${lowerFirst(g.gateName)}` : g.gateName}>

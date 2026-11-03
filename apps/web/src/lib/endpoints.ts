@@ -7,14 +7,18 @@
 import { type ApiBody, roleLabel, type RoleCode } from '@fmot/shared';
 import { api, MOCK, setAccessToken, upload } from './api';
 import type {
+  ApiBaselineRevision,
   ApiCard,
   ApiCertificate,
   ApiChain,
   ApiDesignPackage,
+  ApiDesignRequirement,
   ApiFundingRoute,
   ApiGateRow,
   ApiInbox,
   ApiMapFeature,
+  ApiObligation,
+  ApiPracticalCompletion,
   ApiMe,
   ApiProgress,
   ApiReport,
@@ -31,9 +35,11 @@ import type {
   AlignmentResult,
   AuditEntry,
   AuthTokens,
+  BaselineRevision,
   Certificate,
   ChainStep,
   DesignPackage,
+  DesignRequirement,
   DocumentGroup,
   DraftReview,
   FundingRoute,
@@ -45,6 +51,7 @@ import type {
   MapCounters,
   MapProjectsResponse,
   Me,
+  NewObligation,
   NewUser,
   NotificationLogEntry,
   NotificationPreferences,
@@ -55,6 +62,7 @@ import type {
   Parcel,
   PeopleView,
   PortfolioRow,
+  PracticalCompletion,
   ProgressSummary,
   ProjectBasics,
   ProjectCard,
@@ -387,7 +395,7 @@ export const getIncidents = (id: string) =>
 export const getVariations = (id: string) =>
   viaApi<Array<{ id: string; type: Variation['type']; description: string; amountKobo: string | null; days: number | null; status: string; raisedBy: string; createdAt: string }>, Variation[]>(
     api(p(id, '/variations')),
-    (rows) => rows.map((v) => ({ id: v.id, type: v.type, title: v.description, amountKobo: v.amountKobo, days: v.days, status: v.status, raisedBy: v.raisedBy, raisedAt: v.createdAt })),
+    (rows) => rows.map((v) => ({ id: v.id, type: v.type, title: v.description, amountKobo: v.amountKobo, days: v.days, status: v.status, approved: v.status === 'approved', raisedBy: v.raisedBy, raisedAt: v.createdAt })),
   );
 
 export const getPeople = (id: string) =>
@@ -789,7 +797,74 @@ const OBLIGATION_OWNER: Record<Obligation['kind'], string> = {
   insurance: 'Legal',
   eia_condition: 'Project manager',
 };
-export const getObligations = (id: string) =>
-  viaApi<Array<{ id: string; kind: Obligation['kind']; reference: string; description: string | null; expiresOn: string; documentCode: string | null }>, Obligation[]>(api(p(id, '/obligations')), (rows) =>
-    rows.map((o) => ({ id: o.id, kind: o.kind, title: o.description ? `${o.reference}: ${o.description}` : o.reference, expiresOn: o.expiresOn, owner: OBLIGATION_OWNER[o.kind], documentCode: o.documentCode })),
+const obligation = (o: ApiObligation): Obligation => ({
+  id: o.id,
+  kind: o.kind,
+  title: o.description ? `${o.reference}: ${o.description}` : o.reference,
+  expiresOn: o.expiresOn,
+  owner: OBLIGATION_OWNER[o.kind],
+  documentCode: o.documentCode ?? null,
+});
+export const getObligations = (id: string) => viaApi<ApiObligation[], Obligation[]>(api(p(id, '/obligations')), (rows) => rows.map(obligation));
+// The API has no owner field: who is reminded follows from the kind (legal officers, or the project manager for EIA conditions).
+export const addObligation = (id: string, o: NewObligation) =>
+  viaApi<ApiObligation, Obligation>(
+    api(p(id, '/obligations'), {
+      method: 'POST',
+      body: {
+        kind: o.kind,
+        reference: o.reference,
+        ...(o.description ? { description: o.description } : {}),
+        expiresOn: o.expiresOn,
+        ...(o.lotId ? { lotId: o.lotId } : {}),
+        ...(o.documentId ? { documentId: o.documentId } : {}),
+      } satisfies ApiBody<'ObligationDto'>,
+    }),
+    obligation,
   );
+
+/* Gate 12 design requirements, the programme (baseline) and gate 13 practical completion, per lot. */
+
+const lotPath = (lotId: string, rest: string) => `/lots/${encodeURIComponent(lotId)}${rest}`;
+const designRequirement = (r: ApiDesignRequirement): DesignRequirement => ({
+  disciplineCode: r.discipline,
+  disciplineName: r.label,
+  required: r.required,
+  status: (r.designStatus ?? 'none') as DesignRequirement['status'],
+});
+export const getDesignRequirements = (lotId: string) =>
+  viaApi<ApiDesignRequirement[], DesignRequirement[]>(api(lotPath(lotId, '/design-requirements')), (rows) => rows.map(designRequirement));
+// The API takes every discipline with its flag; the mock only the ones required.
+export const saveDesignRequirements = (lotId: string, disciplines: string[], required: string[]) =>
+  api<unknown>(lotPath(lotId, '/design-requirements'), {
+    method: 'PUT',
+    body: body({ required }, { requirements: disciplines.map((discipline) => ({ discipline, required: required.includes(discipline) })) } satisfies ApiBody<'RequirementsDto'>),
+  });
+
+export const getBaselineRevisions = (lotId: string) =>
+  viaApi<ApiBaselineRevision[], BaselineRevision[]>(api(lotPath(lotId, '/baseline/revisions')), (rows) =>
+    rows.map((r) => ({ id: r.id, revision: r.revision, uploadedAt: r.uploadedAt, uploadedBy: r.uploadedBy, reason: r.reason, extensionOfTimeId: r.variationId, status: r.status })),
+  );
+// Multipart: file (CSV: discipline,month,planned_percent), reason (a revision), variationId (the approved extension of time).
+export const uploadBaseline = (lotId: string, file: File, reason: string, extensionOfTimeId: string | null) =>
+  upload<unknown>(lotPath(lotId, '/baseline'), { ...(reason ? { reason } : {}), ...(extensionOfTimeId ? { variationId: extensionOfTimeId } : {}) }, file);
+
+const COMPLETION_STATUS: Record<ApiPracticalCompletion['status'], PracticalCompletion['status']> = {
+  not_recorded: 'not_recorded',
+  awaiting_confirmation: 'waiting_for_director',
+  confirmed: 'confirmed',
+};
+export const getPracticalCompletion = (projectId: string, lotId: string) =>
+  viaApi<ApiPracticalCompletion, PracticalCompletion>(api(p(projectId, `/lots/${encodeURIComponent(lotId)}/practical-completion`)), (r) => ({
+    lotId: r.lotId,
+    completedOn: r.date,
+    recordedBy: r.recordedBy,
+    status: COMPLETION_STATUS[r.status],
+  }));
+// PIN action completion.record, subject the lot.
+export const recordPracticalCompletion = (projectId: string, lotId: string, completedOn: string, pinConfirmation: string) =>
+  api<unknown>(p(projectId, `/lots/${encodeURIComponent(lotId)}/practical-completion`), {
+    method: 'POST',
+    body: body({ completedOn }, { date: completedOn } satisfies ApiBody<'PracticalCompletionDto'>),
+    pinConfirmation,
+  });
