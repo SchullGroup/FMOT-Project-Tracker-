@@ -1,11 +1,15 @@
 'use client';
 
 import { useQueries, useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { ValuationForm } from '@/components/forms/ValuationForm';
 import { useProjectId } from '@/components/project/ProjectFrame';
+import { useCan } from '@/components/Session';
+import { Button } from '@/components/ui/Button';
 import { StatusPill } from '@/components/ui/Pill';
 import { QueryState, Section, Table } from '@/components/ui/Section';
 import { getCertificates, getLots } from '@/lib/endpoints';
-import { formatDate, formatMonth, formatNaira } from '@/lib/format';
+import { formatDate, formatMonth, formatNaira, formatNairaExact } from '@/lib/format';
 import type { Certificate } from '@/lib/types';
 
 /*
@@ -19,10 +23,21 @@ export default function PaymentsPage() {
   const certs = useQueries({
     queries: (lots.data ?? []).map((l) => ({ queryKey: ['certificates', l.id], queryFn: () => getCertificates(l.id) })),
   });
+  const canValue = useCan('valuations:submit');
+  const [valuing, setValuing] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const all: Certificate[] = certs.flatMap((q) => q.data ?? []).sort((a, b) => b.period.localeCompare(a.period) || b.number - a.number);
 
   return (
     <div className="flex flex-col gap-5">
+      {canValue && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-ink-muted">Claim each month&rsquo;s work with a valuation. The certificate is worked out from it.</p>
+          <Button onClick={() => setValuing(true)}>New valuation</Button>
+        </div>
+      )}
+      {notice && <p role="status" className="rounded-md bg-[#e3f1e6] p-4 text-[#1f5a2b]">{notice}</p>}
+      {lots.data && <ValuationForm lots={lots.data} open={valuing} onClose={() => setValuing(false)} onDone={(m) => { setValuing(false); setNotice(m); }} />}
       <QueryState loading={lots.isPending || certs.some((q) => q.isPending)} error={lots.isError} empty={lots.isSuccess && all.length === 0} emptyText="No payment certificates yet." />
       {all.map((c) => (
         <Section
@@ -61,7 +76,7 @@ function Money({ label, kobo, strong }: { label: string; kobo: number | string |
   return (
     <div>
       <dt className="text-sm text-ink-muted">{label}</dt>
-      <dd className={`tabular ${strong ? 'text-xl font-semibold' : 'text-lg'}`}>{formatNaira(kobo, { compact: true })}</dd>
+      <dd className={`tabular ${strong ? 'text-xl font-semibold' : 'text-lg'}`} title={formatNairaExact(kobo)}>{strong ? formatNairaExact(kobo) : formatNaira(kobo, { compact: true })}</dd>
     </div>
   );
 }

@@ -226,3 +226,23 @@ export interface ApiObligation {
   expiresOn: string;
   documentCode?: string | null;
 }
+
+export interface ApiValuationPrefill {
+  lotId: string;
+  periodMonth: string;
+  lines: Array<{
+    discipline: string;
+    label: string;
+    unit: 'm' | 'no.';
+    quantity: number;
+    cumulative: number | null;
+    ranges?: Array<{ chainageFromM: number; chainageToM: number; state: string; evidenceSubmissionIds: string[] }>;
+    assets?: Array<{ assetId: string; name: string | null; state: string; evidenceSubmissionIds: string[] }>;
+  }>;
+}
+
+export interface ApiMemberAdded {
+  membershipId: string;
+  confirmed: boolean;
+  requiresDirectorConfirmation: boolean;
+}

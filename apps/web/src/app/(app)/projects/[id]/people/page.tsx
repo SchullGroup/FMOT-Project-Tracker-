@@ -1,9 +1,13 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { AddMemberForm } from '@/components/forms/AddMemberForm';
 import { useProjectId } from '@/components/project/ProjectFrame';
+import { useCan } from '@/components/Session';
+import { Button } from '@/components/ui/Button';
 import { QueryState, Section, Table } from '@/components/ui/Section';
-import { getPeople } from '@/lib/endpoints';
+import { getLots, getPeople } from '@/lib/endpoints';
 import { roleLabel } from '@/lib/roles';
 import { formatPhone } from '@/lib/status';
 
@@ -11,10 +15,16 @@ import { formatPhone } from '@/lib/status';
 export default function PeoplePage() {
   const id = useProjectId();
   const people = useQuery({ queryKey: ['people', id], queryFn: () => getPeople(id) });
+  const lots = useQuery({ queryKey: ['lots', id], queryFn: () => getLots(id) });
+  const canAdd = useCan('members:manage');
+  const [adding, setAdding] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-5">
-      <Section title="People on this project">
+      <Section title="People on this project" aside={canAdd ? <Button variant="secondary" onClick={() => setAdding(true)}>Add a member</Button> : undefined}>
+        {notice && <p role="status" className="mb-4 rounded-md bg-[#e3f1e6] p-4 text-[#1f5a2b]">{notice}</p>}
+        <AddMemberForm projectId={id} lots={lots.data ?? []} open={adding} onClose={() => setAdding(false)} onDone={(m) => { setAdding(false); setNotice(m); }} />
         <QueryState loading={people.isPending} error={people.isError} />
         {people.data && (
           <Table head={['Name', 'Role', 'Organisation', 'Lot', 'Phone']}>

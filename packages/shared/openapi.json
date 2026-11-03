@@ -697,6 +697,38 @@
         ]
       }
     },
+    "/api/organisations": {
+      "get": {
+        "operationId": "DirectoryController_lotOrganisations",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "contractor",
+                "consultant"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "directory"
+        ]
+      }
+    },
     "/api/reference/return-reasons": {
       "get": {
         "operationId": "DirectoryController_returnReasons",

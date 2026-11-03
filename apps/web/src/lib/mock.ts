@@ -4,12 +4,13 @@
  * four-digit PIN that is not an easy one (1111, 1234 and similar are refused,
  * as on the real API). Coordinates are approximate and for display only.
  */
-import { mockProjectRoute } from './mock-project';
+import { mockProjectRoute, sampleMembers } from './mock-project';
 import { mockWizard, mockWizardUpload } from './mock-wizard';
 import { mockAct, mockTask, mockTaskInbox, RETURN_REASONS } from './mock-tasks';
 import { mockAdmin } from './mock-admin';
 import { mockReports } from './mock-reports';
 import { mockBaselineUpload, mockForms } from './mock-forms';
+import { mockStep8 } from './mock-step8';
 import type { MapCounters, MapProjectsResponse, Me, ProjectCard, TaskInbox } from './types';
 
 const me: Me = {
@@ -19,7 +20,7 @@ const me: Me = {
   role: 'director_rail',
   organisation: { id: 'o-fmot', name: 'Federal Ministry of Transportation', type: 'ministry_unit' },
   // Sample mode shows every area; on the real API only the IT administrator has the admin permissions.
-  permissions: ['projects:create', 'projects:read', 'reports:read', 'reports:generate', 'finance:read_amounts', 'tasks:read', 'admin:users', 'admin:organisations', 'admin:reminders', 'audit:read', 'reports:export_eyemark', 'progress:plan', 'completion:record', 'obligations:manage'],
+  permissions: ['projects:create', 'projects:read', 'reports:read', 'reports:generate', 'finance:read_amounts', 'tasks:read', 'admin:users', 'admin:organisations', 'admin:reminders', 'audit:read', 'reports:export_eyemark', 'progress:plan', 'completion:record', 'obligations:manage', 'valuations:submit', 'lots:manage', 'members:manage', 'design:submit'],
 };
 
 const projects: MapProjectsResponse = {
@@ -187,6 +188,8 @@ export async function mockFetch(path: string, init: RequestInit): Promise<Respon
 
   const method = String(init.method ?? 'GET');
   if (!signedIn && !route.startsWith('/auth') && !route.startsWith('/invites')) return json(401);
+  const step8 = mockStep8(path, method, body, sampleMembers());
+  if (step8) return json(step8.status, step8.body);
   const forms = mockForms(route, method, body);
   if (forms) return json(forms.status, forms.body);
   const reports = mockReports(route, method, body);
@@ -243,6 +246,7 @@ export async function mockFetch(path: string, init: RequestInit): Promise<Respon
 export async function mockUpload(path: string, fields: Record<string, string>, file: File): Promise<unknown> {
   await new Promise((r) => setTimeout(r, 600));
   if (/^\/projects\/draft-/.test(path)) return mockWizardUpload(path, fields, file);
+  if (/^\/lots\/[^/]+\/(valuations|design-packages)$/.test(path)) return { id: `x-${Date.now()}` };
   const baseline = mockBaselineUpload(path, fields);
   if (baseline) return baseline;
   return { id: `doc-${Date.now()}`, code: fields.code ?? 'D00', title: fields.title || file.name, version: 1 };

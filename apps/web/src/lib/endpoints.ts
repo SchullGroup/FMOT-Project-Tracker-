@@ -17,6 +17,7 @@ import type {
   ApiGateRow,
   ApiInbox,
   ApiMapFeature,
+  ApiMemberAdded,
   ApiObligation,
   ApiPracticalCompletion,
   ApiMe,
@@ -26,8 +27,10 @@ import type {
   ApiStripMap,
   ApiSubmission,
   ApiTaskDetail,
+  ApiValuationPrefill,
 } from './api-shapes';
 import { getDeviceId } from './device';
+import { formatChainage } from './format';
 import { TOWNS } from './towns';
 import type {
   ActivityItem,
@@ -51,12 +54,15 @@ import type {
   MapCounters,
   MapProjectsResponse,
   Me,
+  NewLot,
+  NewMember,
   NewObligation,
   NewUser,
   NotificationLogEntry,
   NotificationPreferences,
   Obligation,
   Organisation,
+  OrganisationOption,
   OrganisationType,
   OtpVerifyResult,
   Parcel,
@@ -81,6 +87,7 @@ import type {
   TaskSubject,
   UploadedDocument,
   UserOption,
+  ValuationPrefill,
   Variation,
 } from './types';
 
@@ -456,8 +463,13 @@ export const uploadAlignment = (id: string, file: File) =>
 export const addStation = (id: string, name: string, chainageM: number) => api<Station>(p(id, '/stations'), { method: 'POST', body: { name, chainageM } satisfies ApiBody<'StationDto'> });
 export const removeStation = (id: string, stationId: string) => api<void>(p(id, `/stations/${stationId}`), { method: 'DELETE' });
 export const findUsers = (role: string) => api<UserOption[]>(`/users?role=${encodeURIComponent(role)}`);
-export const addMember = (id: string, userId: string, role: RoleCode) =>
-  api<void>(p(id, '/members'), { method: 'POST', body: body({ userId, role }, { userId, projectRole: role } satisfies ApiBody<'AddMemberDto'>) });
+export const addMember = (id: string, userId: string, role: RoleCode, lotId: string | null = null) =>
+  api<ApiMemberAdded | undefined>(p(id, '/members'), {
+    method: 'POST',
+    body: body({ userId, role, lotId }, { userId, projectRole: role, ...(lotId ? { lotId } : {}) } satisfies ApiBody<'AddMemberDto'>),
+  });
+// W5.11 Add a member to a published project (or one of its lots). People from outside the ministry wait for the Director.
+export const addProjectMember = (id: string, m: NewMember) => addMember(id, m.userId, m.role, m.lotId);
 
 export const uploadDocument = (id: string, code: string, gateNo: number, title: string, file: File) =>
   viaApi<{ documentId: string; code: string; version: number }, UploadedDocument>(
@@ -868,3 +880,53 @@ export const recordPracticalCompletion = (projectId: string, lotId: string, comp
     body: body({ completedOn }, { date: completedOn } satisfies ApiBody<'PracticalCompletionDto'>),
     pinConfirmation,
   });
+
+/* Valuations, lots and design packages (Web Step 8). */
+
+// The resident engineer's measurement for the month, as the contractor sees it before claiming.
+export const getValuationPrefill = (lotId: string, period: string) =>
+  viaApi<ApiValuationPrefill, ValuationPrefill>(api(lotPath(lotId, `/valuations/prefill?periodMonth=${encodeURIComponent(period)}`)), (r) => ({
+    period: r.periodMonth.slice(0, 7),
+    verifiedPhotos: new Set(r.lines.flatMap((l) => [...(l.ranges ?? []), ...(l.assets ?? [])].flatMap((x) => x.evidenceSubmissionIds))).size,
+    lines: r.lines.map((l) => ({
+      code: l.discipline,
+      discipline: l.label,
+      unit: l.unit,
+      quantity: l.quantity,
+      measured:
+        l.unit === 'm'
+          ? `${(l.quantity / 1000).toLocaleString('en-NG', { maximumFractionDigits: 3 })} km completed this month${l.ranges?.length ? ` (${l.ranges.map((x) => `${formatChainage(x.chainageFromM)} to ${formatChainage(x.chainageToM)}${x.state === 'complete' ? '' : `, ${x.state.replace('_', ' ')}`}`).join('; ')})` : ''}`
+          : `${l.quantity} completed this month${l.assets?.length ? ` (${l.assets.map((a) => `${a.name ?? 'unnamed'}${a.state === 'complete' ? '' : `, ${a.state.replace('_', ' ')}`}`).join('; ')})` : ''}`,
+    })),
+  }));
+// Multipart: periodMonth, grossKobo (digits), quantities (JSON, from the measurement) and the D31 file (PDF or Excel).
+export const submitValuation = (lotId: string, period: string, grossKobo: string, file: File, prefill?: ValuationPrefill) =>
+  upload<unknown>(
+    lotPath(lotId, '/valuations'),
+    {
+      periodMonth: period,
+      grossKobo,
+      quantities: JSON.stringify((prefill?.lines ?? []).filter((l) => l.quantity > 0).map((l) => ({ discipline: l.code, item: l.discipline, unit: l.unit, quantity: l.quantity }))),
+    },
+    file,
+  );
+
+// Active contractors or consultants, for a new lot (project manager).
+export const findOrganisations = (type: 'contractor' | 'consultant') => api<OrganisationOption[]>(`/organisations?type=${type}`);
+// W5.3 Add a lot (from gate 8); it waits for the Director's Confirm.
+export const addLot = (id: string, lot: NewLot) =>
+  api<unknown>(p(id, '/lots'), {
+    method: 'POST',
+    body: {
+      name: lot.name,
+      contractRef: lot.contractRef,
+      contractorOrgId: lot.contractorOrgId,
+      ...(lot.consultantOrgId ? { consultantOrgId: lot.consultantOrgId } : {}),
+      chainageFromM: lot.chainageFromM,
+      chainageToM: lot.chainageToM,
+      contractSumKobo: lot.contractSumKobo,
+    } satisfies ApiBody<'CreateLotDto'>,
+  });
+
+// W5.7 The lot's contractor sends a design package: discipline code, title and the D21 file.
+export const submitDesignPackage = (lotId: string, discipline: string, title: string, file: File) => upload<unknown>(lotPath(lotId, '/design-packages'), { discipline, title }, file);

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Fragment } from 'react';
 import { PhotoThumb } from '@/components/project/PhotoThumb';
 import { Field } from '@/components/ui/Field';
-import { formatChainage, formatDate, formatMonth, formatNaira, lowerFirst } from '@/lib/format';
+import { formatChainage, formatDate, formatMonth, formatNairaExact, lowerFirst } from '@/lib/format';
 import { roleLabel } from '@/lib/roles';
 import { formatKm, formatPhone } from '@/lib/status';
 import type { CheckResult, TaskSubject } from '@/lib/types';
@@ -70,7 +70,7 @@ export function SubjectPanel(props: {
         <div className="flex flex-col gap-5">
           <p className="text-lg">Certificate {s.number}, {s.lotName}, for {formatMonth(s.period)}.</p>
           {s.netKobo !== null ? (
-            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Money label="Gross" kobo={s.grossKobo} />
               <Money label="Retention" kobo={s.retentionKobo} />
               <Money label="Advance recovery" kobo={s.advanceRecoveryKobo} />
@@ -103,7 +103,7 @@ export function SubjectPanel(props: {
       return (
         <div className="flex flex-col gap-3 text-lg">
           <p><strong>{s.title}</strong></p>
-          <p>Asks for {s.type === 'variation' ? <strong className="tabular">{formatNaira(s.amountKobo, { compact: true })}</strong> : <strong className="tabular">{s.days} more days</strong>}.</p>
+          <p>Asks for {s.type === 'variation' ? <strong className="tabular">{formatNairaExact(s.amountKobo)}</strong> : <strong className="tabular">{s.days} more days</strong>}.</p>
           {s.assessment && <p><span className="text-ink-muted">Resident engineer:</span> {s.assessment}</p>}
           {s.recommendation && <p><span className="text-ink-muted">Project manager:</span> {s.recommendation}</p>}
           {s.aboveThreshold && <p className="rounded-md bg-[#fbecd9] p-3 text-base">This is above your limit, so it also needs BPP and FEC approval, uploaded as evidence before you confirm.</p>}
@@ -178,7 +178,7 @@ function Money({ label, kobo, strong }: { label: string; kobo: number | string |
   return (
     <div>
       <dt className="text-sm text-ink-muted">{label}</dt>
-      <dd className={`tabular ${strong ? 'text-2xl font-semibold' : 'text-xl'}`}>{formatNaira(kobo, { compact: true })}</dd>
+      <dd className={`tabular ${strong ? 'text-2xl font-semibold' : 'text-xl'}`}>{formatNairaExact(kobo)}</dd>
     </div>
   );
 }

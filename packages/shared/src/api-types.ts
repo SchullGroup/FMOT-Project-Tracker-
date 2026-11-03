@@ -356,6 +356,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/organisations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DirectoryController_lotOrganisations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reference/return-reasons": {
         parameters: {
             query?: never;
@@ -2806,6 +2822,25 @@ export interface operations {
             query: {
                 role: "executive_viewer" | "accounting_officer" | "director_rail" | "ministry_project_manager" | "procurement_officer" | "legal_officer" | "finance_officer" | "me_analyst" | "nrc_project_engineer" | "nrc_asset_manager" | "consultant_resident_engineer" | "contractor_site_manager" | "contractor_commercial_manager" | "security_desk_officer" | "lender_viewer" | "oversight_viewer" | "public_viewer" | "it_administrator";
                 search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DirectoryController_lotOrganisations: {
+        parameters: {
+            query: {
+                type: "contractor" | "consultant";
             };
             header?: never;
             path?: never;

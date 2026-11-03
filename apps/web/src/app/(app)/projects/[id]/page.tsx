@@ -15,15 +15,31 @@ export default function OverviewPage() {
   const id = useProjectId();
   const card = useQuery({ queryKey: ['card', id], queryFn: () => getProjectCard(id) });
   const gates = useQuery({ queryKey: ['gates', id], queryFn: () => getGates(id) });
-  const strip = useQuery({ queryKey: ['strip', id], queryFn: () => getStripMap(id) });
-  const progress = useQuery({ queryKey: ['progress', id], queryFn: () => getProgress(id), retry: false });
-  const photos = useQuery({ queryKey: ['submissions', id, 'verified-photos'], queryFn: () => getSubmissions(id, '?kind=photo&status=verified') });
+  // A draft has nothing measured, paid or photographed yet, so only its gates are asked for.
+  const live = card.isSuccess && card.data.status !== 'draft';
+  const strip = useQuery({ queryKey: ['strip', id], queryFn: () => getStripMap(id), enabled: live });
+  const progress = useQuery({ queryKey: ['progress', id], queryFn: () => getProgress(id), retry: false, enabled: live });
+  const photos = useQuery({ queryKey: ['submissions', id, 'verified-photos'], queryFn: () => getSubmissions(id, '?kind=photo&status=verified'), enabled: live });
 
   const latest = (photos.data ?? [])
     .filter((s) => s.kind === 'photo' && s.status === 'verified')
     .sort((a, b) => b.capturedAt.localeCompare(a.capturedAt))
     .slice(0, 6);
   const p = progress.data;
+
+  if (card.data?.status === 'draft') {
+    return (
+      <div className="flex flex-col gap-5">
+        <Section title="Gates">
+          <QueryState loading={gates.isPending} error={gates.isError} />
+          {gates.data && <GateStrip gates={gates.data} />}
+        </Section>
+        <Section title="Nothing to measure yet">
+          <p className="text-lg">A draft has no progress, payments or photos. Those start once the project is published and works begin.</p>
+        </Section>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5">

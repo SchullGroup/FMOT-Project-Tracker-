@@ -89,7 +89,19 @@ export function ProjectFrame({ children }: { children: ReactNode }) {
             })}
           </ul>
         </nav>
-        <div className="flex-1 overflow-x-hidden p-5 lg:p-6">{card.isError ? <p className="text-danger">This project could not be loaded, or you cannot see it.</p> : children}</div>
+        <div className="flex-1 overflow-x-hidden p-5 lg:p-6">
+          {c?.status === 'draft' && (
+            <div role="note" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-md border-2 border-dashed border-status-draft bg-surface p-4">
+              <p>
+                <strong>Not published.</strong> Only the project manager who created it and the Director can see this project. It joins the map when the Director publishes it.
+              </p>
+              <Link href={`/setup/${id}?step=6`} className="inline-flex min-h-12 items-center rounded-md border-2 border-brand-900 px-4 font-semibold text-brand-900 hover:bg-brand-50">
+                Review the draft
+              </Link>
+            </div>
+          )}
+          {card.isError ? <p className="text-danger">This project could not be loaded, or you cannot see it.</p> : children}
+        </div>
       </div>
     </div>
   );

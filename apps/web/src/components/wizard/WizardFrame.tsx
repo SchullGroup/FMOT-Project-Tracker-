@@ -61,7 +61,7 @@ export function WizardFrame(props: {
           </ol>
         </nav>
 
-        <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col gap-6 p-6 pb-28">
           {props.intro && <p className="max-w-prose text-lg">{props.intro}</p>}
           {props.children}
         </div>

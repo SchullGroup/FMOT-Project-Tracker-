@@ -6,7 +6,7 @@
  * Types that are the same on both sides come from @fmot/shared (generated from
  * the API's OpenAPI document).
  */
-import type { ApiBody, OrganisationType } from '@fmot/shared';
+import type { ApiBody, OrganisationType, RoleCode } from '@fmot/shared';
 
 export type ProjectStatus =
   | 'draft'
@@ -568,4 +568,37 @@ export interface NewObligation {
   lotId: string | null;
   /** The bond, policy or certificate in the register. */
   documentId: string | null;
+}
+
+/* ---------- Valuations, lots, members, design packages (Web Step 8) ---------- */
+
+/** The resident engineer's measurement of a lot for one month, shown before the contractor claims it. */
+export interface ValuationPrefill {
+  period: string;
+  lines: Array<{ code: string; discipline: string; measured: string; unit: string; quantity: number }>;
+  /** Verified field submissions the measurement rests on. */
+  verifiedPhotos: number;
+}
+
+export interface OrganisationOption {
+  id: string;
+  name: string;
+  type: OrganisationType;
+}
+
+export interface NewLot {
+  name: string;
+  contractRef: string;
+  contractorOrgId: string;
+  consultantOrgId: string;
+  chainageFromM: number;
+  chainageToM: number;
+  /** Kobo as a string of digits. */
+  contractSumKobo: string;
+}
+
+export interface NewMember {
+  userId: string;
+  role: RoleCode;
+  lotId: string | null;
 }

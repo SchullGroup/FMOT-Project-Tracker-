@@ -20,6 +20,8 @@ import type {
   Variation,
 } from './types';
 
+import { addedLots, addedMembers } from './mock-step8';
+
 const day = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
 // Kobo as the API sends it: a string of digits.
 const N = (naira: number) => String(naira * 100);
@@ -221,6 +223,9 @@ const activity: ActivityItem[] = [
   ['Engr. A. Bello', 'Uploaded', 'D31 Contractor valuation, September'],
 ].map(([actor, action, summary], i) => ({ id: `a${i}`, at: day(i * 2 + 1), actor: actor!, action: action!, summary: summary! }));
 
+/** The sample project's own members, before any added in the session. */
+export const sampleMembers = () => people.members;
+
 export function mockProjectRoute(route: string): unknown | undefined {
   const m = /^\/projects\/[^/]+\/(.+)$/.exec(route);
   const lot = /^\/lots\/([^/]+)\/(certificates|design-packages)$/.exec(route);
@@ -228,19 +233,32 @@ export function mockProjectRoute(route: string): unknown | undefined {
   if (/^\/field\/projects\/[^/]+\/submissions$/.test(route)) return submissions;
   if (route.startsWith('/documents/')) return { url: '#' };
   if (!m) return undefined;
+  // A draft (Kano–Maradi, or one made in the wizard) is at gate 1, waiting for publishing.
+  const projectId = /^\/projects\/([^/]+)/.exec(route)?.[1] ?? '';
+  const isDraft = projectId === 'p-km' || projectId.startsWith('draft-');
+  const draftGates: GateRow[] = gates.map((g) => ({
+    ...g,
+    status: g.no === 1 ? 'awaiting_confirmation' : 'not_started',
+    enteredAt: g.no === 1 ? g.enteredAt : null,
+    passedAt: null,
+    confirmedBy: null,
+    daysWaiting: g.no === 1 ? 1 : null,
+    evidence: g.no === 1 ? g.evidence : [],
+    uploadedBy: g.no === 1 ? g.uploadedBy : null,
+  }));
   const table: Record<string, unknown> = {
-    gates,
+    gates: isDraft ? draftGates : gates,
     'strip-map': stripMap,
     progress,
     corridor,
-    lots,
+    lots: [...lots, ...addedLots()],
     documents,
     parcels,
     grievances,
     sections,
     incidents,
     variations,
-    people,
+    people: { ...people, members: [...people.members, ...addedMembers()] },
     activity,
   };
   return table[m[1]!];

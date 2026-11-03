@@ -2,8 +2,12 @@
 
 import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
+import { useState } from 'react';
+import { AddLotForm } from '@/components/forms/AddLotForm';
 import { useProjectId } from '@/components/project/ProjectFrame';
 import { StripMapChart } from '@/components/project/StripMapChart';
+import { useCan } from '@/components/Session';
+import { Button } from '@/components/ui/Button';
 import { QueryState, Section, Table } from '@/components/ui/Section';
 import { getCorridor, getLots, getStripMap } from '@/lib/endpoints';
 import { formatChainage, formatNaira } from '@/lib/format';
@@ -16,6 +20,9 @@ export default function CorridorPage() {
   const corridor = useQuery({ queryKey: ['corridor', id], queryFn: () => getCorridor(id) });
   const strip = useQuery({ queryKey: ['strip', id], queryFn: () => getStripMap(id) });
   const lots = useQuery({ queryKey: ['lots', id], queryFn: () => getLots(id) });
+  const canAddLot = useCan('lots:manage');
+  const [adding, setAdding] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-5">
@@ -37,7 +44,9 @@ export default function CorridorPage() {
       <Section title="Along the line">
         {strip.data && <StripMapChart data={strip.data} />}
       </Section>
-      <Section title="Lots">
+      <Section title="Lots" aside={canAddLot && strip.data ? <Button variant="secondary" onClick={() => setAdding(true)}>Add a lot</Button> : undefined}>
+        {notice && <p role="status" className="mb-4 rounded-md bg-[#e3f1e6] p-4 text-[#1f5a2b]">{notice}</p>}
+        {strip.data && lots.data && <AddLotForm projectId={id} lengthM={strip.data.lengthM} existing={lots.data} open={adding} onClose={() => setAdding(false)} onDone={(m) => { setAdding(false); setNotice(m); }} />}
         <QueryState loading={lots.isPending} error={lots.isError} empty={lots.data?.length === 0} emptyText="Lots are added when the contract is signed (gate 8)." />
         {lots.data && lots.data.length > 0 && (
           <Table head={['Lot', 'Contract', 'From', 'To', 'Contractor', 'Supervising consultant', 'Contract sum']}>

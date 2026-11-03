@@ -10,6 +10,22 @@ export function formatNaira(kobo: number | string | null | undefined, opts: { co
 }
 const trim = (n: number) => (Math.round(n * 10) / 10).toLocaleString('en-NG');
 
+/** The exact amount, to the kobo, for anything someone claims, approves or pays. Worked in bigint, so nothing rounds. */
+export function formatNairaExact(kobo: number | string | bigint | null | undefined): string {
+  if (kobo === null || kobo === undefined || kobo === '') return '–';
+  const k = BigInt(kobo);
+  const abs = k < 0n ? -k : k;
+  return `${k < 0n ? '−' : ''}₦${(abs / 100n).toLocaleString('en-NG')}.${String(abs % 100n).padStart(2, '0')}`;
+}
+
+/** "2,400,000,000.5" typed in naira -> "240000000050" kobo, exactly; null when it is not an amount. */
+export function nairaToKobo(input: string): string | null {
+  const m = /^(\d{1,16})(?:\.(\d{0,2}))?$/.exec(input.replace(/[,\s₦]/g, ''));
+  if (!m) return null;
+  const kobo = BigInt(m[1]!) * 100n + BigInt((m[2] ?? '').padEnd(2, '0'));
+  return kobo.toString();
+}
+
 /** 142300 -> "km 142+300", the way engineers write chainage. */
 export function formatChainage(m: number | null | undefined): string {
   if (m === null || m === undefined) return '–';

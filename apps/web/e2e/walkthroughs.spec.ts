@@ -239,3 +239,104 @@ test('7. design requirements, programme revisions, practical completion, obligat
   await expect(page.getByText("CAR/2026/5531: Contractor's all risks, Lot 3")).toBeVisible();
   await noErrors(page);
 });
+
+test('8. valuation, lots, members, design packages, exact amounts, draft state', async ({ page }) => {
+  await signIn(page);
+  const drawer = page.getByRole('dialog');
+
+  // Payments: a valuation for Lot 2 is made against the month's verified work, and the amount reads back exactly.
+  await page.goto('/projects/p-kk/payments');
+  await expect(page.getByText('Net to pay').first()).toBeVisible();
+  await expect(page.locator('dd').filter({ hasText: /^₦[\d,]+\.\d{2}$/ }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'New valuation' }).click();
+  await drawer.getByLabel('Lot').selectOption({ label: 'Lot 2, FMOT/RL/KK/02' });
+  await expect(drawer.getByText(/Work measured and verified for/)).toBeVisible();
+  await expect(drawer.getByText(/Track laying:/)).toBeVisible();
+  await drawer.getByLabel('Gross amount claimed, in naira').fill('2400000000');
+  await expect(drawer.getByText('You are claiming ₦2,400,000,000.00', { exact: false })).toBeVisible();
+  await drawer.getByRole('button', { name: 'Send the valuation' }).click();
+  await expect(drawer.getByRole('alert')).toContainText('attach the valuation file');
+  await drawer.locator('input[type=file]').setInputFiles({ name: 'valuation.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7\n%%EOF\n') });
+  await drawer.getByRole('button', { name: 'Send the valuation' }).click();
+  await expect(drawer).toBeHidden();
+  await expect(page.getByRole('status').filter({ hasText: /sent\. The resident engineer checks it first/ })).toBeVisible();
+
+  // Corridor: a lot that overlaps Lot 3, or runs past the end of the line, is refused.
+  await page.goto('/projects/p-kk/corridor');
+  await page.getByRole('button', { name: 'Add a lot' }).click();
+  await drawer.getByLabel('Contract reference').fill('FMOT/RL/KK/04');
+  await drawer.getByLabel('Contractor').selectOption({ label: 'Mota-Engil Nigeria' });
+  await drawer.getByLabel('Supervising consultant').selectOption({ label: 'Sigma Engineering' });
+  await drawer.getByLabel('Contract sum, in naira').fill('95000000000');
+  await drawer.getByLabel('From km').fill('150');
+  await drawer.getByLabel('To km').fill('180');
+  await drawer.getByRole('button', { name: 'Add the lot' }).click();
+  await expect(drawer.getByRole('alert')).toContainText('This overlaps Lot 3');
+  await drawer.getByLabel('From km').fill('203');
+  await drawer.getByLabel('To km').fill('230');
+  await drawer.getByRole('button', { name: 'Add the lot' }).click();
+  await expect(drawer.getByRole('alert')).toContainText('The line is only');
+  await drawer.getByRole('button', { name: 'Cancel' }).click();
+
+  // People: Engr. R. Nwosu is already Lot 3's resident engineer, so adding him again is refused; Engr. T. Adeyemi joins
+  // Lot 3 too, and being from outside the ministry waits for the Director.
+  await page.goto('/projects/p-kk/people');
+  const adeyemiRows = page.getByRole('row').filter({ hasText: 'Engr. T. Adeyemi' });
+  await expect(adeyemiRows.first()).toBeVisible();
+  const before = await adeyemiRows.count();
+  const addResidentEngineer = async (person: string) => {
+    await page.getByRole('button', { name: 'Add a member' }).click();
+    await drawer.getByLabel('Role on this project').selectOption('consultant_resident_engineer');
+    await drawer.getByLabel('Person').selectOption({ label: person });
+    await drawer.getByLabel('Lot', { exact: true }).selectOption({ label: 'Lot 3' });
+    await drawer.getByRole('button', { name: 'Add to the project' }).click();
+  };
+  await addResidentEngineer('Engr. R. Nwosu, Sigma Engineering');
+  await expect(drawer.getByRole('alert')).toHaveText('This person is already a member in that role');
+  await drawer.getByRole('button', { name: 'Cancel' }).click();
+  await addResidentEngineer('Engr. T. Adeyemi, TEAM Consultants');
+  await expect(drawer).toBeHidden();
+  await expect(page.getByRole('status')).toContainText('Engr. T. Adeyemi is added to Lot 3');
+  await expect(page.getByRole('status')).toContainText('the Director confirms them first');
+  await expect(adeyemiRows).toHaveCount(before + 1);
+
+  // Design: a package for Lot 3's structures goes to the resident engineer.
+  await page.goto('/projects/p-kk/design');
+  await page.getByRole('button', { name: 'Send a design package' }).click();
+  await drawer.getByLabel('Lot').selectOption({ label: 'Lot 3' });
+  await drawer.getByLabel('Discipline').selectOption({ label: 'Bridges and culverts' });
+  await drawer.getByLabel('Title').fill('Challawa river bridge');
+  await drawer.locator('input[type=file]').setInputFiles({ name: 'D21.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7\n%%EOF\n') });
+  await drawer.getByRole('button', { name: 'Send for review' }).click();
+  await expect(drawer).toBeHidden();
+  await expect(page.getByRole('status').filter({ hasText: '"Challawa river bridge" is sent' })).toBeVisible();
+
+  // Tasks: certificate 14 shows the exact amount to pay.
+  await page.goto('/tasks?task=t-cert');
+  await expect(page.getByText('₦1,785,000,000.00')).toBeVisible();
+
+  // A draft says so on every section, and its overview has nothing to measure.
+  await page.goto('/projects/p-km');
+  await expect(page.getByRole('note')).toContainText('Not published.');
+  await expect(page.getByRole('link', { name: 'Review the draft' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Nothing to measure yet' })).toBeVisible();
+  await page.goto('/projects/p-km/gates');
+  await expect(page.getByRole('note')).toContainText('Not published.');
+  await noErrors(page);
+
+  // Wizard review step: the last box clears the sticky footer when scrolled to the end.
+  await page.goto('/projects/new');
+  await page.getByLabel('Project name').fill('Kano–Maradi SGR');
+  await page.getByLabel('Starts at').selectOption('Kano');
+  await page.getByLabel('Ends at').selectOption('Maradi (Niger)');
+  await page.getByRole('button', { name: 'Next', exact: true }).last().click();
+  await expect(page).toHaveURL(/\/setup\//);
+  await page.goto(`${new URL(page.url()).pathname}?step=6`);
+  const footer = page.locator('div.sticky.bottom-0');
+  const lastBox = footer.locator('xpath=preceding-sibling::div[1]').locator(':scope > *').last();
+  await expect(lastBox).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await page.waitForTimeout(300);
+  const [box, bar] = [await lastBox.boundingBox(), await footer.boundingBox()];
+  expect(box!.y + box!.height).toBeLessThanOrEqual(bar!.y);
+});
