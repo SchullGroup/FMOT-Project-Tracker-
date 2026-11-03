@@ -1,0 +1,88 @@
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { Button, Field, Notice, Screen, SupportButton, T } from '@/components/ui';
+import { PinPad } from '@/components/PinPad';
+import { errorText } from '@/i18n';
+import { inviteToken } from '@/lib/format';
+import { api, useSession } from '@/session/session';
+import { colour } from '@/theme';
+
+type Preview = { name: string; role: string; organisation: string; phoneMasked: string };
+
+/*
+ * M1 with an invite: paste the link (or its code) from the invite text message, then the same steps as the M1 board:
+ * "Welcome, <name>", the SMS code, a 4-digit PIN set twice. Deep links from the message come in a later step, because
+ * they are unreliable in Expo Go.
+ */
+export default function Invite() {
+  const { strings: s, opened } = useSession();
+  const [text, setText] = useState('');
+  const [preview, setPreview] = useState<Preview | null>(null);
+  const [codeSent, setCodeSent] = useState(false);
+  const [code, setCode] = useState('');
+  const [pin, setPin] = useState('');
+  const [firstPin, setFirstPin] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const token = inviteToken(text);
+
+  async function run(work: () => Promise<void>) {
+    setBusy(true);
+    setError(null);
+    try {
+      await work();
+    } catch (e) {
+      setError(errorText(s, e));
+      setPin('');
+      setFirstPin(null);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const finish = (value: string) => {
+    if (!firstPin) {
+      setFirstPin(value);
+      setPin('');
+      return;
+    }
+    if (value !== firstPin) {
+      setError(s.signIn.pinMismatch);
+      setFirstPin(null);
+      setPin('');
+      return;
+    }
+    void run(async () => {
+      await api.acceptInvite(token, code, value);
+      await opened(true);
+    });
+  };
+
+  if (!preview) {
+    return (
+      <Screen footer={<><Button label={s.invite.check} busy={busy} disabled={token.length < 10} onPress={() => void run(async () => setPreview(await api.invitePreview(token)))} /><SupportButton /></>}>
+        <T variant="title" accessibilityRole="header">{s.invite.title}</T>
+        {error && <Notice tone="error">{error}</Notice>}
+        <Field label={s.invite.pasteLabel} hint={s.invite.pasteHint} value={text} onChangeText={setText} autoCapitalize="none" autoCorrect={false} multiline />
+        <Button kind="quiet" label={s.common.back} onPress={() => router.back()} />
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen footer={<SupportButton />}>
+      <T variant="title" accessibilityRole="header">{s.invite.welcome(preview.name.split(' ')[0] ?? preview.name)}</T>
+      <T colour={colour.textSecondary}>{[preview.role, preview.organisation].join(' · ')}</T>
+      {error && <Notice tone="error">{error}</Notice>}
+      {!codeSent ? (
+        <Button label={s.invite.sendCode} busy={busy} onPress={() => void run(async () => { await api.inviteCode(token); setCodeSent(true); })} />
+      ) : (
+        <>
+          <Field label={s.signIn.codeLabel} hint={s.invite.codeSentTo(preview.phoneMasked)} value={code} onChangeText={(t) => setCode(t.replace(/\D/g, '').slice(0, 6))} keyboardType="number-pad" textContentType="oneTimeCode" autoComplete="sms-otp" maxLength={6} />
+          {__DEV__ && <Notice tone="info">{s.signIn.codeOnTestServer}</Notice>}
+          {/^\d{6}$/.test(code) && <PinPad label={firstPin ? s.signIn.pinAgain : s.signIn.pinSet} value={pin} onChange={setPin} onComplete={finish} disabled={busy} />}
+        </>
+      )}
+    </Screen>
+  );
+}

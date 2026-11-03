@@ -12,7 +12,8 @@
     "db:load-boundaries": "pnpm --filter api db:load-boundaries",
     "web": "pnpm --filter web dev",
     "dev": "pnpm --parallel --filter api --filter web run dev",
-    "tokens": "node tools/tokens-to-css.mjs",
+    "tokens": "node tools/tokens-to-css.mjs && node tools/tokens-to-mobile.mjs",
+    "mobile": "pnpm --filter mobile start",
     "api:types": "pnpm --filter api openapi && pnpm --filter @fmot/shared api-types && pnpm --filter @fmot/shared build"
   }
 }

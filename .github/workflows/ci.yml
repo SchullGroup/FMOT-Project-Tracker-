@@ -35,6 +35,10 @@ jobs:
         run: pnpm --filter api test
       - name: Typecheck the web app
         run: pnpm --filter web typecheck
+      - name: Typecheck the field app
+        run: pnpm --filter mobile typecheck
+      - name: Field app unit tests
+        run: pnpm --filter mobile test
       - name: OpenAPI document and shared types are up to date
         # The generator builds the module graph only (no database); config validation still wants well-formed values.
         run: |
