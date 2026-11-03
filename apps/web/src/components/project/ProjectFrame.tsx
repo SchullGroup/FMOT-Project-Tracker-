@@ -6,6 +6,7 @@ import { useParams, usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { getProjectCard } from '@/lib/endpoints';
 import { CATEGORY_COLOUR, CATEGORY_LABEL, categoryOf, formatPhone } from '@/lib/status';
+import { dayCount } from '@/lib/format';
 
 export const SECTIONS = [
   { slug: '', label: 'Overview' },
@@ -52,7 +53,7 @@ export function ProjectFrame({ children }: { children: ReactNode }) {
               </span>
               {c.currentGate && (
                 <span>
-                  Gate {c.currentGate.no}{c.daysAtGate !== null ? `, ${c.daysAtGate} days at gate` : ''}
+                  Gate {c.currentGate.no}{c.daysAtGate !== null ? `, ${dayCount(c.daysAtGate)} at gate` : ''}
                 </span>
               )}
               {c.physicalPercent !== null && <span className="tabular">{c.physicalPercent}% built</span>}

@@ -9,7 +9,7 @@ import { useCan } from '@/components/Session';
 import { Button } from '@/components/ui/Button';
 import { QueryState, Section, Table } from '@/components/ui/Section';
 import { exportEyemark, generatePortfolioReport, getPortfolio, getPortfolioReports } from '@/lib/endpoints';
-import { formatDate, lowerFirst } from '@/lib/format';
+import { dayCount, formatDate, lowerFirst } from '@/lib/format';
 import { messageFor } from '@/lib/messages';
 import { CATEGORY_COLOUR, CATEGORY_LABEL, categoryOf, HEALTH_LABEL } from '@/lib/status';
 import type { PortfolioRow } from '@/lib/types';
@@ -98,7 +98,7 @@ export default function PortfolioPage() {
                     {r.health && r.health !== 'on_track' && cat !== 'stalled' && <span className="block text-sm font-semibold text-status-construction">{HEALTH_LABEL[r.health]}</span>}
                   </td>
                   <td>{r.currentGate ? <>Gate {r.currentGate.no}, {lowerFirst(r.currentGate.name)}</> : 'Running'}</td>
-                  <td className={`tabular whitespace-nowrap ${r.daysAtGate !== null && r.daysAtGate > 60 ? 'font-semibold text-status-stalled' : ''}`}>{r.daysAtGate !== null ? `${r.daysAtGate} days` : '–'}</td>
+                  <td className={`tabular whitespace-nowrap ${r.daysAtGate !== null && r.daysAtGate > 60 ? 'font-semibold text-status-stalled' : ''}`}>{r.daysAtGate !== null ? dayCount(r.daysAtGate) : '–'}</td>
                   <td className="tabular">{r.physicalPercent !== null ? `${r.physicalPercent}%` : '–'}</td>
                   {showMoney && <td className="tabular">{r.financialPercent !== null ? `${r.financialPercent}%` : '–'}</td>}
                   <td className="text-sm">

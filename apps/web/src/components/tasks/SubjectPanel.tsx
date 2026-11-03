@@ -88,7 +88,7 @@ export function SubjectPanel(props: {
                   ))}
                 </tbody>
               </table>
-              <p className="mt-2 text-sm text-ink-muted"><span className="tabular font-semibold text-ink">{s.verifiedPhotos}</span> verified photos back this measurement.</p>
+              {s.verifiedPhotos !== null && <p className="mt-2 text-sm text-ink-muted"><span className="tabular font-semibold text-ink">{s.verifiedPhotos}</span> verified {s.verifiedPhotos === 1 ? 'photo backs' : 'photos back'} this measurement.</p>}
             </div>
             {s.netKobo !== null && (
               <div>
@@ -121,7 +121,7 @@ export function SubjectPanel(props: {
       return (
         <div className="flex flex-col gap-3 text-lg">
           <p><strong>{s.title}</strong></p>
-          <p>Asks for {s.type === 'variation' ? <strong className="tabular">{formatNairaExact(s.amountKobo)}</strong> : <strong className="tabular">{s.days} more days</strong>}.</p>
+          <p>Asks for {s.type === 'variation' ? <strong className="tabular">{formatNairaExact(s.amountKobo)}</strong> : <strong className="tabular">{s.days} more {s.days === 1 ? 'day' : 'days'}</strong>}.</p>
           {s.assessment && <p><span className="text-ink-muted">Resident engineer:</span> {s.assessment}</p>}
           {s.recommendation && <p><span className="text-ink-muted">Project manager:</span> {s.recommendation}</p>}
           {s.aboveThreshold && <p className="rounded-md bg-[#fbecd9] p-3 text-base">This is above your limit, so it also needs BPP and FEC approval, uploaded as evidence before you confirm.</p>}

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Pill } from '@/components/ui/Pill';
 import { Select } from '@/components/ui/Select';
 import { getBaselineRevisions, getVariations, uploadBaseline } from '@/lib/endpoints';
-import { formatDate } from '@/lib/format';
+import { dayCount, formatDate } from '@/lib/format';
 import { messageFor } from '@/lib/messages';
 
 const STATUS = {
@@ -114,7 +114,7 @@ export function BaselinePanel({ projectId, lotId, lotName }: { projectId: string
               </label>
               <Select label="Linked extension of time (optional)" value={eot} onChange={(e) => setEot(e.target.value)}>
                 <option value="">None</option>
-                {approvedEots.map((v) => <option key={v.id} value={v.id}>{v.title} ({v.days} days)</option>)}
+                {approvedEots.map((v) => <option key={v.id} value={v.id}>{v.title} ({v.days !== null ? dayCount(v.days) : ''})</option>)}
               </Select>
             </>
           )}

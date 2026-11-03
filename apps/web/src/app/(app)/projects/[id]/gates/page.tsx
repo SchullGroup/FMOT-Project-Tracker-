@@ -6,7 +6,7 @@ import { useProjectId } from '@/components/project/ProjectFrame';
 import { StatusPill } from '@/components/ui/Pill';
 import { QueryState, Section, Table } from '@/components/ui/Section';
 import { getGates } from '@/lib/endpoints';
-import { formatDate } from '@/lib/format';
+import { dayCount, formatDate } from '@/lib/format';
 import { roleLabel } from '@/lib/roles';
 
 /** W5.2 Gates: every gate, who decides it, and the evidence behind it. */
@@ -32,7 +32,7 @@ export default function GatesPage() {
                 <td>{roleLabel(g.approverRole)}</td>
                 <td><StatusPill status={g.status} /></td>
                 <td className="tabular whitespace-nowrap">{formatDate(g.passedAt)}</td>
-                <td className="tabular">{g.daysWaiting !== null ? `${g.daysWaiting} days` : '–'}</td>
+                <td className="tabular">{g.daysWaiting !== null ? dayCount(g.daysWaiting) : '–'}</td>
                 <td>
                   {g.evidence.length === 0 ? '–' : (
                     <ul>

@@ -393,7 +393,8 @@ export type TaskSubject =
       retentionKobo: string | null;
       advanceRecoveryKobo: string | null;
       netKobo: string | null;
-      verifiedPhotos: number;
+      /** Verified photos behind the measurement; null when the API does not say. */
+      verifiedPhotos: number | null;
       measurement: Array<{ discipline: string; done: string }>;
     }
   | { kind: 'design'; title: string; discipline: string; lotName: string; version: number; comments: Array<{ by: string; text: string }> }

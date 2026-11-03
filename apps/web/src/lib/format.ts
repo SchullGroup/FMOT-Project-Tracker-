@@ -30,6 +30,9 @@ export function nairaToKobo(input: string): string | null {
 /** A state as the API sends it ("akwa_ibom", "fct") -> its name ("Akwa Ibom", "FCT"). */
 export const stateName = (code: string) => (code === 'fct' ? 'FCT' : code.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '));
 
+/** "1 day", "12 days". */
+export const dayCount = (n: number) => `${n} ${Math.abs(n) === 1 ? 'day' : 'days'}`;
+
 /** 142300 -> "km 142+300", the way engineers write chainage. */
 export function formatChainage(m: number | null | undefined): string {
   if (m === null || m === undefined) return '–';

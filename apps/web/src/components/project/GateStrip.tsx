@@ -1,4 +1,4 @@
-import { lowerFirst } from '@/lib/format';
+import { dayCount, lowerFirst } from '@/lib/format';
 import type { GateRow } from '@/lib/types';
 
 const FILL: Record<GateRow['status'], string> = {
@@ -30,7 +30,7 @@ export function GateStrip({ gates }: { gates: GateRow[] }) {
       {current && (
         <p className="mt-3 text-base">
           Now at gate {current.no}, {lowerFirst(current.name)}
-          {current.daysWaiting !== null && <span className="text-ink-muted">, {current.daysWaiting} days</span>}
+          {current.daysWaiting !== null && <span className="text-ink-muted">, {dayCount(current.daysWaiting)}</span>}
         </p>
       )}
     </div>

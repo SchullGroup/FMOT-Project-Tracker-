@@ -1,6 +1,6 @@
 'use client';
 
-import { ATTRIBUTION, STYLE_URL } from '@/lib/map';
+import { ATTRIBUTION, foldCreditOnSmallMaps, STYLE_URL } from '@/lib/map';
 import { Map as MlMap, NavigationControl, LngLatBounds, setWorkerUrl, type GeoJSONSource } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
 
@@ -13,6 +13,8 @@ export function CorridorMap({ data, height = 480 }: { data: GeoJSON.FeatureColle
   useEffect(() => {
     if (!box.current) return;
     const m = new MlMap({ container: box.current, style: STYLE_URL, attributionControl: ATTRIBUTION });
+    // The overview's inset is small: smaller station dots so they do not crowd the line.
+    const small = height < 400;
     // Redraw when the box changes size (a map created in a box still being laid out comes out squashed).
     const ro = new ResizeObserver(() => {
       m.resize();
@@ -29,6 +31,7 @@ export function CorridorMap({ data, height = 480 }: { data: GeoJSON.FeatureColle
     if (!bounds.isEmpty()) m.fitBounds(bounds, { padding: 40, animate: false });
 
     m.on('load', () => {
+      foldCreditOnSmallMaps(m.getContainer());
       m.addSource('corridor', { type: 'geojson', data });
       (m.getSource('corridor') as GeoJSONSource).setData(data);
       m.addLayer({ id: 'lot-casing', type: 'line', source: 'corridor', filter: ['==', ['get', 'kind'], 'lot'], layout: { 'line-cap': 'round' }, paint: { 'line-color': '#ffffff', 'line-width': 11 } });
@@ -40,7 +43,7 @@ export function CorridorMap({ data, height = 480 }: { data: GeoJSON.FeatureColle
         layout: { 'line-cap': 'round' },
         paint: { 'line-color': ['match', ['get', 'state'], 'complete', '#2f7a3e', '#c76f0a'], 'line-width': 7 },
       });
-      m.addLayer({ id: 'station', type: 'circle', source: 'corridor', filter: ['==', ['get', 'kind'], 'station'], paint: { 'circle-radius': 7, 'circle-color': '#ffffff', 'circle-stroke-color': '#0b2545', 'circle-stroke-width': 2.5 } });
+      m.addLayer({ id: 'station', type: 'circle', source: 'corridor', filter: ['==', ['get', 'kind'], 'station'], paint: { 'circle-radius': small ? 4 : 7, 'circle-color': '#ffffff', 'circle-stroke-color': '#0b2545', 'circle-stroke-width': small ? 1.5 : 2.5 } });
       m.addLayer({ id: 'photo', type: 'circle', source: 'corridor', filter: ['==', ['get', 'kind'], 'photo'], paint: { 'circle-radius': 6, 'circle-color': '#2f6fde', 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 } });
       m.addLayer({ id: 'incident', type: 'circle', source: 'corridor', filter: ['==', ['get', 'kind'], 'incident'], paint: { 'circle-radius': 7, 'circle-color': '#b00020', 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 } });
     });

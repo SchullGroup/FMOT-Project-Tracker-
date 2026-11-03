@@ -30,7 +30,7 @@ import type {
   ApiValuationPrefill,
 } from './api-shapes';
 import { getDeviceId } from './device';
-import { formatChainage, stateName } from './format';
+import { formatChainage, lowerFirst, stateName } from './format';
 import { TOWNS } from './towns';
 import type {
   ActivityItem,
@@ -357,6 +357,14 @@ export const getSubmissions = (id: string, query = '') =>
 const chainSteps = (chain: ApiChain | undefined): ChainStep[] =>
   (chain?.steps ?? []).map((s) => ({ step: s.label, role: roleLabel(s.role), actor: s.actedBy?.name ?? null, at: s.actedBy?.at ?? null, current: s.state === 'current' }));
 
+// "10000", "m", "Track laid" -> "10,000 m"; m2 and m3 written as m² and m³; the discipline, or else the item, as the label.
+const UNIT: Record<string, string> = { m2: 'm²', m3: 'm³', sqm: 'm²', cum: 'm³' };
+const quantityLine = (q: { discipline?: string; item?: string; unit?: string; quantity: number | string }) => {
+  const amount = `${Number(q.quantity).toLocaleString('en-NG', { maximumFractionDigits: 2 })} ${UNIT[q.unit ?? ''] ?? q.unit ?? ''}`.trim();
+  const discipline = q.discipline ? q.discipline.charAt(0).toUpperCase() + q.discipline.slice(1).replaceAll('_', ' ') : '';
+  return discipline ? { discipline, done: q.item ? `${amount}, ${lowerFirst(q.item)}` : amount } : { discipline: q.item ?? '', done: amount };
+};
+
 const certificate = (c: ApiCertificate): Certificate => ({
   id: c.id,
   number: c.number,
@@ -571,8 +579,9 @@ async function taskSubject(t: ApiTaskDetail): Promise<TaskSubject> {
         retentionKobo: c.amounts?.retentionKobo ?? null,
         advanceRecoveryKobo: c.amounts?.advanceRecoveryKobo ?? null,
         netKobo: c.amounts?.netKobo ?? null,
-        verifiedPhotos: 0,
-        measurement: (c.valuation?.quantities ?? []).map((q) => ({ discipline: q.discipline, done: `${q.quantity} ${q.unit} ${q.item}` })),
+        // The certificate view does not count the photos behind the measurement, so none is shown.
+        verifiedPhotos: null,
+        measurement: (c.valuation?.quantities ?? []).map(quantityLine),
       };
     }
     case 'review_design_package':

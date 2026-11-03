@@ -1,6 +1,6 @@
 'use client';
 
-import { lowerFirst } from '@/lib/format';
+import { dayCount, lowerFirst } from '@/lib/format';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { getMediaUrl, getProjectCard } from '@/lib/endpoints';
@@ -47,7 +47,7 @@ export function ProjectCardPanel({ id, onClose }: { id: string; onClose: () => v
               <span className="text-base">
                 Gate {card.data.currentGate.no}, {lowerFirst(card.data.currentGate.name)}
                 {card.data.daysAtGate !== null && (
-                  <span className="text-ink-muted">: {card.data.daysAtGate} days</span>
+                  <span className="text-ink-muted">: {dayCount(card.data.daysAtGate)}</span>
                 )}
               </span>
             )}

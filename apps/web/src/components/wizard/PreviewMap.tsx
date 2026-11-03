@@ -1,6 +1,6 @@
 'use client';
 
-import { ATTRIBUTION, STYLE_URL } from '@/lib/map';
+import { ATTRIBUTION, foldCreditOnSmallMaps, STYLE_URL } from '@/lib/map';
 import { LngLatBounds, Map as MlMap, setWorkerUrl, type GeoJSONSource } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
 
@@ -25,6 +25,7 @@ export function PreviewMap({ line, stations }: { line: [number, number][] | null
     if (m.getContainer().parentElement) ro.observe(m.getContainer().parentElement!);
     map.current = m;
     m.on('load', () => {
+      foldCreditOnSmallMaps(m.getContainer());
       m.addSource('line', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       m.addSource('stations', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       m.addLayer({ id: 'line-casing', type: 'line', source: 'line', paint: { 'line-color': '#ffffff', 'line-width': 9 } });

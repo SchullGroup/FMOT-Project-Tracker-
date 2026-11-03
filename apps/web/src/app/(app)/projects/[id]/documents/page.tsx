@@ -8,7 +8,7 @@ import { useCan } from '@/components/Session';
 import { Button } from '@/components/ui/Button';
 import { QueryState, Section, Table } from '@/components/ui/Section';
 import { getDocumentUrl, getDocuments, getObligations } from '@/lib/endpoints';
-import { formatDate, lowerFirst } from '@/lib/format';
+import { dayCount, formatDate, lowerFirst } from '@/lib/format';
 
 /*
  * W5.8 Documents, grouped by gate. The API only returns documents the person
@@ -43,7 +43,7 @@ export default function DocumentsPage() {
                 <tr key={o.id}>
                   <td>{o.title}{o.documentCode && <span className="block text-sm text-ink-muted">Document {o.documentCode}</span>}</td>
                   <td className="tabular whitespace-nowrap">{formatDate(o.expiresOn)}</td>
-                  <td className={`tabular whitespace-nowrap ${tone}`}>{days < 0 ? `Expired ${-days} days ago` : `${days} days`}</td>
+                  <td className={`tabular whitespace-nowrap ${tone}`}>{days < 0 ? `Expired ${dayCount(-days)} ago` : dayCount(days)}</td>
                   <td>{o.owner}</td>
                 </tr>
               );

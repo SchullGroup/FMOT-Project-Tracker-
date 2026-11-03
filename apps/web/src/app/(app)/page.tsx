@@ -141,8 +141,8 @@ export default function MapHome() {
   }
 
   return (
-    <main className="grid flex-1 grid-rows-[minmax(60vh,1fr)_auto] lg:grid-cols-[360px_1fr] lg:grid-rows-1">
-      <div className="order-2 flex flex-col overflow-y-auto border-line bg-canvas lg:order-1 lg:border-r">
+    <main className="grid min-h-0 flex-1 grid-rows-[minmax(60vh,1fr)_auto] lg:grid-cols-[360px_1fr] lg:grid-rows-1">
+      <div className="order-2 flex min-h-0 flex-col overflow-y-auto border-line bg-canvas lg:order-1 lg:border-r">
         <TasksPanel />
         <div className="mt-auto">
           <LayersPanel on={layers} onToggle={toggleLayer} canSecurity={canSecurity} failed={failed} />

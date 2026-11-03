@@ -1,6 +1,6 @@
 'use client';
 
-import { ATTRIBUTION, STYLE_URL } from '@/lib/map';
+import { ATTRIBUTION, foldCreditOnSmallMaps, STYLE_URL } from '@/lib/map';
 import {
   LngLatBounds,
   Map as MlMap,
@@ -74,6 +74,7 @@ export function MapView({ data, overlays, selectedId, focusId, onSelect }: Props
     map.current = m;
 
     m.on('load', () => {
+      foldCreditOnSmallMaps(m.getContainer());
       const empty: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] };
       for (const n of OVERLAY_NAMES) m.addSource(`ov-${n}`, { type: 'geojson', data: empty });
       m.addLayer({ id: 'ov-state-boundaries', type: 'line', source: 'ov-state-boundaries', paint: { 'line-color': '#4a5565', 'line-width': 1.2, 'line-dasharray': [3, 2] } });
@@ -120,6 +121,8 @@ export function MapView({ data, overlays, selectedId, focusId, onSelect }: Props
           id: 'ov-stations-label',
           type: 'symbol',
           source: 'ov-stations',
+          // Names only once zoomed in to a corridor; at country scale they crowd each other.
+          minzoom: 8,
           layout: { 'text-field': ['get', 'name'], 'text-size': 13, 'text-offset': [0.8, 0], 'text-anchor': 'left' },
           paint: { 'text-color': '#1b2430', 'text-halo-color': '#ffffff', 'text-halo-width': 1.6 },
         });

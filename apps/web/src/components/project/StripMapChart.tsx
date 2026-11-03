@@ -5,9 +5,12 @@ import type { StripMap } from '@/lib/types';
  * is complete, orange in progress, grey not started. Lot boundaries and the
  * track-laying front are marked. A text summary follows for screen readers.
  */
+// Row labels short enough for the label column; the full name is the hover title.
+const SHORT: Record<string, string> = { systems: 'Signalling', structures: 'Structures', track: 'Track', earthworks: 'Earthworks', drainage: 'Drainage', stations: 'Stations' };
+
 export function StripMapChart({ data }: { data: StripMap }) {
   const W = 1000;
-  const LABEL = 130;
+  const LABEL = 150;
   const BAND = 26;
   const GAP = 12;
   const TOP = 24; // room for the track-laying front label
@@ -27,7 +30,8 @@ export function StripMapChart({ data }: { data: StripMap }) {
           return (
             <g key={d.code}>
               <text x={0} y={y + BAND / 2 + 6} fontSize="17" fill="#1b2430">
-                {d.name}
+                <title>{d.name}</title>
+                {SHORT[d.code] ?? d.name}
               </text>
               <rect x={x(0)} y={y} width={x(data.lengthM) - x(0)} height={BAND} rx="4" fill="#dfe6f0" />
               {d.segments.map((s, j) => (
