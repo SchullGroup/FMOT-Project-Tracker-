@@ -1,0 +1,10 @@
+#!/bin/sh
+# Removes AI attribution from every commit message: lines starting with "Co-Authored-By: Claude" or
+# "Claude-Session:", and lines containing "Generated with Claude Code" (or "Generated with [Claude Code](...)").
+# Enable once per clone: git config core.hooksPath tools/git-hooks
+msg="$1"
+tmp="$msg.clean.$$"
+grep -v -i -E '^Co-Authored-By: Claude|^Claude-Session:|Generated with \[?Claude Code' "$msg" > "$tmp" || true
+# Drop the blank lines left at the end once a trailer is gone.
+awk '{ lines[NR] = $0 } END { n = NR; while (n > 0 && lines[n] ~ /^[[:space:]]*$/) n--; for (i = 1; i <= n; i++) print lines[i] }' "$tmp" > "$msg"
+rm -f "$tmp"
