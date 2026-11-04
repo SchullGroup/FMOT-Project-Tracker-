@@ -59,6 +59,8 @@ neon branches reset demo --parent --project-id wild-paper-65564975
 # then the four demo commands above
 ```
 
+**Photos.** The 30 site photos are real, openly licensed railway photos from Wikimedia Commons (`apps/api/src/database/demo-photos/`, credits in docs/data-sources.md), chosen to fit each item: earthworks, bridges and culverts, track laying, stations, signalling, the incident and the finished lines. Most construction shots come from other standard-gauge projects, so they stand in for Kaduna–Kano rather than show it. A submission without a photo of its own gets a generated picture.
+
 **Files.** Documents, baselines and photos are written to `apps/api/storage/` (development storage) under fixed keys: `projects/<id>/documents/demo-*`, `lots/<id>/baseline/demo-*`, `field/originals/demo-*` with their `-thumb.jpg` and `-web.jpg` copies. Each file is generated from its key and written only when missing, so its sha256 always matches the database. An API on another machine needs the seed run there too, or a copy of those files.
 
 ## Who is in it
