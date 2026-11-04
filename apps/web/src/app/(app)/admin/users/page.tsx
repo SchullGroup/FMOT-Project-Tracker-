@@ -75,17 +75,19 @@ export default function UsersPage() {
         </Table>
       )}
 
-      <AddPerson open={adding} onClose={() => setAdding(false)} onAdded={(u) => { setAdding(false); setNotice(u.awaitingDirector ? `${u.name} is added. The Director confirms the account, then the invite text goes out.` : `${u.name} is added and the invite text has gone to ${formatPhone(u.phone)}.`); }} />
+      <AddPerson open={adding} onClose={() => setAdding(false)} onAdded={(u) => { setAdding(false); setNotice(u.awaitingDirector ? `${u.name} is added. The Director confirms the account, then the invite text goes out.` : u.codeChannel === 'email' && u.email ? `${u.name} is added and the invite email has gone to ${u.email}.` : `${u.name} is added and the invite text has gone to ${formatPhone(u.phone)}.`); }} />
       <PersonDrawer user={open} people={users.data ?? []} onClose={() => setOpenId(null)} onDone={(m) => { setOpenId(null); setNotice(m); }} />
     </div>
   );
 }
 
+const EMPTY: NewUser = { name: '', phone: '', email: '', codeChannel: 'sms', organisationId: '', role: '', memberships: [] };
+
 function AddPerson({ open, onClose, onAdded }: { open: boolean; onClose: () => void; onAdded: (u: AdminUser) => void }) {
   const qc = useQueryClient();
   const orgs = useQuery({ queryKey: ['organisations'], queryFn: getOrganisations, enabled: open });
   const projects = useQuery({ queryKey: ['admin-projects'], queryFn: getProjectsForPicker, enabled: open });
-  const [form, setForm] = useState<NewUser>({ name: '', phone: '', organisationId: '', role: '', memberships: [] });
+  const [form, setForm] = useState<NewUser>(EMPTY);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const org = orgs.data?.find((o) => o.id === form.organisationId);
@@ -98,12 +100,13 @@ function AddPerson({ open, onClose, onAdded }: { open: boolean; onClose: () => v
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!form.name.trim() || !form.phone.trim() || !form.organisationId || !form.role) return setError('Fill in the name, phone, organisation and role.');
+    if (form.codeChannel === 'email' && !form.email.trim()) return setError('To send codes by email, enter the email address.');
     setBusy(true);
     setError(null);
     try {
       const u = await createUser({ ...form, name: form.name.trim(), phone: form.phone.trim() });
       await qc.invalidateQueries({ queryKey: ['admin-users'] });
-      setForm({ name: '', phone: '', organisationId: '', role: '', memberships: [] });
+      setForm(EMPTY);
       onAdded(u);
     } catch (err) {
       setError(messageFor(err));
@@ -116,7 +119,20 @@ function AddPerson({ open, onClose, onAdded }: { open: boolean; onClose: () => v
     <Drawer open={open} title="Add a person" onClose={onClose} footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button className="ml-auto" type="submit" form="add-person" busy={busy}>Send invite</Button></>}>
       <form id="add-person" onSubmit={submit} className="flex flex-col gap-5">
         <Field label="Full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoFocus />
-        <Field label="Mobile number" type="tel" inputMode="tel" placeholder="0803 123 4567" hint="The invite and every sign-in code go to this number." value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+        <Field label="Mobile number" type="tel" inputMode="tel" placeholder="0803 123 4567" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+        <Field label="Email address (optional)" type="email" autoComplete="off" placeholder="name@example.com" hint="They can sign in with it instead of the phone number." value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+        <fieldset>
+          <legend className="mb-2 font-semibold">Send the invite and codes by</legend>
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            {(['sms', 'email'] as const).map((c) => (
+              <label key={c} className="flex min-h-11 items-center gap-3">
+                <input type="radio" name="codeChannel" value={c} checked={form.codeChannel === c} onChange={() => setForm({ ...form, codeChannel: c })} className="size-5 accent-brand-900" />
+                {c === 'sms' ? 'Text message (SMS)' : 'Email'}
+              </label>
+            ))}
+          </div>
+          <p className="mt-1 text-sm text-ink-muted">When they sign in, the code goes to whatever they type: the number or the email address.</p>
+        </fieldset>
         <Select label="Organisation" value={form.organisationId} onChange={(e) => setForm({ ...form, organisationId: e.target.value, role: '', memberships: [] })}>
           <option value="">Choose an organisation</option>
           {orgs.data?.filter((o) => o.active).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
@@ -193,6 +209,7 @@ function PersonDrawer({ user, people, onClose, onDone }: { user: AdminUser | nul
       <div className="flex flex-col gap-6">
         <dl className="grid grid-cols-[9rem_1fr] gap-y-2">
           <dt className="text-ink-muted">Phone</dt><dd className="tabular">{formatPhone(user.phone)}</dd>
+          {user.email && <><dt className="text-ink-muted">Email</dt><dd>{user.email}{user.codeChannel === 'email' ? ' (codes by email)' : ''}</dd></>}
           <dt className="text-ink-muted">Organisation</dt><dd>{user.organisation.name}</dd>
           <dt className="text-ink-muted">Role</dt><dd>{roleLabel(user.role)}</dd>
           <dt className="text-ink-muted">Status</dt><dd>{STATUS[user.status].label}</dd>

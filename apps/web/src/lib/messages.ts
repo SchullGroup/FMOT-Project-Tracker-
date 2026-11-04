@@ -7,13 +7,13 @@ import { ApiError } from './api';
  * which is written to be read.
  */
 const MESSAGES: Record<string, string> = {
-  code_incorrect: 'That code is not right. Check the text message and try again.',
+  code_incorrect: 'That code is not right. Check the latest text message or email we sent you and try again.',
   code_expired: 'That code has expired. Ask for a new one.',
   too_many_requests: 'Too many tries. Wait 15 minutes, then try again.',
   pin_incorrect: 'That PIN is not right.',
   pin_too_easy: 'Choose a PIN that is harder to guess. Avoid repeated or running digits like 1111 or 1234.',
   account_locked: 'Your account is locked after too many wrong PINs. Call the IT support desk to unlock it.',
-  device_unknown: 'This device is new. We will text you a code first.',
+  device_unknown: 'This device is new. We will send you a code first.',
   invite_expired: 'This invite link or code is not valid, or it has expired. Check it, or ask the IT support desk to send a new one.',
   invite_used: 'This invite has already been used. Sign in with your phone number instead.',
   pin_confirmation_required: 'This needs your PIN. Press the button again and enter it.',
@@ -21,6 +21,9 @@ const MESSAGES: Record<string, string> = {
   task_done: 'This task has already been dealt with.',
   not_allowed: 'You cannot do this on this item.',
   phone_invalid: 'Enter a Nigerian mobile number, for example 0803 123 4567.',
+  email_invalid: 'Enter a full email address, for example name@example.com.',
+  email_required: 'To send codes by email, enter the email address.',
+  email_taken: 'Someone already has this email address.',
   pin_not_set: 'Set your PIN first: ask for a code and choose a PIN.',
   device_not_bound: 'This phone is not registered to you. Sign in on it with a code first.',
   unauthorized: 'Your session has ended. Sign in again.',

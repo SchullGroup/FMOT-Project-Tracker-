@@ -144,18 +144,19 @@ const km = (m: number) => `km ${Math.floor(m / 1000)}+${String(m % 1000).padStar
 
 /* Sign-in */
 
-export const requestCode = (phone: string) => api<void>('/auth/otp/request', { method: 'POST', body: { phone }, noRefresh: true });
+// `login` is the phone number or email address the person typed; the code goes to it.
+export const requestCode = (login: string) => api<void>('/auth/otp/request', { method: 'POST', body: { login }, noRefresh: true });
 
-export const verifyCode = (phone: string, code: string) =>
-  api<OtpVerifyResult>('/auth/otp/verify', { method: 'POST', body: { phone, code, deviceId: getDeviceId() }, noRefresh: true });
+export const verifyCode = (login: string, code: string) =>
+  api<OtpVerifyResult>('/auth/otp/verify', { method: 'POST', body: { login, code, deviceId: getDeviceId() }, noRefresh: true });
 
-export async function signInWithPin(phone: string, pin: string, ticket?: string): Promise<void> {
-  const tokens = await api<AuthTokens>('/auth/pin/login', { method: 'POST', body: { phone, pin, deviceId: getDeviceId(), ticket }, noRefresh: true });
+export async function signInWithPin(login: string, pin: string, ticket?: string): Promise<void> {
+  const tokens = await api<AuthTokens>('/auth/pin/login', { method: 'POST', body: { login, pin, deviceId: getDeviceId(), ticket }, noRefresh: true });
   setAccessToken(tokens.accessToken);
 }
 
-export async function setPin(phone: string, ticket: string, pin: string): Promise<void> {
-  const tokens = await api<AuthTokens>('/auth/pin/set', { method: 'POST', body: { phone, ticket, pin, deviceId: getDeviceId() }, noRefresh: true });
+export async function setPin(login: string, ticket: string, pin: string): Promise<void> {
+  const tokens = await api<AuthTokens>('/auth/pin/set', { method: 'POST', body: { login, ticket, pin, deviceId: getDeviceId() }, noRefresh: true });
   setAccessToken(tokens.accessToken);
 }
 
@@ -713,11 +714,18 @@ export const uploadTaskDocument = (projectId: string, code: string, gateNo: numb
 export const getOrganisations = () => api<Organisation[]>('/admin/organisations');
 export const createOrganisation = (o: { name: string; type: OrganisationType; contactName: string; contactPhone: string }) => api<Organisation>('/admin/organisations', { method: 'POST', body: o satisfies ApiBody<'OrganisationDto'> });
 export const getAdminUsers = (search = '') => api<AdminUser[]>(`/admin/users${search ? `?search=${encodeURIComponent(search)}` : ''}`);
+// The API answers with the new ids; the screen's notice needs the person as entered.
 export const createUser = (u: NewUser) =>
-  api<AdminUser>('/admin/users', {
-    method: 'POST',
-    body: body(u, { ...u, role: u.role as RoleCode, memberships: u.memberships.map((m) => ({ projectId: m.projectId, lotId: m.lotId ?? undefined })) } satisfies ApiBody<'CreateUserDto'>),
-  });
+  viaApi<{ userId: string; requiresDirectorConfirmation: boolean }, AdminUser>(
+    api('/admin/users', {
+      method: 'POST',
+      body: body(u, { ...u, email: u.email.trim() || undefined, role: u.role as RoleCode, memberships: u.memberships.map((m) => ({ projectId: m.projectId, lotId: m.lotId ?? undefined })) } satisfies ApiBody<'CreateUserDto'>),
+    }),
+    (r) => ({
+      id: r.userId, name: u.name, phone: u.phone, email: u.email.trim() || null, codeChannel: u.codeChannel, role: u.role, status: 'invited', openTasks: 0,
+      organisation: { id: u.organisationId, name: '', type: 'ministry_unit' }, lastLoginAt: null, lastUploadAt: null, memberships: [], awaitingDirector: r.requiresDirectorConfirmation,
+    }),
+  );
 export const resendInvite = (id: string) => api<void>(`/admin/users/${id}/resend-invite`, { method: 'POST' });
 export const resetPin = (id: string) => api<void>(`/admin/users/${id}/reset-pin`, { method: 'POST' });
 export const deactivateUser = (id: string, replacementUserId: string | null) =>

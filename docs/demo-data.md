@@ -11,6 +11,17 @@ Code: `apps/api/src/database/seed-demo.ts` (guard, rows, workflow replay), `demo
 - **The label must match the connection.** If `DATABASE_URL_UNPOOLED` is the one in `.env.local`, `NEON_BRANCH` must be the branch written next to it. Exporting `NEON_BRANCH=demo` on its own therefore cannot relabel `dev`.
 - **SMS goes to the console only.** The demo uses `SMS_PROVIDER=console`. The phone numbers are a fictional block, and sign-in codes appear in the API's log.
 - **No secrets in files.** Connection strings come from the `neon` CLI at run time and are never written to disk.
+- **The test sign-in code is for development and demo only.** See below.
+
+## Test sign-in code
+
+For demonstrations without a phone at hand, `DEV_SIGNIN_CODE` (six digits, for example `000000`) in `apps/api/.env` is accepted as the sign-in or invite code, beside the real one.
+
+- Only when `APP_ENV` is `development` or `demo`. With any other `APP_ENV` (staging, production, test) the API refuses to start while it is set, and the code check ignores it as well.
+- A code must still be requested first (Send me a code), so the limits stay: three requests per 15 minutes per phone number or email address, five tries per code, ten minutes per code. It is used up like a real code.
+- Anyone who knows it can sign in as any demo person whose number or address they know, so it never goes near real people's accounts. Leave it empty when the demo is not running.
+
+Run the demo API with it, for example: `demo env APP_ENV=demo DEV_SIGNIN_CODE=000000 PORT=4100 SMS_PROVIDER=console node dist/main.js`.
 
 ## Loading it
 

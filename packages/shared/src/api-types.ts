@@ -1848,12 +1848,12 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        PhoneDto: {
+        LoginDto: {
             /**
-             * @description Any Nigerian or international format; stored as E.164 (+234...)
+             * @description The phone number (any Nigerian or international format) or the email address of the account; the code goes to it
              * @example 08030000000
              */
-            phone: string;
+            login: string;
         };
         VerifyOtpDto: {
             /**
@@ -1862,10 +1862,10 @@ export interface components {
              */
             deviceId: string;
             /**
-             * @description Any Nigerian or international format; stored as E.164 (+234...)
+             * @description The phone number (any Nigerian or international format) or the email address of the account; the code goes to it
              * @example 08030000000
              */
-            phone: string;
+            login: string;
             /** @example 123456 */
             code: string;
         };
@@ -1876,10 +1876,10 @@ export interface components {
              */
             deviceId: string;
             /**
-             * @description Any Nigerian or international format; stored as E.164 (+234...)
+             * @description The phone number (any Nigerian or international format) or the email address of the account; the code goes to it
              * @example 08030000000
              */
-            phone: string;
+            login: string;
             /** @example 2580 */
             pin: string;
             /** @description OTP ticket; required when this device is not yet bound */
@@ -1892,10 +1892,10 @@ export interface components {
              */
             deviceId: string;
             /**
-             * @description Any Nigerian or international format; stored as E.164 (+234...)
+             * @description The phone number (any Nigerian or international format) or the email address of the account; the code goes to it
              * @example 08030000000
              */
-            phone: string;
+            login: string;
             ticket: string;
             /** @example 2580 */
             pin: string;
@@ -1949,6 +1949,17 @@ export interface components {
              * @example 08030000000
              */
             phone: string;
+            /**
+             * @description Optional; the person may sign in with it, and get codes and the invite by email
+             * @example e.nwosu@example.com
+             */
+            email?: string;
+            /**
+             * @description Where the invite and codes the system sends go; email needs an email address
+             * @default sms
+             * @enum {string}
+             */
+            codeChannel: "sms" | "email";
             organisationId: string;
             /** @enum {string} */
             role: "executive_viewer" | "accounting_officer" | "director_rail" | "ministry_project_manager" | "procurement_officer" | "legal_officer" | "finance_officer" | "me_analyst" | "nrc_project_engineer" | "nrc_asset_manager" | "consultant_resident_engineer" | "contractor_site_manager" | "contractor_commercial_manager" | "security_desk_officer" | "lender_viewer" | "oversight_viewer" | "public_viewer" | "it_administrator";
@@ -2290,7 +2301,7 @@ export interface components {
         };
         PreferencesDto: {
             /**
-             * @description Push and email come later; until then messages go by SMS
+             * @description Email reaches people with an email address on their account (else SMS); push comes later, so it goes by SMS until then
              * @enum {string}
              */
             channel?: "sms" | "push" | "email";
@@ -2403,7 +2414,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PhoneDto"];
+                "application/json": components["schemas"]["LoginDto"];
             };
         };
         responses: {

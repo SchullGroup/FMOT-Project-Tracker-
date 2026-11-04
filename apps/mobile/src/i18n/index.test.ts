@@ -5,6 +5,7 @@ import { errorText } from './index';
 // Every code the sign-in, invite and PIN routes can return (apps/api/src/auth, the step-up guard and the engine).
 const AUTH_CODES = [
   'phone_invalid',
+  'email_invalid',
   'code_incorrect',
   'code_expired',
   'pin_incorrect',

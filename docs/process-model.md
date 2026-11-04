@@ -86,3 +86,5 @@ Values the platform runs on today as placeholders; each needs a ministry decisio
 | Working days for the 16:00 no-photo reminder: which public holidays are skipped? | Monday to Friday; no holidays | reminder_rules `reminder.no_photo` (hour); holidays are not modelled yet |
 | Eyemark: which import template does the M&E unit use? | The tracker's own 21-column layout | `docs/eyemark-export.md`, `EYEMARK_COLUMNS` |
 | Project health on the map: when is a project behind, and when stalled? | Behind after 2 x the current gate's reminder days; stalled after 90 days at one gate | reminder_rules `health.behind_factor`, `health.stalled_days` |
+| Email sending: does Schulltech's mailing endpoint have (or will it get) an API key? Today it accepts any caller. | No key; the API sends `x-api-key` only when one is configured | `SCHULLTECH_MAIL_API_KEY` |
+| Email sending: which domain does the ministry want sign-in codes, invites and messages sent from at go-live (it must be verified in the sending SES account)? | `"FMoT Rail Tracker" <noreply@schulltech.com>` | `MAIL_FROM` |

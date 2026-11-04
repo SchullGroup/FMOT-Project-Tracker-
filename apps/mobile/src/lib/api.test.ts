@@ -98,7 +98,7 @@ describe('the API client', () => {
     expect(error).toBeInstanceOf(ApiError);
     expect((error as ApiError).code).toBe('pin_incorrect');
     expect(calls).toHaveLength(1);
-    expect(JSON.parse(calls[0]!.init.body as string)).toEqual({ phone: '07000000112', pin: '1357', deviceId: 'mobile-device' });
+    expect(JSON.parse(calls[0]!.init.body as string)).toEqual({ login: '07000000112', pin: '1357', deviceId: 'mobile-device' });
   });
 
   it('keeps the refresh token from sign-in only in the store, and sends it on sign-out', async () => {

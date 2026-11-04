@@ -14,8 +14,8 @@ test.afterEach(() => expect(violations).toEqual([]));
 
 test('1. sign in, map home, find a project, tasks', async ({ page }) => {
   await page.goto('/sign-in');
-  await page.getByLabel('Your mobile number').fill('0803 123 4567');
-  await page.getByRole('button', { name: 'Text me a code' }).click();
+  await page.getByLabel('Your phone number or email address').fill('0803 123 4567');
+  await page.getByRole('button', { name: 'Send me a code' }).click();
   await page.getByLabel('Code').fill('123456');
   await page.getByRole('button', { name: 'Continue' }).click();
   // An easy PIN is refused; a good one signs in.

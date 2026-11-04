@@ -7,7 +7,7 @@ import { inviteToken } from '@/lib/format';
 import { api, useSession } from '@/session/session';
 import { colour } from '@/theme';
 
-type Preview = { name: string; role: string; organisation: string; phoneMasked: string };
+type Preview = { name: string; role: string; organisation: string; phoneMasked: string; codeChannel?: 'sms' | 'email'; codeSentTo?: string };
 
 /*
  * M1 with an invite: the short code from the invite text message (or the pasted link), then the same steps as the M1 board:
@@ -75,10 +75,10 @@ export default function Invite() {
       <T colour={colour.textSecondary}>{[preview.role, preview.organisation].join(' · ')}</T>
       {error && <Notice tone="error">{error}</Notice>}
       {!codeSent ? (
-        <Button label={s.invite.sendCode} busy={busy} onPress={() => void run(async () => { await api.inviteCode(token); setCodeSent(true); })} />
+        <Button label={preview.codeChannel === 'email' ? s.invite.emailCode : s.invite.sendCode} busy={busy} onPress={() => void run(async () => { await api.inviteCode(token); setCodeSent(true); })} />
       ) : (
         <>
-          <Field label={s.signIn.codeLabel} hint={s.invite.codeSentTo(preview.phoneMasked)} value={code} onChangeText={(t) => setCode(t.replace(/\D/g, '').slice(0, 6))} keyboardType="number-pad" textContentType="oneTimeCode" autoComplete="sms-otp" maxLength={6} />
+          <Field label={s.signIn.codeLabel} hint={s.invite.codeSentTo(preview.codeSentTo ?? preview.phoneMasked)} value={code} onChangeText={(t) => setCode(t.replace(/\D/g, '').slice(0, 6))} keyboardType="number-pad" textContentType="oneTimeCode" autoComplete="sms-otp" maxLength={6} />
           {__DEV__ && <Notice tone="info">{s.signIn.codeOnTestServer}</Notice>}
           {/^\d{6}$/.test(code) && <PinPad label={firstPin ? s.signIn.pinAgain : s.signIn.pinSet} value={pin} onChange={setPin} onComplete={finish} disabled={busy} />}
         </>

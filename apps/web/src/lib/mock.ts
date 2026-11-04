@@ -180,6 +180,8 @@ export async function mockFetch(path: string, init: RequestInit): Promise<Respon
       role: 'Contractor site manager',
       organisation: 'CCECC',
       phoneMasked: '0803 *** 4417',
+      codeChannel: 'sms',
+      codeSentTo: '+234803***4417',
     });
   }
 

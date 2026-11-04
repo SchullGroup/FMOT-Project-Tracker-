@@ -11,6 +11,9 @@ import { requestCode, setPin, signInWithPin, verifyCode } from '@/lib/endpoints'
 import { isCode, messageFor } from '@/lib/messages';
 import { formatPhone } from '@/lib/status';
 
+// What the person typed, as shown back to them: an email address as it is, a phone number spaced.
+const shown = (login: string) => (login.includes('@') ? login.trim() : formatPhone(login));
+
 type Step = 'phone' | 'code' | 'pin' | 'new-pin';
 
 function SignIn() {
@@ -78,7 +81,7 @@ function SignIn() {
 
   const titles: Record<Step, string> = {
     phone: 'Sign in',
-    code: 'Enter the code we texted you',
+    code: 'Enter the code we sent you',
     pin: 'Enter your PIN',
     'new-pin': 'Choose a PIN',
   };
@@ -88,12 +91,13 @@ function SignIn() {
       <form onSubmit={submit} className="flex flex-col gap-6" noValidate>
         {step === 'phone' && (
           <Field
-            label="Your mobile number"
-            hint="The number your account was set up with."
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            placeholder="0803 123 4567"
+            label="Your phone number or email address"
+            hint="The number or email address your account was set up with. We send the code to it."
+            type="text"
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            placeholder="0803 123 4567 or name@example.com"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             error={error}
@@ -105,7 +109,7 @@ function SignIn() {
         {step === 'code' && (
           <>
             <p className="text-lg">
-              We sent a 6-digit code to <strong className="tabular">{formatPhone(phone)}</strong>. It works for 10 minutes.
+              We sent a 6-digit code to <strong className="tabular">{shown(phone)}</strong>. It works for 10 minutes.
             </p>
             <Field
               label="Code"
@@ -125,7 +129,7 @@ function SignIn() {
         {step === 'pin' && (
           <>
             <p className="text-lg">
-              Signing in as <strong className="tabular">{formatPhone(phone)}</strong>
+              Signing in as <strong className="tabular">{shown(phone)}</strong>
             </p>
             <PinInput label="PIN" value={pin} onChange={setPinValue} error={error} autoFocus />
           </>
@@ -140,7 +144,7 @@ function SignIn() {
         )}
 
         <Button type="submit" busy={busy} wide>
-          {step === 'phone' ? 'Text me a code' : step === 'code' ? 'Continue' : step === 'pin' ? 'Sign in' : 'Save PIN and sign in'}
+          {step === 'phone' ? 'Send me a code' : step === 'code' ? 'Continue' : step === 'pin' ? 'Sign in' : 'Save PIN and sign in'}
         </Button>
 
         {step === 'code' && (
@@ -159,7 +163,7 @@ function SignIn() {
               setStep('phone');
             }}
           >
-            Use a different number
+            Use a different number or email
           </Button>
         )}
       </form>

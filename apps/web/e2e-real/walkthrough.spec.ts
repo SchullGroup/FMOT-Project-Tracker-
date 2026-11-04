@@ -52,7 +52,7 @@ async function acceptInvite(browser: Browser, path: string, local: string): Prom
 async function signIn(browser: Browser, local: string): Promise<Page> {
   const page = await (await browser.newContext()).newPage();
   await page.goto('/sign-in');
-  await page.getByLabel('Your mobile number').fill(local);
+  await page.getByLabel('Your phone number or email address').fill(local);
   const before = mark(local);
   await page.getByRole('button', { name: /continue|next|send|text me/i }).first().click();
   await page.getByLabel('Code').fill(await codeFor(local, before));

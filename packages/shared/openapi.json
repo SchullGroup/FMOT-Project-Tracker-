@@ -38,7 +38,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PhoneDto"
+                "$ref": "#/components/schemas/LoginDto"
               }
             }
           }
@@ -4744,17 +4744,17 @@
       }
     },
     "schemas": {
-      "PhoneDto": {
+      "LoginDto": {
         "type": "object",
         "properties": {
-          "phone": {
+          "login": {
             "type": "string",
             "example": "08030000000",
-            "description": "Any Nigerian or international format; stored as E.164 (+234...)"
+            "description": "The phone number (any Nigerian or international format) or the email address of the account; the code goes to it"
           }
         },
         "required": [
-          "phone"
+          "login"
         ]
       },
       "VerifyOtpDto": {
@@ -4765,10 +4765,10 @@
             "description": "Stable id of this browser or phone install",
             "example": "web-8f2c1a..."
           },
-          "phone": {
+          "login": {
             "type": "string",
             "example": "08030000000",
-            "description": "Any Nigerian or international format; stored as E.164 (+234...)"
+            "description": "The phone number (any Nigerian or international format) or the email address of the account; the code goes to it"
           },
           "code": {
             "type": "string",
@@ -4777,7 +4777,7 @@
         },
         "required": [
           "deviceId",
-          "phone",
+          "login",
           "code"
         ]
       },
@@ -4789,10 +4789,10 @@
             "description": "Stable id of this browser or phone install",
             "example": "web-8f2c1a..."
           },
-          "phone": {
+          "login": {
             "type": "string",
             "example": "08030000000",
-            "description": "Any Nigerian or international format; stored as E.164 (+234...)"
+            "description": "The phone number (any Nigerian or international format) or the email address of the account; the code goes to it"
           },
           "pin": {
             "type": "string",
@@ -4805,7 +4805,7 @@
         },
         "required": [
           "deviceId",
-          "phone",
+          "login",
           "pin"
         ]
       },
@@ -4817,10 +4817,10 @@
             "description": "Stable id of this browser or phone install",
             "example": "web-8f2c1a..."
           },
-          "phone": {
+          "login": {
             "type": "string",
             "example": "08030000000",
-            "description": "Any Nigerian or international format; stored as E.164 (+234...)"
+            "description": "The phone number (any Nigerian or international format) or the email address of the account; the code goes to it"
           },
           "ticket": {
             "type": "string"
@@ -4832,7 +4832,7 @@
         },
         "required": [
           "deviceId",
-          "phone",
+          "login",
           "ticket",
           "pin"
         ]
@@ -4978,6 +4978,20 @@
             "type": "string",
             "example": "08030000000",
             "description": "Any Nigerian or international format; stored as E.164 (+234...)"
+          },
+          "email": {
+            "type": "string",
+            "example": "e.nwosu@example.com",
+            "description": "Optional; the person may sign in with it, and get codes and the invite by email"
+          },
+          "codeChannel": {
+            "type": "string",
+            "enum": [
+              "sms",
+              "email"
+            ],
+            "default": "sms",
+            "description": "Where the invite and codes the system sends go; email needs an email address"
           },
           "organisationId": {
             "type": "string"
@@ -5905,7 +5919,7 @@
               "push",
               "email"
             ],
-            "description": "Push and email come later; until then messages go by SMS"
+            "description": "Email reaches people with an email address on their account (else SMS); push comes later, so it goes by SMS until then"
           },
           "weeklyDigest": {
             "type": "boolean"

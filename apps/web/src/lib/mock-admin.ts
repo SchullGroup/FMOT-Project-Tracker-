@@ -99,7 +99,7 @@ export function mockAdmin(route: string, method: string, body: Record<string, un
     const o = s.organisations.find((x) => x.id === body.organisationId)!;
     const external = ['contractor', 'consultant', 'lender'].includes(o.type);
     const u: AdminUser = {
-      id: `u${Date.now()}`, name: String(body.name), phone: String(body.phone), role: String(body.role), status: 'invited', openTasks: 0,
+      id: `u${Date.now()}`, name: String(body.name), phone: String(body.phone), email: body.email ? String(body.email) : null, codeChannel: body.codeChannel === 'email' ? 'email' : 'sms', role: String(body.role), status: 'invited', openTasks: 0,
       organisation: { id: o.id, name: o.name, type: o.type }, lastLoginAt: null, lastUploadAt: null,
       memberships: (body.memberships as Array<{ projectId: string; lotId: string | null }>).map((m) => ({ project: m.projectId === 'p-kk' ? 'Kaduna–Kano SGR' : 'Kano–Katsina–Maradi SGR', lot: m.lotId ? `Lot ${m.lotId.slice(1)}` : null })),
       awaitingDirector: external,

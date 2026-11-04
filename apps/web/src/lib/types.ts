@@ -44,6 +44,9 @@ export interface InvitePreview {
   role: string;
   organisation: string;
   phoneMasked: string;
+  /** Where the code goes: the person's chosen channel, and that phone or email address masked. */
+  codeChannel?: 'sms' | 'email';
+  codeSentTo?: string;
 }
 
 export interface MapProjectProperties {
@@ -439,6 +442,8 @@ export interface AdminUser {
   id: string;
   name: string;
   phone: string;
+  email?: string | null;
+  codeChannel?: 'sms' | 'email';
   organisation: { id: string; name: string; type: OrganisationType };
   role: string;
   status: 'invited' | 'active' | 'locked' | 'deactivated';
@@ -452,6 +457,9 @@ export interface AdminUser {
 export interface NewUser {
   name: string;
   phone: string;
+  email: string;
+  /** Where the invite and codes the system sends go. Signing in sends the code to what the person types. */
+  codeChannel: 'sms' | 'email';
   organisationId: string;
   role: string; // '' until the form has a role; endpoints.ts sends it as the API's role code
   memberships: Array<{ projectId: string; lotId: string | null }>;

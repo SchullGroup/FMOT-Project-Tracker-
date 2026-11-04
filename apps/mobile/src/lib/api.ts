@@ -192,9 +192,10 @@ export function createApi(deps: {
   }
 
   const device = () => getDeviceId(deps.store, deps.random);
-  const signedIn = async (tokens: Tokens, phone: string) => {
+  // Keeps what the person signed in with (phone number or email address) for opening the app later with the PIN.
+  const signedIn = async (tokens: Tokens, login: string) => {
     await keep(tokens);
-    await deps.store.set(KEYS.phone, phone);
+    await deps.store.set(KEYS.phone, login);
   };
 
   return {
@@ -206,23 +207,27 @@ export function createApi(deps: {
     hasSession: async () => (await deps.store.get(KEYS.refresh)) !== null,
     savedPhone: () => deps.store.get(KEYS.phone),
 
-    /** Step 1 of sign-in: the API texts a code (the same answer whether or not the number has an account). */
-    requestCode: (phone: string) => request<void>('/auth/otp/request', { method: 'POST', body: { phone }, signIn: true }),
+    /**
+     * Step 1 of sign-in: the API sends a code to `login`, a phone number (by text) or an email address (the same
+     * answer whether or not it belongs to an account).
+     */
+    requestCode: (login: string) => request<void>('/auth/otp/request', { method: 'POST', body: { login }, signIn: true }),
     /** Step 2: the code gives a 10-minute ticket for this phone, and says whether the person has a PIN yet. */
-    verifyCode: async (phone: string, code: string) =>
-      request<{ ticket: string; hasPin: boolean }>('/auth/otp/verify', { method: 'POST', body: { phone, code, deviceId: await device() }, signIn: true }),
+    verifyCode: async (login: string, code: string) =>
+      request<{ ticket: string; hasPin: boolean }>('/auth/otp/verify', { method: 'POST', body: { login, code, deviceId: await device() }, signIn: true }),
     /** Step 3a: first PIN (or a new one after a reset). */
-    setPin: async (phone: string, ticket: string, pin: string) => {
-      await signedIn(await request<Tokens>('/auth/pin/set', { method: 'POST', body: { phone, ticket, pin, deviceId: await device() }, signIn: true }), phone);
+    setPin: async (login: string, ticket: string, pin: string) => {
+      await signedIn(await request<Tokens>('/auth/pin/set', { method: 'POST', body: { login, ticket, pin, deviceId: await device() }, signIn: true }), login);
     },
     /** Step 3b, or opening the app later: the PIN (with the ticket on a phone not yet bound). */
-    pinLogin: async (phone: string, pin: string, ticket?: string) => {
-      await signedIn(await request<Tokens>('/auth/pin/login', { method: 'POST', body: { phone, pin, deviceId: await device(), ...(ticket ? { ticket } : {}) }, signIn: true }), phone);
+    pinLogin: async (login: string, pin: string, ticket?: string) => {
+      await signedIn(await request<Tokens>('/auth/pin/login', { method: 'POST', body: { login, pin, deviceId: await device(), ...(ticket ? { ticket } : {}) }, signIn: true }), login);
     },
     /** Opening the app with the fingerprint instead of the PIN: renew the stored session. */
     resume: refresh,
 
-    invitePreview: (token: string) => request<{ name: string; role: string; organisation: string; phoneMasked: string }>(`/invites/${encodeURIComponent(token)}`, { signIn: true }),
+    invitePreview: (token: string) =>
+      request<{ name: string; role: string; organisation: string; phoneMasked: string; codeChannel?: 'sms' | 'email'; codeSentTo?: string }>(`/invites/${encodeURIComponent(token)}`, { signIn: true }),
     inviteCode: (token: string) => request<void>('/invites/code', { method: 'POST', body: { token }, signIn: true }),
     /** The invite only shows a masked number, so the phone number for later PIN sign-ins comes from /me. */
     acceptInvite: async (token: string, code: string, pin: string) => {

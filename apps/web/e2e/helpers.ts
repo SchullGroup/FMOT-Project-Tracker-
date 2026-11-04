@@ -3,8 +3,8 @@ import { expect, type Page } from '@playwright/test';
 // Sample-data sign-in: any phone, code 123456, any PIN that is not an easy one.
 export async function signIn(page: Page, pin = '2580') {
   await page.goto('/sign-in');
-  await page.getByLabel('Your mobile number').fill('0803 123 4567');
-  await page.getByRole('button', { name: 'Text me a code' }).click();
+  await page.getByLabel('Your phone number or email address').fill('0803 123 4567');
+  await page.getByRole('button', { name: 'Send me a code' }).click();
   await page.getByLabel('Code').fill('123456');
   await page.getByRole('button', { name: 'Continue' }).click();
   await choosePin(page, pin);

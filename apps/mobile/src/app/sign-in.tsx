@@ -105,11 +105,11 @@ export default function SignIn() {
   }
 
   return (
-    <Screen footer={<><Button label={s.signIn.sendCode} busy={busy} disabled={phone.replace(/\D/g, '').length < 10} onPress={() => void sendCode()} /><SupportButton /></>}>
+    <Screen footer={<><Button label={s.signIn.sendCode} busy={busy} disabled={!(phone.includes('@') ? /^\S+@\S+\.\S+$/.test(phone.trim()) : phone.replace(/\D/g, '').length >= 10)} onPress={() => void sendCode()} /><SupportButton /></>}>
       <Crest />
       <T variant="title" accessibilityRole="header">{s.signIn.title}</T>
       {error && <Notice tone="error">{error}</Notice>}
-      <Field label={s.signIn.phoneLabel} hint={s.signIn.phoneHint} value={phone} onChangeText={setPhone} keyboardType="phone-pad" textContentType="telephoneNumber" autoComplete="tel" />
+      <Field label={s.signIn.phoneLabel} hint={s.signIn.phoneHint} value={phone} onChangeText={setPhone} keyboardType="default" autoCapitalize="none" autoCorrect={false} textContentType="username" autoComplete="username" />
       <Button kind="quiet" label={s.signIn.haveInvite} onPress={() => router.push('/invite')} />
     </Screen>
   );

@@ -12,8 +12,9 @@ import { acceptInvite, getInvite, sendInviteCode } from '@/lib/endpoints';
 import { messageFor } from '@/lib/messages';
 
 /*
- * W2 Accept invite: the link from the invite text message. Shows who the
- * account is for, texts a code, and sets the PIN in one go.
+ * W2 Accept invite: the link from the invite text message or email. Shows who
+ * the account is for, sends a code by the person's channel, and sets the PIN
+ * in one go.
  */
 export default function AcceptInvitePage() {
   const { token } = useParams<{ token: string }>();
@@ -43,6 +44,7 @@ export default function AcceptInvitePage() {
   }
 
   const { name, role, organisation, phoneMasked } = invite.data;
+  const byEmail = invite.data.codeChannel === 'email';
 
   async function sendCode() {
     setBusy(true);
@@ -83,20 +85,20 @@ export default function AcceptInvitePage() {
         <dd className="font-medium">{role}</dd>
         <dt className="text-ink-muted">Organisation</dt>
         <dd className="font-medium">{organisation}</dd>
-        <dt className="text-ink-muted">Phone</dt>
-        <dd className="font-medium tabular">{phoneMasked}</dd>
+        <dt className="text-ink-muted">{byEmail ? 'Email' : 'Phone'}</dt>
+        <dd className="font-medium tabular">{byEmail ? invite.data.codeSentTo : phoneMasked}</dd>
       </dl>
 
       {!codeSent ? (
         <div className="flex flex-col gap-4">
-          <p className="text-lg">To set up your account, we will text a code to this phone.</p>
+          <p className="text-lg">To set up your account, we will {byEmail ? 'email a code to this address' : 'text a code to this phone'}.</p>
           {error && (
             <p role="alert" className="text-base font-medium text-danger">
               {error}
             </p>
           )}
           <Button busy={busy} onClick={sendCode} wide>
-            Text me a code
+            {byEmail ? 'Email me a code' : 'Text me a code'}
           </Button>
           <p className="text-base text-ink-muted">
             Not you, or the details are wrong? Do not continue; call the IT support desk.
@@ -105,7 +107,7 @@ export default function AcceptInvitePage() {
       ) : (
         <form onSubmit={accept} className="flex flex-col gap-6" noValidate>
           <Field
-            label="Code from the text message"
+            label={byEmail ? 'Code from the email' : 'Code from the text message'}
             inputMode="numeric"
             autoComplete="one-time-code"
             maxLength={6}
