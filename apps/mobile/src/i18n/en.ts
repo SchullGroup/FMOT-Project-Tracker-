@@ -43,6 +43,7 @@ export const en = {
     codeOnTestServer: 'Test server: a code sent by text is printed in the API window on the computer; a code sent by email is in Mailpit.',
     codeLabel: 'Code',
     newCode: 'Send a new code',
+    newCodeSent: (to: string) => `We sent a new code to ${to}. Use the newest one: the earlier code no longer works.`,
     otherNumber: 'Use another number or email',
     pinEnter: 'Enter your PIN',
     pinSet: 'Set a 4-digit PIN',
@@ -229,7 +230,7 @@ export const en = {
   errors: {
     code_incorrect: 'That code is not right. Check the latest text message or email we sent you and try again.',
     code_expired: 'That code has expired. Ask for a new one.',
-    too_many_requests: 'Too many tries. Wait 15 minutes, then try again.',
+    too_many_requests: 'Too many tries. Wait a minute, then try again.',
     pin_incorrect: 'That PIN is not right.',
     pin_too_easy: 'Choose a PIN that is harder to guess. Avoid repeated or running digits like 1111 or 1234.',
     pin_not_set: 'You have no PIN yet. Sign in with a code by text or email to set one.',

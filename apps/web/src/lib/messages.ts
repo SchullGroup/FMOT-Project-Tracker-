@@ -9,7 +9,7 @@ import { ApiError } from './api';
 const MESSAGES: Record<string, string> = {
   code_incorrect: 'That code is not right. Check the latest text message or email we sent you and try again.',
   code_expired: 'That code has expired. Ask for a new one.',
-  too_many_requests: 'Too many tries. Wait 15 minutes, then try again.',
+  too_many_requests: 'Too many tries. Wait a minute, then try again.',
   pin_incorrect: 'That PIN is not right.',
   pin_too_easy: 'Choose a PIN that is harder to guess. Avoid repeated or running digits like 1111 or 1234.',
   account_locked: 'Your account is locked after too many wrong PINs. Call the IT support desk to unlock it.',
@@ -51,11 +51,19 @@ const MESSAGES: Record<string, string> = {
   internal_error: 'Something went wrong on our side. Try again, or call the IT support desk.',
 };
 
+// Too many sign-in codes asked for (when SIGNIN_CODE_LIMIT is on): the API says when the next one is allowed.
+function tooMany(error: ApiError): string {
+  const seconds = Number(error.details.retryAfterSeconds);
+  if (!(seconds > 0)) return MESSAGES.too_many_requests!;
+  const minutes = Math.ceil(seconds / 60);
+  return `You have asked for too many codes. You can ask for a new one in ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}. A code you already have still works until it expires.`;
+}
+
 const UNREACHABLE = 'Could not reach the tracker. Check your connection and try again.';
 
 export function messageFor(error: unknown): string {
   if (error instanceof ApiError) {
-    if (error.status === 429) return MESSAGES.too_many_requests!;
+    if (error.status === 429) return tooMany(error);
     // A 5xx without the API's JSON body (code http_5xx) came from the proxy in front of it: the API did not answer.
     if (/^http_5\d\d$/.test(error.code)) return UNREACHABLE;
     return MESSAGES[error.code] ?? (error.status < 500 && error.message ? error.message : 'Something went wrong. Try again, or call the IT support desk.');

@@ -24,10 +24,13 @@ export default function SignIn() {
   const [firstPin, setFirstPin] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // After "Send a new code": a line saying it went.
+  const [notice, setNotice] = useState<string | null>(null);
 
   async function run(work: () => Promise<void>) {
     setBusy(true);
     setError(null);
+    setNotice(null);
     try {
       await work();
     } catch (e) {
@@ -46,6 +49,13 @@ export default function SignIn() {
       await api.requestCode(phone);
       setCode('');
       setStep({ kind: 'code' });
+    });
+
+  const resendCode = () =>
+    run(async () => {
+      await api.requestCode(phone);
+      setCode('');
+      setNotice(s.signIn.newCodeSent(phone.trim()));
     });
 
   const checkCode = () =>
@@ -97,8 +107,9 @@ export default function SignIn() {
         <T colour={colour.textSecondary}>{s.signIn.codeSent(phone)}</T>
         {__DEV__ && <Notice tone="info">{s.signIn.codeOnTestServer}</Notice>}
         {error && <Notice tone="error">{error}</Notice>}
+        {notice && <Notice tone="success">{notice}</Notice>}
         <Field label={s.signIn.codeLabel} value={code} onChangeText={(t) => setCode(t.replace(/\D/g, '').slice(0, 6))} keyboardType="number-pad" textContentType="oneTimeCode" autoComplete="sms-otp" autoFocus maxLength={6} />
-        <Button kind="quiet" label={s.signIn.newCode} onPress={() => void sendCode()} />
+        <Button kind="quiet" label={s.signIn.newCode} busy={busy} onPress={() => void resendCode()} />
         <Button kind="quiet" label={s.signIn.otherNumber} onPress={() => setStep({ kind: 'phone' })} />
       </Screen>
     );

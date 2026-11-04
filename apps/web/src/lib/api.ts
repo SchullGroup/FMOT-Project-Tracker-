@@ -27,6 +27,8 @@ export class ApiError extends Error {
     public readonly status: number,
     public readonly code: string,
     message: string,
+    /** Anything else the API said, such as retryAfterSeconds on too_many_requests. */
+    public readonly details: Record<string, unknown> = {},
   ) {
     super(message);
   }
@@ -79,14 +81,16 @@ export async function refreshSession(): Promise<boolean> {
 async function toApiError(res: Response): Promise<ApiError> {
   let code = `http_${res.status}`;
   let message = res.statusText;
+  let details: Record<string, unknown> = {};
   try {
-    const data = (await res.json()) as { code?: string; error?: string; message?: string | string[] };
+    const data = (await res.json()) as { code?: string; error?: string; message?: string | string[] } & Record<string, unknown>;
     code = data.code ?? data.error ?? code;
     message = Array.isArray(data.message) ? data.message.join(', ') : (data.message ?? message);
+    details = data;
   } catch {
     /* body was not JSON */
   }
-  return new ApiError(res.status, code, message);
+  return new ApiError(res.status, code, message, details);
 }
 
 // A 401 is an ended session only when its code says so; a wrong PIN or code is a 401 too, and retrying it after a

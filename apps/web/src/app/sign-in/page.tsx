@@ -29,10 +29,13 @@ function SignIn() {
   const [ticket, setTicket] = useState<string | undefined>();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // After "Send a new code": a line saying it went.
+  const [notice, setNotice] = useState<string | null>(null);
 
   async function run(action: () => Promise<void>) {
     setBusy(true);
     setError(null);
+    setNotice(null);
     try {
       await action();
     } catch (e) {
@@ -45,6 +48,13 @@ function SignIn() {
       setBusy(false);
     }
   }
+
+  const resend = () =>
+    run(async () => {
+      await requestCode(phone);
+      setCode('');
+      setNotice(`We sent a new code to ${shown(phone)}. Use the newest one: the earlier code no longer works.`);
+    });
 
   const done = () => {
     setKnownPhone(phone);
@@ -148,9 +158,16 @@ function SignIn() {
         </Button>
 
         {step === 'code' && (
-          <Button type="button" variant="quiet" onClick={() => run(() => requestCode(phone))}>
-            Send a new code
-          </Button>
+          <>
+            {notice && (
+              <p role="status" className="text-base font-medium text-brand-900">
+                {notice}
+              </p>
+            )}
+            <Button type="button" variant="quiet" disabled={busy} onClick={resend}>
+              Send a new code
+            </Button>
+          </>
         )}
         {step === 'pin' && (
           <Button

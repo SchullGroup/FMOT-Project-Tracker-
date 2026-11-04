@@ -33,7 +33,7 @@ and the review queue open a "coming in the next step" screen.
    - resident engineer: **0700 000 0111** (Engr. T. Adeyemi, Lots 1 and 2).
 
    Press Text me a code, read the 6-digit code from the API window (`to +234700***0112: Your FMoT Rail Tracker code
-   is …`), then enter the PIN. The API allows three codes per phone every 15 minutes.
+   is …`), then enter the PIN. Asking again sends a new code; only the newest one works.
 6. **Take a photo.** Stand somewhere with a clear sky and press Take photo. The demo lots are on the Kaduna–Kano line,
    so away from it the photo still sends but arrives flagged as outside the corridor.
 

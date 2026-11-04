@@ -18,7 +18,7 @@ Code: `apps/api/src/database/seed-demo.ts` (guard, rows, workflow replay), `demo
 For demonstrations without a phone at hand, `DEV_SIGNIN_CODE` (six digits, for example `000000`) in `apps/api/.env` is accepted as the sign-in or invite code, beside the real one.
 
 - Only when `APP_ENV` is `development` or `demo`. With any other `APP_ENV` (staging, production, test) the API refuses to start while it is set, and the code check ignores it as well.
-- A code must still be requested first (Send me a code), so the limits stay: three requests per 15 minutes per phone number or email address, five tries per code, ten minutes per code. It is used up like a real code.
+- A code must still be requested first (Send me a code), so the same rules apply: five tries per code, ten minutes per code, and the request limit when `SIGNIN_CODE_LIMIT` is on (off for now). It is used up like a real code.
 - Anyone who knows it can sign in as any demo person whose number or address they know, so it never goes near real people's accounts. Leave it empty when the demo is not running.
 
 Run the demo API with it, for example: `demo env APP_ENV=demo DEV_SIGNIN_CODE=000000 PORT=4100 SMS_PROVIDER=console node dist/main.js`.
