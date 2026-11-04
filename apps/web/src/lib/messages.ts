@@ -14,7 +14,7 @@ const MESSAGES: Record<string, string> = {
   pin_too_easy: 'Choose a PIN that is harder to guess. Avoid repeated or running digits like 1111 or 1234.',
   account_locked: 'Your account is locked after too many wrong PINs. Call the IT support desk to unlock it.',
   device_unknown: 'This device is new. We will text you a code first.',
-  invite_expired: 'This invite has expired. Ask the IT support desk to send a new one.',
+  invite_expired: 'This invite link or code is not valid, or it has expired. Check it, or ask the IT support desk to send a new one.',
   invite_used: 'This invite has already been used. Sign in with your phone number instead.',
   pin_confirmation_required: 'This needs your PIN. Press the button again and enter it.',
   pin_confirmation_used: 'That PIN confirmation was already used. Enter your PIN again.',
@@ -48,12 +48,16 @@ const MESSAGES: Record<string, string> = {
   internal_error: 'Something went wrong on our side. Try again, or call the IT support desk.',
 };
 
+const UNREACHABLE = 'Could not reach the tracker. Check your connection and try again.';
+
 export function messageFor(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.status === 429) return MESSAGES.too_many_requests!;
+    // A 5xx without the API's JSON body (code http_5xx) came from the proxy in front of it: the API did not answer.
+    if (/^http_5\d\d$/.test(error.code)) return UNREACHABLE;
     return MESSAGES[error.code] ?? (error.status < 500 && error.message ? error.message : 'Something went wrong. Try again, or call the IT support desk.');
   }
-  return 'Could not reach the tracker. Check your connection and try again.';
+  return UNREACHABLE;
 }
 
 export function isCode(error: unknown, code: string): boolean {

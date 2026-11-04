@@ -21,6 +21,8 @@ export function errorText(s: Strings, error: unknown): string {
   if (error instanceof OfflineError) return s.errors.offline;
   if (error instanceof ApiError) {
     if (error.status === 429) return s.errors.too_many_requests;
+    // A 5xx without the API's JSON body (code http_5xx) came from something in front of it: the API did not answer.
+    if (/^http_5\d\d$/.test(error.code)) return s.errors.offline;
     const known = (s.errors as Record<string, string>)[error.code];
     if (known) return known;
     return error.status < 500 && error.message ? error.message : s.errors.generic;
