@@ -34,6 +34,8 @@ export function CorridorMap({ data, height = 480 }: { data: GeoJSON.FeatureColle
       foldCreditOnSmallMaps(m.getContainer());
       m.addSource('corridor', { type: 'geojson', data });
       (m.getSource('corridor') as GeoJSONSource).setData(data);
+      // The whole line in grey under the lots: the route even where no lot has started (or none exists yet).
+      m.addLayer({ id: 'line', type: 'line', source: 'corridor', filter: ['==', ['get', 'kind'], 'line'], layout: { 'line-cap': 'round' }, paint: { 'line-color': '#8a94a6', 'line-width': 5 } });
       m.addLayer({ id: 'lot-casing', type: 'line', source: 'corridor', filter: ['==', ['get', 'kind'], 'lot'], layout: { 'line-cap': 'round' }, paint: { 'line-color': '#ffffff', 'line-width': 11 } });
       m.addLayer({
         id: 'lot',
