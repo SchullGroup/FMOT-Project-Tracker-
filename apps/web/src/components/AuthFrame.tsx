@@ -6,8 +6,8 @@ export function AuthFrame({ title, children }: { title: string; children: ReactN
     <div className="min-h-dvh">
       <header className="border-b-4 border-accent bg-brand-900 text-white">
         <div className="mx-auto flex max-w-xl items-center gap-4 px-6 py-5">
-          {/* Slot for the ministry crest, supplied by the ministry. */}
-          <div aria-hidden className="size-11 shrink-0 rounded-md border-2 border-dashed border-white/60" />
+          {/* eslint-disable-next-line @next/next/no-img-element -- a fixed 44 px picture, nothing to optimise */}
+          <img src="/coat-of-arms.png" alt="Coat of arms of Nigeria" className="size-11 shrink-0 object-contain" />
           <div>
             <p className="text-lg font-semibold leading-tight">Rail Project Tracker</p>
             <p className="text-sm text-brand-100">Federal Ministry of Transportation</p>

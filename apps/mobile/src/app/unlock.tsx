@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Notice, Screen, SupportButton, T } from '@/components/ui';
+import { Button, Crest, Notice, Screen, SupportButton, T } from '@/components/ui';
 import { PinPad } from '@/components/PinPad';
 import { errorText } from '@/i18n';
 import { ApiError } from '@/lib/api';
@@ -45,6 +45,7 @@ export default function Unlock() {
 
   return (
     <Screen footer={<SupportButton />}>
+      <Crest />
       <T variant="title" accessibilityRole="header">{s.unlock.title}</T>
       <T colour={colour.textSecondary}>{s.unlock.usePin}</T>
       {error && <Notice tone="error">{error}</Notice>}

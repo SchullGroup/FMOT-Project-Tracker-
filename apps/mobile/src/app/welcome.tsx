@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
-import { Button, Chip, Gap, Screen, SupportButton, T, Toggle } from '@/components/ui';
+import { Button, Chip, Crest, Gap, Screen, SupportButton, T, Toggle } from '@/components/ui';
 import { LANGUAGES } from '@/i18n';
 import { useSession } from '@/session/session';
 import { colour, space } from '@/theme';
@@ -10,6 +10,7 @@ export default function Welcome() {
   const { strings: s, prefs, setPrefs } = useSession();
   return (
     <Screen footer={<Button label={s.welcome.start} onPress={() => router.push('/permissions')} />}>
+      <Crest />
       <T variant="title" accessibilityRole="header">{s.welcome.title}</T>
       <T colour={colour.textSecondary}>{s.welcome.intro}</T>
       <Gap size={space.sm} />

@@ -53,6 +53,9 @@ export const radius = { sm: tokens['radius.4'], md: tokens['radius.8'], lg: toke
 /** The smallest thing a thumb may press (48 points), and the big buttons (56). */
 export const touch = { min: tokens['phone.touch-min'], large: tokens['button.height.large'] } as const;
 
+/** The coat of arms: the header slot (40 points) and twice that on the screens before sign-in. */
+export const crest = { header: tokens['size.crest'], large: tokens['size.crest'] * 2 } as const;
+
 export type TextVariant = 'title' | 'heading' | 'body' | 'bodyStrong' | 'label' | 'small';
 
 const SIZE: Record<TextVariant, keyof typeof largeText> = {

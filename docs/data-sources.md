@@ -6,6 +6,7 @@ Open data the platform loads, with its licence and how to credit it.
 | --- | --- | --- | --- |
 | State boundaries (36 states and the FCT, ADM1) | [geoBoundaries](https://www.geoboundaries.org) gbOpen NGA ADM1, boundary ID NGA-ADM1-27671186, built 12 December 2023 from GRID3 Nigeria State Boundaries (2022, [source](https://data.grid3.org/datasets/grid3-nigeria-state-boundaries)). File pinned to release commit 9469f09: `geoBoundaries-NGA-ADM1.geojson` | [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) | `pnpm db:load-boundaries` into `admin_boundaries` (level 1) |
 | Satellite base map in the designs | NASA Blue Marble (GIBS) | Public domain | Design files only |
+| Coat of arms of Nigeria (the logo) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Nigeria.svg), drawn by Lumia1234, `docs/brand/coat-of-arms-nigeria.svg` | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/); an insignia, its use also governed by Nigerian law | Web header and favicon, field app icon, splash and front screens (docs/brand/README.md) |
 
 ## Attribution
 

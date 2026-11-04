@@ -74,7 +74,8 @@ export function TopBar() {
     <header className="border-b-4 border-accent bg-brand-900 text-white">
       <div className="flex min-h-16 flex-wrap items-center gap-x-6 gap-y-2 px-5 py-2">
         <Link href="/" className="flex items-center gap-3 rounded-md">
-          <div aria-hidden className="size-9 shrink-0 rounded border-2 border-dashed border-white/60" />
+          {/* eslint-disable-next-line @next/next/no-img-element -- a fixed 36 px picture, nothing to optimise */}
+          <img src="/coat-of-arms.png" alt="" className="size-9 shrink-0 object-contain" />
           <span className="leading-tight">
             <span className="block font-semibold">Rail Project Tracker</span>
             <span className="block text-sm text-brand-100">Federal Ministry of Transportation</span>

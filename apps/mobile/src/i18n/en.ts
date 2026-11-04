@@ -3,6 +3,7 @@
 export const en = {
   common: {
     continue: 'Continue',
+    coatOfArms: 'Coat of arms of Nigeria',
     back: 'Back',
     cancel: 'Cancel',
     tryAgain: 'Try again',

@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Button, Field, Notice, Screen, SupportButton, T } from '@/components/ui';
+import { Button, Crest, Field, Notice, Screen, SupportButton, T } from '@/components/ui';
 import { PinPad } from '@/components/PinPad';
 import { errorText } from '@/i18n';
 import { ApiError } from '@/lib/api';
@@ -106,6 +106,7 @@ export default function SignIn() {
 
   return (
     <Screen footer={<><Button label={s.signIn.sendCode} busy={busy} disabled={phone.replace(/\D/g, '').length < 10} onPress={() => void sendCode()} /><SupportButton /></>}>
+      <Crest />
       <T variant="title" accessibilityRole="header">{s.signIn.title}</T>
       {error && <Notice tone="error">{error}</Notice>}
       <Field label={s.signIn.phoneLabel} hint={s.signIn.phoneHint} value={phone} onChangeText={setPhone} keyboardType="phone-pad" textContentType="telephoneNumber" autoComplete="tel" />

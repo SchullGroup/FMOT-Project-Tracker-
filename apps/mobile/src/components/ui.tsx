@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SUPPORT_PHONE } from '@/lib/config';
 import { useSession } from '@/session/session';
-import { colour, radius, space, touch, typeStyle, type TextVariant } from '@/theme';
+import { colour, crest, radius, space, touch, typeStyle, type TextVariant } from '@/theme';
 
 /** Text in the design's type, scaled by Large text. Never below 16 points. */
 export function T({ variant = 'body', colour: c = colour.text, style, children, ...rest }: { variant?: TextVariant; colour?: string; style?: StyleProp<TextStyle>; children: ReactNode; numberOfLines?: number; accessibilityRole?: 'header' | 'text' | 'alert' }) {
@@ -130,6 +130,12 @@ export function SupportButton() {
 }
 
 export const Gap = ({ size = space.lg }: { size?: number }) => <View style={{ height: size }} />;
+
+/** The coat of arms of Nigeria (docs/brand), at the top of the screens before sign-in. */
+export function Crest() {
+  const { strings: s } = useSession();
+  return <Image source={require('../../assets/coat-of-arms.png')} style={{ height: crest.large, width: (crest.large * 284) / 241 }} accessibilityLabel={s.common.coatOfArms} />;
+}
 
 export const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colour.page },
