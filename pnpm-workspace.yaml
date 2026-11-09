@@ -2,5 +2,7 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
+  # Ships ready-built binaries per platform (pulled in by the Expo tools); its install script is only a fallback.
+  '@parcel/watcher': false
   '@scarf/scarf': false
   esbuild: true
