@@ -166,6 +166,29 @@ export interface ApiSubmission {
   returnReason: string | null;
 }
 
+export interface ApiFieldItem {
+  id: string;
+  kind: string;
+  status: string;
+  flagged: boolean;
+  projectId: string;
+  chainageM: number | null;
+  offsetM: number | null;
+  discipline: { code: string; label: string } | null;
+  capturedAt: string;
+  receivedAt: string;
+  checks: Record<string, { result: 'pass' | 'warn' | 'fail' | 'not_available'; reason: string }> | null;
+  details: Record<string, unknown> | null;
+  returnReason: { code: string; label: string } | null;
+  media: Array<{ id: string; kind: 'photo' | 'voice_note' }>;
+  submittedBy: string | null;
+  lotName: string | null;
+  milestoneName: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  canReview: boolean;
+}
+
 export interface ApiReview {
   basics: {
     id: string;

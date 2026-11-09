@@ -196,6 +196,34 @@ export interface Submission {
   returnReason: string | null;
 }
 
+/** One item from site, as its page shows it (W7.4): the photos, the answers, the checks and the decision. */
+export interface FieldItem {
+  id: string;
+  projectId: string;
+  kind: Submission['kind'];
+  status: SubmissionStatus;
+  flagged: boolean;
+  chainageM: number | null;
+  /** Metres from the line, when the checks measured it. */
+  offsetM: number | null;
+  lotName: string;
+  submittedBy: string;
+  capturedAt: string;
+  receivedAt: string;
+  /** "Earthworks", the milestone's name, or the incident type, as the title's second part. */
+  what: string | null;
+  photoIds: string[];
+  voiceId: string | null;
+  /** A report's or incident's answers, in plain words. */
+  lines: Array<{ label: string; value: string }>;
+  checks: CheckResult[];
+  returnReason: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  /** Whether the person looking is the lot's engineer and may verify it or send it back now. */
+  canReview: boolean;
+}
+
 export type CertificateStatus = 'draft' | 'recommended' | 'certified' | 'approved' | 'final_approved' | 'paid' | 'returned';
 
 export interface Certificate {

@@ -7,6 +7,7 @@ import type {
   Certificate,
   DesignPackage,
   DocumentGroup,
+  FieldItem,
   GateRow,
   Grievance,
   Incident,
@@ -125,6 +126,45 @@ function sub(id: string, kind: Submission['kind'], status: Submission['status'],
   return { id, kind, status, flagged, chainageM, capturedAt: day(daysAgo), submittedBy: by, discipline, lotName, mediaId: kind === 'photo' || kind === 'milestone_claim' ? `m-${id}` : null, summary, returnReason };
 }
 
+// W7.4 in sample data: the item's page, and Verify or Send back, which change it for the rest of the session.
+function mockFieldItem(id: string, action?: 'verify' | 'send-back'): FieldItem | { id: string; status: string } {
+  const s = submissions.find((x) => x.id === id) ?? submissions[0]!;
+  if (action) {
+    s.status = action === 'verify' ? 'verified' : 'sent_back';
+    if (action === 'send-back') s.returnReason = 'Photo unclear';
+    return { id: s.id, status: s.status };
+  }
+  const outside = s.flagged;
+  return {
+    id: s.id,
+    projectId: 'p-kk',
+    kind: s.kind,
+    status: s.status,
+    flagged: s.flagged,
+    chainageM: s.chainageM,
+    offsetM: outside ? 680 : 12,
+    lotName: s.lotName,
+    submittedBy: s.submittedBy,
+    capturedAt: s.capturedAt,
+    receivedAt: s.capturedAt,
+    what: s.kind === 'milestone_claim' ? (s.summary ?? null) : s.discipline,
+    photoIds: s.mediaId ? (s.kind === 'milestone_claim' ? [s.mediaId, `${s.mediaId}-2`] : [s.mediaId]) : [],
+    voiceId: null,
+    lines: s.kind === 'daily_report' ? [{ label: 'Workers on site', value: '46' }, { label: 'Machines working', value: 'Excavator EX-04, Grader GR-02' }, { label: 'Weather', value: 'Sunny' }, { label: 'Any problem', value: 'No' }] : s.summary && s.kind === 'incident' ? [{ label: 'What happened', value: s.summary }] : [],
+    checks: [
+      { name: 'Inside the corridor', result: outside ? 'fail' : 'pass', detail: outside ? 'Outside the corridor by 180 m' : '12 m from the line' },
+      { name: 'Inside the lot', result: 'pass', detail: `Inside ${s.lotName}` },
+      { name: 'Time', result: 'pass', detail: 'Taken 2 hours before it was sent' },
+      { name: 'Phone', result: 'not_available', detail: 'Not checked on test phones' },
+      { name: 'Not a repeat', result: 'pass', detail: 'No match with earlier photos' },
+    ],
+    returnReason: s.returnReason,
+    reviewedBy: s.status === 'pending_re' ? null : 'Engr. R. Nwosu',
+    reviewedAt: s.status === 'pending_re' ? null : s.capturedAt,
+    canReview: s.status === 'pending_re',
+  };
+}
+
 const chain = (done: number): Certificate['chain'] =>
   [
     ['Recommend', 'Resident engineer', 'Engr. T. Adeyemi'],
@@ -231,6 +271,8 @@ export function mockProjectRoute(route: string): unknown | undefined {
   const lot = /^\/lots\/([^/]+)\/(certificates|design-packages)$/.exec(route);
   if (lot) return lot[2] === 'certificates' ? (certificates[lot[1]!] ?? []) : (design[lot[1]!] ?? []);
   if (/^\/field\/projects\/[^/]+\/submissions$/.test(route)) return submissions;
+  const field = /^\/field\/submissions\/([^/]+)(?:\/(verify|send-back))?$/.exec(route);
+  if (field) return mockFieldItem(field[1]!, field[2] as 'verify' | 'send-back' | undefined);
   if (route.startsWith('/documents/')) return { url: '#' };
   if (!m) return undefined;
   // A draft (Kano–Maradi, or one made in the wizard) is at gate 1, waiting for publishing.

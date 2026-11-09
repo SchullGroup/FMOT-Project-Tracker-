@@ -23,6 +23,7 @@ import type {
   ApiMe,
   ApiProgress,
   ApiReport,
+  ApiFieldItem,
   ApiReview,
   ApiStripMap,
   ApiSubmission,
@@ -30,7 +31,7 @@ import type {
   ApiValuationPrefill,
 } from './api-shapes';
 import { getDeviceId } from './device';
-import { formatChainage, lowerFirst, stateName } from './format';
+import { formatChainage, formatDate, lowerFirst, stateName } from './format';
 import { TOWNS } from './towns';
 import type {
   ActivityItem,
@@ -46,6 +47,7 @@ import type {
   DesignRequirement,
   DocumentGroup,
   DraftReview,
+  FieldItem,
   FundingRoute,
   GateRow,
   Grievance,
@@ -360,6 +362,66 @@ export const getSubmissions = (id: string, query = '') =>
         returnReason: s.returnReason,
       }))
       .filter((s) => (!want.get('kind') || s.kind === want.get('kind')) && (!want.get('status') || s.status === want.get('status')));
+  });
+
+// The checks in the order a reviewer reads them, with their names in plain words.
+const CHECK_NAMES: Array<[string, string]> = [
+  ['corridor', 'Inside the corridor'],
+  ['lot', 'Inside the lot'],
+  ['chainage', 'Place on the line'],
+  ['location', 'Location'],
+  ['time', 'Time'],
+  ['device', 'Phone'],
+  ['duplicate', 'Not a repeat'],
+];
+const WEATHER: Record<string, string> = { sunny: 'Sunny', cloudy: 'Cloudy', rain: 'Rain', storm: 'Storm', harmattan: 'Harmattan' };
+const INCIDENT: Record<string, string> = { accident: 'Accident', security: 'Security', community: 'Community', equipment: 'Equipment' };
+
+/** W7.4: one item from site, with whether this person may verify it or send it back. */
+export const getFieldItem = (id: string) =>
+  viaApi<ApiFieldItem, FieldItem>(api(`/field/submissions/${encodeURIComponent(id)}`), (s) => {
+    const d = s.details ?? {};
+    const lines: FieldItem['lines'] = [];
+    if (s.kind === 'daily_report') {
+      lines.push({ label: 'Report for', value: formatDate(String(d.report_date ?? s.capturedAt)) });
+      lines.push({ label: 'Workers on site', value: String(d.workers ?? 0) });
+      const machines = (d.machines as string[] | undefined) ?? [];
+      lines.push({ label: 'Machines working', value: machines.length ? machines.join(', ') : 'None' });
+      lines.push({ label: 'Weather', value: WEATHER[String(d.weather)] ?? String(d.weather ?? '') });
+      lines.push({ label: 'Any problem', value: d.problem ? 'Yes' : 'No' });
+    }
+    if (s.kind === 'incident' && d.description) lines.push({ label: 'What happened', value: String(d.description) });
+    if (d.note) lines.push({ label: 'Note', value: String(d.note) });
+    const checks = CHECK_NAMES.flatMap(([key, name]) => (s.checks?.[key] ? [{ name, result: s.checks[key].result, detail: s.checks[key].reason }] : []));
+    return {
+      id: s.id,
+      projectId: s.projectId,
+      kind: s.kind as FieldItem['kind'],
+      status: s.status === 'verified' ? 'verified' : s.status === 'sent_back' ? 'sent_back' : 'pending_re',
+      flagged: s.flagged,
+      chainageM: s.chainageM,
+      offsetM: s.offsetM,
+      lotName: s.lotName ?? '',
+      submittedBy: s.submittedBy ?? 'Unknown',
+      capturedAt: s.capturedAt,
+      receivedAt: s.receivedAt,
+      what: s.kind === 'incident' ? (INCIDENT[String(d.incident_type)] ?? null) : (s.milestoneName ?? s.discipline?.label ?? null),
+      photoIds: s.media.filter((m) => m.kind === 'photo').map((m) => m.id),
+      voiceId: s.media.find((m) => m.kind === 'voice_note')?.id ?? null,
+      lines,
+      checks,
+      returnReason: s.returnReason?.label ?? null,
+      reviewedBy: s.reviewedBy,
+      reviewedAt: s.reviewedAt,
+      canReview: s.canReview,
+    };
+  });
+
+export const verifyFieldItem = (id: string) => api<void>(`/field/submissions/${encodeURIComponent(id)}/verify`, { method: 'POST' });
+export const sendBackFieldItem = (id: string, returnReasonId: string, note: string) =>
+  api<void>(`/field/submissions/${encodeURIComponent(id)}/send-back`, {
+    method: 'POST',
+    body: { returnReasonCode: returnReasonId, ...(note.trim() ? { reasonText: note.trim() } : {}) } satisfies ApiBody<'ReturnDto'>,
   });
 
 const chainSteps = (chain: ApiChain | undefined): ChainStep[] =>

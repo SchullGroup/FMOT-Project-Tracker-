@@ -4,10 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 import { getMediaUrl } from '@/lib/endpoints';
 
 /** A photo fetched through a short-lived signed link (5 minutes on the API). */
-export function PhotoThumb({ mediaId, alt, className = '' }: { mediaId: string | null; alt: string; className?: string }) {
+export function PhotoThumb({ mediaId, alt, className = '', size = 'thumb' }: { mediaId: string | null; alt: string; className?: string; size?: 'thumb' | 'web' }) {
   const media = useQuery({
-    queryKey: ['media', mediaId, 'thumb'],
-    queryFn: () => getMediaUrl(mediaId!, 'thumb'),
+    queryKey: ['media', mediaId, size],
+    queryFn: () => getMediaUrl(mediaId!, size),
     enabled: Boolean(mediaId),
     staleTime: 4 * 60_000,
     retry: false,

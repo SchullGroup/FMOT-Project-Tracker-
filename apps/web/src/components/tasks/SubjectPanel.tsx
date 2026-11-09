@@ -17,6 +17,23 @@ const RESULT: Record<CheckResult['result'], { mark: string; cls: string; word: s
   not_available: { mark: '–', cls: 'bg-[#eceef1] text-[#4b5563]', word: 'Not checked' },
 };
 
+/** The automatic checks on an item from site: a mark per result (amber only for something real), the name and why. */
+export function CheckList({ checks }: { checks: CheckResult[] }) {
+  return (
+    <ul className="flex flex-col gap-2" aria-label="Automatic checks">
+      {checks.map((c) => (
+        <li key={c.name} className="flex items-start gap-3">
+          <span aria-hidden className={`grid size-7 shrink-0 place-items-center rounded-full text-sm font-bold ${RESULT[c.result].cls}`}>{RESULT[c.result].mark}</span>
+          <span>
+            <span className="font-semibold">{c.name}</span> <span className="sr-only">{RESULT[c.result].word}.</span>
+            <span className="block text-sm text-ink-muted">{c.detail}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /** The part of a task screen that shows what is being decided. */
 export function SubjectPanel(props: {
   subject: TaskSubject;
@@ -36,17 +53,7 @@ export function SubjectPanel(props: {
           <div className="flex flex-col gap-5">
             <CorridorDiagram offsetM={s.offsetM} widthM={s.corridorWidthM} />
             <LotDiagram name={s.lotName} fromM={s.lotFromM} toM={s.lotToM} atM={s.chainageM} />
-            <ul className="flex flex-col gap-2" aria-label="Automatic checks">
-              {s.checks.map((c) => (
-                <li key={c.name} className="flex items-start gap-3">
-                  <span aria-hidden className={`grid size-7 shrink-0 place-items-center rounded-full text-sm font-bold ${RESULT[c.result].cls}`}>{RESULT[c.result].mark}</span>
-                  <span>
-                    <span className="font-semibold">{c.name}</span> <span className="sr-only">{RESULT[c.result].word}.</span>
-                    <span className="block text-sm text-ink-muted">{c.detail}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <CheckList checks={s.checks} />
           </div>
         </div>
       );

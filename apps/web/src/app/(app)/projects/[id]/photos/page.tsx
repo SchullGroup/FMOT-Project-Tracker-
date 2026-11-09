@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
 import { useState } from 'react';
 import { PhotoThumb } from '@/components/project/PhotoThumb';
 import { useProjectId } from '@/components/project/ProjectFrame';
@@ -28,7 +29,8 @@ const FILTERS = [
 /*
  * W5.4 Photos and reports. What a person sees here depends on their role:
  * the API only returns unverified items to the submitter, the lot's
- * engineer and the project manager.
+ * engineer and the project manager. Each card opens the item (W7.4), where
+ * the lot's engineer verifies it or sends it back.
  */
 export default function PhotosPage() {
   const id = useProjectId();
@@ -71,30 +73,35 @@ export default function PhotosPage() {
 
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {shown.map((s) => (
-          <li key={s.id} className={`flex gap-4 rounded-md border bg-surface p-3 ${s.flagged ? 'border-status-construction' : 'border-line'}`}>
-            <div className="w-32 shrink-0">
-              {s.mediaId ? (
-                <PhotoThumb mediaId={s.mediaId} alt={`${KIND_LABEL[s.kind]} at ${formatChainage(s.chainageM)}`} />
-              ) : (
-                <div className="grid aspect-[4/3] place-items-center rounded-md bg-canvas text-sm text-ink-muted">{KIND_LABEL[s.kind]}</div>
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold">
-                {KIND_LABEL[s.kind]}
-                {s.discipline ? `, ${s.discipline.toLowerCase()}` : ''}
-              </p>
-              <p className="tabular text-sm">{s.chainageM !== null ? formatChainage(s.chainageM) : s.lotName}</p>
-              <p className="text-sm text-ink-muted">
-                {formatDate(s.capturedAt)}, {s.submittedBy}
-              </p>
-              {s.summary && <p className="mt-1 text-sm">{s.summary}</p>}
-              <div className="mt-2 flex flex-wrap gap-2">
-                <StatusPill status={s.status} />
-                {s.flagged && <Pill tone="warn">Flagged</Pill>}
+          <li key={s.id}>
+            <Link
+              href={`/projects/${id}/photos/${s.id}`}
+              className={`flex h-full gap-4 rounded-md border bg-surface p-3 hover:bg-brand-50 focus-visible:outline-2 ${s.flagged ? 'border-status-construction' : 'border-line'}`}
+            >
+              <div className="w-32 shrink-0">
+                {s.mediaId ? (
+                  <PhotoThumb mediaId={s.mediaId} alt={`${KIND_LABEL[s.kind]} at ${formatChainage(s.chainageM)}`} />
+                ) : (
+                  <div className="grid aspect-[4/3] place-items-center rounded-md bg-canvas text-sm text-ink-muted">{KIND_LABEL[s.kind]}</div>
+                )}
               </div>
-              {s.returnReason && <p className="mt-1 text-sm text-danger">Reason: {s.returnReason}</p>}
-            </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">
+                  {KIND_LABEL[s.kind]}
+                  {s.discipline ? `, ${s.discipline.toLowerCase()}` : ''}
+                </p>
+                <p className="tabular text-sm">{s.chainageM !== null ? formatChainage(s.chainageM) : s.lotName}</p>
+                <p className="text-sm text-ink-muted">
+                  {formatDate(s.capturedAt)}, {s.submittedBy}
+                </p>
+                {s.summary && <p className="mt-1 text-sm">{s.summary}</p>}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <StatusPill status={s.status} />
+                  {s.flagged && <Pill tone="warn">Flagged</Pill>}
+                </div>
+                {s.returnReason && <p className="mt-1 text-sm text-danger">Reason: {s.returnReason}</p>}
+              </div>
+            </Link>
           </li>
         ))}
       </ul>
