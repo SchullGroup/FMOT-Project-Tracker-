@@ -41,6 +41,7 @@ import type {
   BaselineRevision,
   Certificate,
   ChainStep,
+  CodeChannel,
   DesignPackage,
   DesignRequirement,
   DocumentGroup,
@@ -184,10 +185,16 @@ export const confirmPin = (pin: string, action: string, subjectId: string) =>
 /* Invites */
 
 export const getInvite = (token: string) => api<InvitePreview>(`/invites/${encodeURIComponent(token)}`, { noRefresh: true });
-export const sendInviteCode = (token: string) => api<void>('/invites/code', { method: 'POST', body: { token }, noRefresh: true });
+/** The code goes where the person picked (`channel`), else by their code channel; accept says where it went. */
+export const sendInviteCode = (token: string, channel?: CodeChannel) =>
+  api<void>('/invites/code', { method: 'POST', body: { token, channel } satisfies ApiBody<'InviteCodeDto'>, noRefresh: true });
 
-export async function acceptInvite(token: string, code: string, pin: string): Promise<void> {
-  const tokens = await api<AuthTokens>('/invites/accept', { method: 'POST', body: { token, code, pin, deviceId: getDeviceId() }, noRefresh: true });
+export async function acceptInvite(token: string, code: string, pin: string, channel?: CodeChannel): Promise<void> {
+  const tokens = await api<AuthTokens>('/invites/accept', {
+    method: 'POST',
+    body: { token, code, pin, deviceId: getDeviceId(), channel } satisfies ApiBody<'AcceptInviteDto'>,
+    noRefresh: true,
+  });
   setAccessToken(tokens.accessToken);
 }
 

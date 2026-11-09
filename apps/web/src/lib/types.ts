@@ -39,14 +39,19 @@ export interface OtpVerifyResult {
   hasPin: boolean;
 }
 
+/** Where a code or invite goes. */
+export type CodeChannel = 'sms' | 'email';
+
 export interface InvitePreview {
   name: string;
   role: string;
   organisation: string;
   phoneMasked: string;
   /** Where the code goes: the person's chosen channel, and that phone or email address masked. */
-  codeChannel?: 'sms' | 'email';
+  codeChannel?: CodeChannel;
   codeSentTo?: string;
+  /** Every way the code can go, masked, the person's code channel first; they pick one. */
+  channels?: { channel: CodeChannel; sentTo: string }[];
 }
 
 export interface MapProjectProperties {

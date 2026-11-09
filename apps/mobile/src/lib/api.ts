@@ -46,6 +46,19 @@ export interface Me {
   permissions: string[];
 }
 
+export type CodeChannel = 'sms' | 'email';
+
+/** Who the invite is for, and every way the code can go (masked), the person's code channel first. */
+export interface InvitePreview {
+  name: string;
+  role: string;
+  organisation: string;
+  phoneMasked: string;
+  codeChannel?: CodeChannel;
+  codeSentTo?: string;
+  channels?: { channel: CodeChannel; sentTo: string }[];
+}
+
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
@@ -227,11 +240,12 @@ export function createApi(deps: {
     resume: refresh,
 
     invitePreview: (token: string) =>
-      request<{ name: string; role: string; organisation: string; phoneMasked: string; codeChannel?: 'sms' | 'email'; codeSentTo?: string }>(`/invites/${encodeURIComponent(token)}`, { signIn: true }),
-    inviteCode: (token: string) => request<void>('/invites/code', { method: 'POST', body: { token }, signIn: true }),
+      request<InvitePreview>(`/invites/${encodeURIComponent(token)}`, { signIn: true }),
+    /** The code goes where the person picked (`channel`), else by their code channel. */
+    inviteCode: (token: string, channel?: CodeChannel) => request<void>('/invites/code', { method: 'POST', body: { token, channel }, signIn: true }),
     /** The invite only shows a masked number, so the phone number for later PIN sign-ins comes from /me. */
-    acceptInvite: async (token: string, code: string, pin: string) => {
-      await keep(await request<Tokens>('/invites/accept', { method: 'POST', body: { token, code, pin, deviceId: await device() }, signIn: true }));
+    acceptInvite: async (token: string, code: string, pin: string, channel?: CodeChannel) => {
+      await keep(await request<Tokens>('/invites/accept', { method: 'POST', body: { token, code, pin, deviceId: await device(), channel }, signIn: true }));
       const me = await request<Me>('/me');
       await deps.store.set(KEYS.phone, me.user.phone);
     },

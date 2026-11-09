@@ -182,6 +182,10 @@ export async function mockFetch(path: string, init: RequestInit): Promise<Respon
       phoneMasked: '0803 *** 4417',
       codeChannel: 'sms',
       codeSentTo: '+234803***4417',
+      channels: [
+        { channel: 'sms', sentTo: '+234803***4417' },
+        { channel: 'email', sentTo: 'm***@example.com' },
+      ],
     });
   }
 

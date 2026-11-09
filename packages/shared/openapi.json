@@ -293,7 +293,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/InviteTokenDto"
+                "$ref": "#/components/schemas/InviteCodeDto"
               }
             }
           }
@@ -4889,12 +4889,20 @@
           "subjectId"
         ]
       },
-      "InviteTokenDto": {
+      "InviteCodeDto": {
         "type": "object",
         "properties": {
           "token": {
             "type": "string",
             "description": "The token from the invite link, or the short code (ABCD-2345)"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "sms",
+              "email"
+            ],
+            "description": "Where to send the code; the person's code channel when left out"
           }
         },
         "required": [
@@ -4920,6 +4928,14 @@
           "pin": {
             "type": "string",
             "example": "2580"
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "sms",
+              "email"
+            ],
+            "description": "Where the code was sent (as asked for on /invites/code)"
           }
         },
         "required": [

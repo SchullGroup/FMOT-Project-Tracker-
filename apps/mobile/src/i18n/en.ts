@@ -60,6 +60,8 @@ export const en = {
     welcome: (name: string) => `Welcome, ${name}`,
     sendCode: 'Text me a code',
     emailCode: 'Email me a code',
+    chooseHow: (phone: string, email: string) => `We can text the code to ${phone} or email it to ${email}. Pick one.`,
+    otherWay: 'Send the code the other way',
     codeSentTo: (phone: string) => `We sent a 6-digit code to ${phone}.`,
     start: 'Start',
   },

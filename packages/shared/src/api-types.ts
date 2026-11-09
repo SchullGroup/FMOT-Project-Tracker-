@@ -1915,9 +1915,14 @@ export interface components {
             /** @description Its subject: invite, project, lot, section or membership id, or "<project id>:<gate no>" */
             subjectId: string;
         };
-        InviteTokenDto: {
+        InviteCodeDto: {
             /** @description The token from the invite link, or the short code (ABCD-2345) */
             token: string;
+            /**
+             * @description Where to send the code; the person's code channel when left out
+             * @enum {string}
+             */
+            channel?: "sms" | "email";
         };
         AcceptInviteDto: {
             /**
@@ -1931,6 +1936,11 @@ export interface components {
             code: string;
             /** @example 2580 */
             pin: string;
+            /**
+             * @description Where the code was sent (as asked for on /invites/code)
+             * @enum {string}
+             */
+            channel?: "sms" | "email";
         };
         MembershipInput: {
             projectId: string;
@@ -2609,7 +2619,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["InviteTokenDto"];
+                "application/json": components["schemas"]["InviteCodeDto"];
             };
         };
         responses: {
