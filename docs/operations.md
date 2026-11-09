@@ -10,6 +10,7 @@ when staging was prepared but not yet deployed (see "Status" at the end).
 | Local development | branch `dev` (this folder is linked to it) | your machine, `pnpm dev` | console |
 | Demo | branch `demo` (`pnpm db:seed:demo`, docs/demo-data.md) | your machine, pointed at `demo` | console |
 | Staging | branch `main` | Fly.io, Frankfurt (`fra`) | console |
+| Web demo (sample data) | none: the web app's built-in sample data (`NEXT_PUBLIC_API_MOCK=1`) | Vercel, Schulltech team account, `fra1` | none |
 | Production | open | open: must be hosted in Nigeria (Nigeria Data Protection Act) | Termii |
 
 Production hosting in Nigeria is an open question and is not set up. Nothing here is a production plan.
@@ -111,7 +112,8 @@ Every push runs `.github/workflows/ci.yml`:
 - **Lint, unit tests, types:** oxlint on the API, its unit tests, a web typecheck, and a check that `packages/shared/openapi.json` and the
   generated types match the code (`pnpm api:types`, then `git diff --exit-code`).
 - **Web walkthroughs:** the nine Playwright walkthroughs on sample data, under the Content Security Policy.
-- **Deploy to staging:** only on `main`, after both pass, and one deploy at a time:
+- **Deploy to staging:** only on `main`, after both pass, one deploy at a time, and only once the repository variable
+  `STAGING_DEPLOY` is `on` (it is off until staging exists on Fly.io, so pushes are not red for want of `FLY_API_TOKEN`):
   1. API: `flyctl deploy` builds the image. The release command (`node dist/scripts/migrate.js`) applies the migrations
      on `main`, and only then do the API machines move to the new image, one at a time, each routed once `/api/ready`
      answers.
@@ -128,6 +130,39 @@ flyctl deploy --config deploy/fly/web.staging.toml --dockerfile apps/web/Dockerf
 Migrations must be backward compatible with the API that is still running while they apply: add columns and tables
 first, and drop or rename them in a later release once no running code reads them. Never edit a migration that has
 been applied anywhere; write a new one.
+
+## Web app on Vercel
+
+The web app (`apps/web`) can also run on Vercel, under the Schulltech team account. For now it is a sample-data demo:
+it runs every screen on the built-in sample data and needs no API or database. Later it will point at the staging API on
+Fly.io. The settings are in `apps/web/vercel.json`, and the Node version in `apps/web/package.json` (`engines`).
+
+| Setting | Value | Why |
+| --- | --- | --- |
+| Root Directory | `apps/web` | the web app's folder; Vercel reads `vercel.json` there |
+| Include files outside the root directory | on (the default) | the build needs `packages/shared` and the root `pnpm-lock.yaml` |
+| Framework preset | Next.js | from `vercel.json` |
+| Install command | `npx --yes pnpm@12.11.2 install --frozen-lockfile` | Vercel would pick pnpm 9 or 10 from the lockfile; the repository needs pnpm 12 (`allowBuilds` in `pnpm-workspace.yaml`). Installs the whole workspace from the root |
+| Build command | `npx --yes pnpm@12.11.2 --filter @fmot/shared build && npx --yes pnpm@12.11.2 run build` | builds `@fmot/shared` (its `dist` is not committed), then the web app; `prebuild` copies the MapLibre worker into `public/maplibre` |
+| Region | `fra1` (Frankfurt) | next to the Neon database and the Fly.io API (`fra`) |
+| Node.js | 26.x | the version everything else runs on; Vercel's default since Node 26 LTS |
+
+Environment variables (Settings, Environment Variables, for Production and Preview):
+
+| Variable | Now (sample-data demo) | Later (against the staging API) |
+| --- | --- | --- |
+| `NEXT_PUBLIC_API_MOCK` | `1` | `0` |
+| `NEXT_PUBLIC_MAP_STYLE_URL` | `https://tiles.openfreemap.org/styles/liberty` (the default street map; a MapTiler satellite style URL with its key when there is one) | same |
+| `API_ORIGIN` | not needed | the staging API's origin, for example `https://fmot-rail-api-staging.fly.dev` (no `/api`) |
+| `MAP_EXTRA_ORIGINS` | not needed | only if the map style loads tiles from hosts other than its own (comma separated) |
+
+`NEXT_PUBLIC_*` values and `API_ORIGIN` are read when the app is built (the `/api` proxy is written into the build), so
+changing any of them needs a redeploy (Deployments, the latest one, Redeploy). The Content Security Policy is set per
+request by `src/proxy.ts` and allows the map style's own origin; checked on a production build on 9 November 2026: sign-in
+on sample data, the map with its worker, no policy violations.
+
+Vercel's preview and production links are public unless Deployment Protection is on (Settings, Deployment Protection).
+The sample-data demo holds no real data, but turn protection on before pointing it at the staging API.
 
 ## Roll back
 

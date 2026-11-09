@@ -78,7 +78,9 @@ jobs:
   deploy-staging:
     name: Deploy to staging
     needs: [checks, web]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Off until staging exists on Fly.io: set the repository variable STAGING_DEPLOY to on (Settings, Secrets and
+    # variables, Actions, Variables) together with the FLY_API_TOKEN secret (docs/operations.md, One-time setup).
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.STAGING_DEPLOY == 'on'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment:
