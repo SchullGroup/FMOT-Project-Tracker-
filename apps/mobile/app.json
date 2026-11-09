@@ -8,7 +8,8 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.schulltech.fmotfield"
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +18,9 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.schulltech.fmotfield",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -39,6 +42,14 @@
           "cameraPermission": "Site photos are taken in the app, so they carry the time and place.",
           "microphonePermission": false,
           "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Hold the button to record a short voice note with a site photo.",
+          "enableBackgroundPlayback": false,
+          "enableBackgroundRecording": false
         }
       ],
       [

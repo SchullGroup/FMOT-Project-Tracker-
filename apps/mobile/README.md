@@ -108,6 +108,22 @@ The same API as the web, as a mobile client (`src/lib/api.ts`):
 - `pnpm --filter mobile doctor`: Expo's dependency checks.
 - `pnpm tokens` (root): rewrites `src/theme/tokens.ts` from `tools/penpot-ds-tokens.json`, with the web theme.
 
+## A Wi-Fi test APK for Android
+
+An installable app for a tester on the same Wi-Fi as the Mac running the API, without Expo Go. It talks plain http to that Mac, which Android allows only in this build (`app.config.ts` turns it on when `FMOT_ALLOW_HTTP=1`; every other build is https only). Change the address to the Mac's own.
+
+- On this Mac, no Expo account (Java 17 from Homebrew `openjdk@17`, the Android SDK in `~/Library/Android/sdk`; the first build takes about 20 minutes):
+  ```sh
+  cd apps/mobile
+  FMOT_ALLOW_HTTP=1 EXPO_PUBLIC_API_URL=http://192.168.1.178:4000 npx expo prebuild --platform android --no-install
+  cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@17 ANDROID_HOME=~/Library/Android/sdk \
+    EXPO_PUBLIC_API_URL=http://192.168.1.178:4000 FMOT_ALLOW_HTTP=1 NODE_ENV=production \
+    ./gradlew assembleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a
+  ```
+  The APK is `android/app/build/outputs/apk/release/app-release.apk` (`android/` is git-ignored and made again by prebuild). It is signed with the Android debug key: fine to pass around for testing, not for the Play Store.
+- In Expo's cloud instead: `npx eas-cli build -p android --profile lan-test` (needs an Expo account; the profile in `eas.json` sets the same two variables).
+- Send the file by WhatsApp (as a document), Google Drive or USB; Gmail refuses .apk attachments. The phone asks to allow installs from that app, and Play Protect may ask to install anyway.
+
 ## What does not work in Expo Go
 
 - **Face ID on iPhone.** Expo Go cannot use Face ID, so on an iPhone the "fingerprint or face" shortcut asks for the
