@@ -58,11 +58,22 @@ async function rawFetch(path: string, opts: RequestOptions): Promise<Response> {
   return MOCK ? mockFetch(path, init) : fetch(`/api${path}`, init);
 }
 
-/** Exchange the refresh cookie for a new access token. Shared by concurrent callers. */
+// One tab at a time: the refresh token changes on every use and an old one sent again ends the whole session, so two
+// tabs opening together must not both send the same cookie. The second waits, then sends the new one.
+async function oneTabAtATime(work: () => Promise<Response>): Promise<Response> {
+  if (typeof navigator === 'undefined' || !navigator.locks) return work();
+  let res: Response | undefined;
+  await navigator.locks.request('fmot-refresh', async () => {
+    res = await work();
+  });
+  return res!;
+}
+
+/** Exchange the refresh cookie for a new access token. Shared by concurrent callers, and by tabs in turn. */
 export async function refreshSession(): Promise<boolean> {
   refreshing ??= (async () => {
     try {
-      const res = await rawFetch('/auth/refresh', { method: 'POST', noRefresh: true });
+      const res = await oneTabAtATime(() => rawFetch('/auth/refresh', { method: 'POST', noRefresh: true }));
       if (!res.ok) return false;
       const data = (await res.json()) as { accessToken: string };
       setAccessToken(data.accessToken);

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useState, type FormEvent } from 'react';
+import { Suspense, useEffect, useState, type FormEvent } from 'react';
 import { AuthFrame } from '@/components/AuthFrame';
 import { PinInput } from '@/components/PinInput';
 import { Button } from '@/components/ui/Button';
@@ -19,10 +19,20 @@ type Step = 'phone' | 'code' | 'pin' | 'new-pin';
 function SignIn() {
   const router = useRouter();
   const next = useSearchParams().get('next') ?? '/';
-  const known = getKnownPhone();
-
-  const [step, setStep] = useState<Step>(known ? 'pin' : 'phone');
-  const [phone, setPhone] = useState(known ?? '');
+  const [step, setStep] = useState<Step>('phone');
+  const [phone, setPhone] = useState('');
+  // The remembered phone lives only in this browser, so it is read after the first render: the server's page and the
+  // browser's first render must match (a mismatch is a React error, and in development it made open tabs reload
+  // each other without end).
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const known = getKnownPhone();
+    if (known) {
+      setPhone(known);
+      setStep('pin');
+    }
+    setReady(true);
+  }, []);
   const [code, setCode] = useState('');
   const [pin, setPinValue] = useState('');
   const [pin2, setPin2] = useState('');
@@ -95,6 +105,14 @@ function SignIn() {
     pin: 'Enter your PIN',
     'new-pin': 'Choose a PIN',
   };
+
+  if (!ready) {
+    return (
+      <AuthFrame title="Sign in">
+        <p className="text-lg text-ink-muted">Opening…</p>
+      </AuthFrame>
+    );
+  }
 
   return (
     <AuthFrame title={titles[step]}>
