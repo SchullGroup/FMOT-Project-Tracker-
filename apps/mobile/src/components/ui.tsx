@@ -1,3 +1,5 @@
+import { router } from 'expo-router';
+import { ChevronLeft } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -123,6 +125,16 @@ export function Toggle({ label, hint, value, onChange, disabled }: { label: stri
   );
 }
 
+/** "‹ Home" at the top of a screen opened from home. */
+export function BackLink({ label, onPress }: { label: string; onPress?: () => void }) {
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress ?? (() => router.back())} style={styles.back}>
+      <ChevronLeft size={22} color={colour.text} />
+      <T variant="label">{label}</T>
+    </Pressable>
+  );
+}
+
 /** Call support: on every screen. */
 export function SupportButton() {
   const s = useSession().strings;
@@ -149,6 +161,7 @@ export const styles = StyleSheet.create({
   card: { backgroundColor: colour.raised, borderRadius: radius.lg, borderWidth: 1, borderColor: colour.border, padding: space.lg, gap: space.xs },
   input: { minHeight: touch.large, borderWidth: 2, borderRadius: radius.md, backgroundColor: colour.raised, paddingHorizontal: space.md, color: colour.text },
   notice: { borderRadius: radius.md, padding: space.md },
+  back: { flexDirection: 'row', alignItems: 'center', gap: space.xs, minHeight: touch.min, alignSelf: 'flex-start' },
   chip: { minHeight: touch.min, minWidth: touch.min, paddingHorizontal: space.md, borderRadius: radius.lg, borderWidth: 1, borderColor: colour.borderStrong, backgroundColor: colour.raised, alignItems: 'center', justifyContent: 'center' },
   toggleRow: { minHeight: touch.min, flexDirection: 'row', alignItems: 'center', gap: space.md },
   track: { width: 52, height: 30, borderRadius: 15, padding: 3, justifyContent: 'center' },

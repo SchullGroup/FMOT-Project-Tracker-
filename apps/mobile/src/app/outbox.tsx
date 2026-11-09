@@ -6,7 +6,7 @@ import { rungOf, StatusChip, type Rung } from '@/components/StatusChip';
 import { Button, Card, Notice, Screen, SupportButton, T } from '@/components/ui';
 import { formatTime } from '@/lib/format';
 import { useOutbox } from '@/outbox/OutboxProvider';
-import type { OutboxItem } from '@/outbox/outbox';
+import { isSecurityIncident, type OutboxItem } from '@/outbox/outbox';
 import { useSession } from '@/session/session';
 import { colour, radius, space, touch } from '@/theme';
 
@@ -73,7 +73,14 @@ function Row({ item, onRetry }: { item: OutboxItem; onRetry: () => void }) {
   const { outbox } = useOutbox();
   const rung = rungOf(item);
   const tile = String(item.metadata.discipline_code ?? '');
-  const what = [item.chainageLabel, s.capture.tiles[tile as keyof typeof s.capture.tiles]].filter(Boolean).join(' · ');
+  const incidentType = String((item.metadata.details as { incident_type?: string } | undefined)?.incident_type ?? '');
+  const kindLabel =
+    item.kind === 'daily_report' ? s.outbox.kind.report
+    : item.kind === 'milestone_claim' ? s.outbox.kind.claim
+    : item.kind === 'incident' ? s.outbox.kind.incident(s.incident.types[incidentType as keyof typeof s.incident.types]?.title ?? '')
+    : s.capture.tiles[tile as keyof typeof s.capture.tiles];
+  // A security incident's place is never shown on the phone.
+  const what = [isSecurityIncident(item) ? null : item.chainageLabel, kindLabel].filter(Boolean).join(' · ');
   const state =
     rung === 'queued' ? (item.attempts ? s.outbox.nextTry(formatTime(new Date(item.nextTryAt))) : s.outbox.waitingSignal)
     : rung === 'sending' ? s.outbox.sending

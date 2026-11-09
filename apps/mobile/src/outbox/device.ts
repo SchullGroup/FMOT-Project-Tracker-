@@ -49,6 +49,7 @@ export function uploader(api: Api) {
         const form = new FormData();
         form.append('metadata', JSON.stringify(item.metadata));
         if (item.photoPath) form.append('photo', new File(item.photoPath) as unknown as Blob, 'photo.jpg');
+        if (item.photo2Path) form.append('photo', new File(item.photo2Path) as unknown as Blob, 'photo-2.jpg');
         if (item.voicePath) form.append('voice', new File(item.voicePath) as unknown as Blob, 'voice.m4a');
         return form;
       });

@@ -7,14 +7,14 @@ import { useEffect, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Notice, T } from '@/components/ui';
-import { compass, localIso, shrink, shutterState, TILES, uuid } from '@/lib/capture';
+import { baseMetadata, compass, shrink, shutterState, TILES, uuid, type Fix } from '@/lib/capture';
 import { getContext } from '@/lib/field';
+import { incidentPhoto } from '@/lib/handoff';
 import { formatChainage, formatTime } from '@/lib/format';
 import { useOutbox } from '@/outbox/OutboxProvider';
 import { api, useSession } from '@/session/session';
 import { colour, radius, space, touch } from '@/theme';
 
-type Fix = { latitude: number; longitude: number; accuracyM: number; mocked: boolean };
 type Shot = { photo: string; thumb: string; takenAt: Date; fix: Fix; heading: number | null; weak: boolean };
 
 const VOICE_MAX_MS = 60_000;
@@ -24,11 +24,18 @@ const VOICE_MAX_MS = 60_000;
  * fix of 25 m or better, showing the accuracy live; after 60 seconds without one it allows the photo with a warning,
  * which travels with it. After the shot: the photo, what it is (six tiles), an optional voice note (hold, up to 60 s),
  * Retake or Send. Send moves the files into the outbox and goes home; the outbox sends it when there is signal.
+ *
+ * The same camera serves the other screens (`mode`):
+ * - milestone (M5 Mark complete): two photos, the second "from another angle", sent as one claim;
+ * - onsite (M9 Verify on site): the resident engineer's own photo of a claimed milestone, which verifies it;
+ * - incident (M6): one photo handed back to the incident screen, which sends it.
  */
+type Mode = 'photo' | 'milestone' | 'onsite' | 'incident';
 export default function Capture() {
   const { strings: s, me } = useSession();
   const { outbox, syncNow } = useOutbox();
-  const params = useLocalSearchParams<{ lotId: string; lotName?: string; chainageM?: string; supersedesId?: string }>();
+  const params = useLocalSearchParams<{ lotId: string; lotName?: string; chainageM?: string; supersedesId?: string; mode?: Mode; milestoneId?: string; milestoneName?: string; discipline?: string }>();
+  const mode: Mode = params.mode ?? 'photo';
   const [permission, requestPermission] = useCameraPermissions();
   const camera = useRef<CameraView>(null);
   const [ready, setReady] = useState(false);
@@ -40,6 +47,8 @@ export default function Capture() {
   // Chainage is worked out by the API; without signal the phone only has the last one it was told.
   const [chainageFresh, setChainageFresh] = useState(false);
   const [shot, setShot] = useState<Shot | null>(null);
+  // Milestone claims: the first of the two photos, while the camera waits for the second.
+  const [firstShot, setFirstShot] = useState<Shot | null>(null);
   const [tile, setTile] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -108,7 +117,9 @@ export default function Capture() {
       const takenAt = new Date();
       const picture = await camera.current.takePictureAsync({ quality: 1, exif: false });
       const small = await shrink(picture.uri, picture.width, picture.height);
-      setShot({ photo: small.photo, thumb: small.thumb, takenAt, fix, heading, weak: state === 'weak' });
+      const taken = { photo: small.photo, thumb: small.thumb, takenAt, fix, heading, weak: state === 'weak' };
+      if (mode === 'milestone' && !firstShot) setFirstShot(taken);
+      else setShot(taken);
     } catch (e) {
       console.warn('Capture failed:', (e as Error).message);
       setError(s.capture.failed);
@@ -132,42 +143,52 @@ export default function Capture() {
     if (recorder.uri && ms >= 1000) setVoice({ uri: recorder.uri, ms });
   }
 
+  const needsTile = mode === 'photo' || mode === 'onsite';
+  const restart = () => {
+    setShot(null);
+    setFirstShot(null);
+    setTile(null);
+    setVoice(null);
+  };
+
+  // M6: the photo goes back to the incident screen, which sends it with the type and any voice note.
+  function useForIncident() {
+    if (!shot) return;
+    incidentPhoto.put(shot);
+    router.back();
+  }
+
   async function send() {
-    if (!shot || !tile || !outbox || !me) return;
+    if (!shot || !outbox || !me || (needsTile && !tile)) return;
+    if (mode === 'milestone' && !firstShot) return;
     setBusy(true);
     const clientId = uuid();
     const chainageM = liveChainage;
+    // A claim is dated by its first photo: the moment the person stood at the finished work.
+    const first = mode === 'milestone' ? firstShot! : shot;
+    const kind = mode === 'milestone' ? 'milestone_claim' : 'photo';
+    const discipline = mode === 'milestone' ? (params.discipline ?? null) : tile;
     await outbox.add({
       clientId,
       userId: me.user.id,
-      kind: 'photo',
+      kind,
       lotId: params.lotId,
-      capturedAt: shot.takenAt.toISOString(),
+      capturedAt: first.takenAt.toISOString(),
       chainageLabel: chainageM !== null ? formatChainage(chainageM) : null,
       supersedesId: params.supersedesId ?? null,
-      photoUri: shot.photo,
-      thumbUri: shot.thumb,
+      photoUri: first.photo,
+      photo2Uri: mode === 'milestone' ? shot.photo : null,
+      thumbUri: first.thumb,
       voiceUri: voice?.uri ?? null,
       metadata: {
-        client_id: clientId,
-        kind: 'photo',
-        lot_id: params.lotId,
-        discipline_code: tile,
-        captured_at: localIso(shot.takenAt),
-        latitude: shot.fix.latitude,
-        longitude: shot.fix.longitude,
-        accuracy_m: shot.fix.accuracyM,
-        ...(shot.heading !== null ? { heading: Math.round(shot.heading) % 360 } : {}),
-        device_id: await api.deviceId(),
-        mock_location: shot.fix.mocked,
-        weak_location: shot.weak,
-        ...(chainageM !== null ? { phone_chainage_m: chainageM } : {}),
-        ...(params.supersedesId ? { supersedes_id: params.supersedesId } : {}),
-        details: {},
+        ...baseMetadata({ clientId, kind, lotId: params.lotId, takenAt: first.takenAt, fix: first.fix, heading: first.heading, weak: first.weak || shot.weak, chainageM, deviceId: await api.deviceId(), supersedesId: params.supersedesId }),
+        ...(discipline ? { discipline_code: discipline } : {}),
+        details: params.milestoneId ? { milestone_id: params.milestoneId } : {},
       },
     });
     void syncNow();
-    router.dismissTo({ pathname: '/home', params: { saved: clientId } });
+    if (mode === 'photo') router.dismissTo({ pathname: '/home', params: { saved: clientId } });
+    else router.back();
   }
 
   if (!permission) return <View style={styles.black} />;
@@ -235,6 +256,18 @@ export default function Capture() {
         <View style={styles.after}>
           {shot.weak && <Notice tone="warning">{s.capture.weakNote}</Notice>}
           {error && <Notice tone="error">{error}</Notice>}
+          {mode === 'onsite' && params.milestoneName && <Notice tone="info">{s.capture.onSite(params.milestoneName)}</Notice>}
+          {mode === 'milestone' && firstShot && (
+            <View style={styles.pair}>
+              <Image source={{ uri: firstShot.thumb }} style={styles.pairThumb} accessibilityLabel={s.capture.firstPhoto} />
+              <View style={styles.flex}>
+                <T variant="heading">{params.milestoneName ?? s.milestones.title}</T>
+                <T colour={colour.textSecondary}>{s.capture.twoPhotosTaken}</T>
+              </View>
+            </View>
+          )}
+          {needsTile && (
+          <>
           <View style={styles.between}>
             <T variant="heading">{s.capture.whatIsThis}</T>
             <T variant="small" colour={colour.textSecondary}>{s.capture.tapOne}</T>
@@ -253,7 +286,9 @@ export default function Capture() {
               </Pressable>
             ))}
           </View>
-          {voice ? (
+          </>
+          )}
+          {mode === 'incident' ? null : voice ? (
             <View style={styles.voiceRow}>
               <Button kind="secondary" style={styles.flex} label={s.capture.playVoice(Math.round(voice.ms / 1000))} onPress={() => { player.seekTo(0); player.play(); }} />
               <Button kind="quiet" label={s.capture.deleteVoice} onPress={() => setVoice(null)} />
@@ -271,14 +306,20 @@ export default function Capture() {
             </Pressable>
           )}
           <View style={styles.row}>
-            <Button kind="secondary" label={s.capture.retake} onPress={() => { setShot(null); setTile(null); setVoice(null); }} />
-            <Button label={s.capture.send} style={styles.flex} disabled={!tile} busy={busy} onPress={() => void send()} />
+            <Button kind="secondary" label={s.capture.retake} onPress={restart} />
+            {mode === 'incident' ? (
+              <Button label={s.capture.usePhoto} style={styles.flex} onPress={useForIncident} />
+            ) : (
+              <Button label={mode === 'milestone' ? s.capture.sendClaim : s.capture.send} style={styles.flex} disabled={needsTile && !tile} busy={busy} onPress={() => void send()} />
+            )}
           </View>
-          <T variant="small" colour={colour.textSecondary} style={styles.center}>{s.capture.joinsOutbox}</T>
+          {mode !== 'incident' && <T variant="small" colour={colour.textSecondary} style={styles.center}>{s.capture.joinsOutbox}</T>}
         </View>
       ) : (
         <View style={styles.after}>
           {error && <Notice tone="error">{error}</Notice>}
+          {mode === 'milestone' && <Notice tone="info">{firstShot ? s.capture.secondPhoto : s.capture.firstOfTwo(params.milestoneName ?? '')}</Notice>}
+          {mode === 'onsite' && params.milestoneName && <Notice tone="info">{s.capture.onSite(params.milestoneName)}</Notice>}
           <T colour={colour.textInverse}>{state === 'waiting' ? s.capture.waitHint : state === 'weak' ? s.capture.weakNote : s.capture.readyHint}</T>
         </View>
       )}
@@ -308,4 +349,6 @@ const styles = StyleSheet.create({
   voice: { minHeight: touch.large, borderWidth: 2, borderColor: colour.secondaryBorder, borderRadius: radius.md, backgroundColor: colour.raised, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm },
   voiceRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   row: { flexDirection: 'row', gap: space.md },
+  pair: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  pairThumb: { width: 72, height: 72, borderRadius: radius.sm, backgroundColor: colour.muted },
 });

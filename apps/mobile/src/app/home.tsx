@@ -1,12 +1,13 @@
 import * as Location from 'expo-location';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Camera, ChevronRight, FileText, Flag } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Button, Card, Notice, Screen, SupportButton, T } from '@/components/ui';
 import { errorText } from '@/i18n';
-import { getContext, getMySubmissions, ladder, reportSentToday, type FieldLot } from '@/lib/field';
-import { formatTime, greetingName, partOfDay } from '@/lib/format';
+import { getContext, getMySubmissions, lagosToday, ladder, reportSentToday, type FieldLot, type Milestone } from '@/lib/field';
+import { claimsOf, loadMilestones, milestoneState } from '@/lib/milestones';
+import { formatChainage, formatTime, greetingName, partOfDay } from '@/lib/format';
 import { prefsStore } from '@/lib/storage';
 import { useLoad } from '@/lib/useLoad';
 import { useOutbox } from '@/outbox/OutboxProvider';
@@ -22,8 +23,6 @@ async function position(): Promise<{ lat: number; lon: number; accuracyM: number
   const fix = (await Location.getLastKnownPositionAsync({ maxAge: 120_000, requiredAccuracy: 100 })) ?? (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
   return { lat: fix.coords.latitude, lon: fix.coords.longitude, accuracyM: fix.coords.accuracy !== null ? Math.round(fix.coords.accuracy) : null };
 }
-
-const soon = (title: string) => router.push({ pathname: '/coming-soon', params: { title } });
 
 /** M2 Home for site managers (screens/m2-home). */
 export default function Home() {
@@ -54,7 +53,21 @@ export default function Home() {
   const retakenHere = new Set(local.map((i) => i.supersedesId).filter((x): x is string => !!x));
   const counts = ladder((data.data?.mine.items ?? []).filter((i) => !(i.status === 'sent_back' && retakenHere.has(i.id))), unsent);
   const lastSync = lastSentAt ?? (lastSyncedAt ? Date.parse(lastSyncedAt) : null) ?? data.data?.syncedAt.getTime() ?? null;
-  const reportSent = reportSentToday(data.data?.mine.items ?? []);
+  // Today's report: on the server, or still on this phone (it sends with the outbox).
+  const reportHere = local.find((i) => i.kind === 'daily_report' && i.lotId === lot?.id && (i.metadata.details as { report_date?: string } | undefined)?.report_date === lagosToday());
+  const reportSent = reportSentToday((data.data?.mine.items ?? []).filter((i) => i.lotId === lot?.id)) || reportHere?.status === 'sent';
+  const reportWaiting = !reportSent && !!reportHere;
+
+  // The lot's milestones for the card: how many are open, and the next one along the line.
+  const [milestones, setMilestones] = useState<Milestone[] | null>(null);
+  useFocusEffect(
+    useCallback(() => {
+      if (!lot?.id) return;
+      void loadMilestones(lot.id).then((r) => setMilestones(r.list)).catch(() => setMilestones(null));
+    }, [lot?.id]),
+  );
+  const claims = lot ? claimsOf(local, lot.id) : [];
+  const openMilestones = (milestones ?? []).filter((m) => milestoneState(m, claims) === 'open');
   const firstName = greetingName(me?.user.name ?? '');
 
   const choose = (id: string) => {
@@ -105,24 +118,27 @@ export default function Home() {
       </Pressable>
 
       <View style={styles.row}>
-        <Card style={styles.half} onPress={() => soon(s.home.todaysReport)} label={s.home.todaysReport}>
+        <Card style={styles.half} onPress={() => lot && router.push({ pathname: '/report', params: { lotId: lot.id, lotName: lot.name } })} label={s.home.todaysReport}>
           <View style={styles.iconTitle}>
             <FileText size={22} color={colour.text} />
             <T variant="heading" style={styles.flex}>{s.home.todaysReport}</T>
           </View>
-          <T variant="bodyStrong" colour={reportSent ? colour.successFg : colour.text}>{reportSent ? s.home.reportSent : s.home.reportNotSent}</T>
+          <T variant="bodyStrong" colour={reportSent ? colour.successFg : colour.text}>{reportSent ? s.home.reportSent : reportWaiting ? s.home.reportWaiting : s.home.reportNotSent}</T>
           <T variant="small" colour={colour.textSecondary}>{s.home.reportDue}</T>
         </Card>
-        <Card style={styles.half} onPress={() => soon(s.home.milestones)} label={s.home.milestones}>
+        <Card style={styles.half} onPress={() => lot && router.push({ pathname: '/milestones', params: { lotId: lot.id, lotName: lot.name, projectName: lot.projectName } })} label={s.home.milestones}>
           <View style={styles.iconTitle}>
             <Flag size={22} color={colour.text} />
             <T variant="heading" style={styles.flex}>{s.home.milestones}</T>
           </View>
-          <T variant="small" colour={colour.textSecondary}>{s.home.milestonesHint}</T>
+          {milestones && <T variant="bodyStrong">{s.home.milestonesOpen(openMilestones.length)}</T>}
+          <T variant="small" colour={colour.textSecondary}>
+            {openMilestones[0] ? s.home.milestonesNext(openMilestones[0].name, formatChainage(openMilestones[0].chainageM)) : s.home.milestonesHint}
+          </T>
         </Card>
       </View>
 
-      <Button kind="danger" label={s.home.reportIncident} onPress={() => soon(s.home.reportIncident)} />
+      <Button kind="danger" label={s.home.reportIncident} disabled={!lot} onPress={() => lot && router.push({ pathname: '/incident', params: { lotId: lot.id, lotName: lot.name } })} />
 
       <Card style={styles.sentBack} onPress={() => router.push('/sent-back')} label={s.home.sentBack}>
         <T variant="heading">{s.home.sentBack}</T>

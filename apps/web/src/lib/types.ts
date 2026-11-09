@@ -369,7 +369,7 @@ export interface ChainStep {
 
 export interface CheckResult {
   name: string;
-  result: 'pass' | 'warn' | 'fail';
+  result: 'pass' | 'warn' | 'fail' | 'not_available';
   detail: string;
 }
 

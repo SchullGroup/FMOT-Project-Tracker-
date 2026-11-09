@@ -46,7 +46,9 @@ function Routes() {
         <Stack.Screen name="sent-back" />
         <Stack.Screen name="re-home" />
         <Stack.Screen name="settings" />
-        <Stack.Screen name="coming-soon" />
+        <Stack.Screen name="report" />
+        <Stack.Screen name="milestones" />
+        <Stack.Screen name="incident" />
         <Stack.Screen name="not-for-you" />
       </Stack.Protected>
     </Stack>

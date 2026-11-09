@@ -13,6 +13,8 @@ const RESULT: Record<CheckResult['result'], { mark: string; cls: string; word: s
   pass: { mark: '✓', cls: 'bg-[#e3f1e6] text-[#1f5a2b]', word: 'Passed' },
   warn: { mark: '!', cls: 'bg-[#fbecd9] text-[#7a4304]', word: 'Warning' },
   fail: { mark: '✕', cls: 'bg-[#fbe3e6] text-[#8a0019]', word: 'Failed' },
+  // Grey, so amber always means something real: a check that cannot run on test phones.
+  not_available: { mark: '–', cls: 'bg-[#eceef1] text-[#4b5563]', word: 'Not checked' },
 };
 
 /** The part of a task screen that shows what is being decided. */

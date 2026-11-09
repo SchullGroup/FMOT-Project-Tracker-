@@ -206,4 +206,28 @@ describe('the outbox', () => {
     expect(await box.get(item(2).clientId)).toMatchObject({ serverStatus: 'sent_back', returnReason: 'Photo unclear' });
     expect((await box.lastSync('musa')).syncedAt).toBe('2026-11-03T10:05:00.000Z');
   });
+
+  it('sends incidents before older items, and forgets a security incident once the API has it', async () => {
+    const order: string[] = [];
+    const s = setup(async (i) => {
+      order.push(i.clientId.slice(-1));
+      return { ok: true, serverId: `srv-${i.clientId.slice(-1)}`, chainageLabel: 'km 150+301' };
+    });
+    const box = s.make();
+    await box.init();
+    await box.add(item(1));
+    s.advance(1000);
+    await box.add(item(2, { kind: 'incident', metadata: { kind: 'incident', details: { incident_type: 'security' } }, chainageLabel: null, photo2Uri: null, voiceUri: 'cache/voice-2.m4a' }));
+    s.advance(1000);
+    await box.add(item(3, { kind: 'milestone_claim', photo2Uri: 'cache/photo-3b.jpg' }));
+    const security = (await box.get(item(2).clientId))!;
+    expect((await box.get(item(3).clientId))!.photo2Path).toBe(`document/outbox/${item(3).clientId}/photo-2.jpg`);
+
+    expect(await box.send('musa')).toBe(3);
+    expect(order).toEqual(['2', '1', '3']);
+    // Gone from the phone: no row, no files; the other items stay as sent.
+    expect(await box.get(item(2).clientId)).toBeNull();
+    for (const p of [security.photoPath, security.voicePath, security.thumbPath]) expect(s.files.files.has(p!)).toBe(false);
+    expect((await box.get(item(3).clientId))!).toMatchObject({ status: 'sent', photoPath: null, photo2Path: null });
+  });
 });

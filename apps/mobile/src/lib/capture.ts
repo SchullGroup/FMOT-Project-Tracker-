@@ -1,4 +1,6 @@
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
+import * as Location from 'expo-location';
 import type { LucideIcon } from 'lucide-react-native';
 import { Flag, Layers, MapPin, Signpost, TrainFront, Wrench } from 'lucide-react-native';
 
@@ -57,4 +59,52 @@ export async function shrink(uri: string, width: number, height: number) {
   const photo = await (await longSide(2048)).saveAsync({ compress: 0.8, format: SaveFormat.JPEG });
   const thumb = await (await longSide(400)).saveAsync({ compress: 0.7, format: SaveFormat.JPEG });
   return { photo: photo.uri, thumb: thumb.uri, width: photo.width, height: photo.height };
+}
+
+/** Where the phone is, as an item carries it. */
+export type Fix = { latitude: number; longitude: number; accuracyM: number; mocked: boolean };
+
+/**
+ * One position for a report or an incident (which wait for no shutter): the best the phone gives within 15 seconds,
+ * else its last known one. Null when location is not allowed or the phone has none.
+ */
+export async function oneFix(): Promise<Fix | null> {
+  const had = await Location.getForegroundPermissionsAsync();
+  const p = had.granted ? had : await Location.requestForegroundPermissionsAsync();
+  if (!p.granted) return null;
+  const toFix = (l: Location.LocationObject): Fix => ({ latitude: l.coords.latitude, longitude: l.coords.longitude, accuracyM: Math.round(l.coords.accuracy ?? 999), mocked: l.mocked === true });
+  const fresh = Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }).then(toFix);
+  const late = new Promise<null>((resolve) => setTimeout(() => resolve(null), 15_000));
+  const fix = await Promise.race([fresh, late]).catch(() => null);
+  if (fix) return fix;
+  const last = await Location.getLastKnownPositionAsync().catch(() => null);
+  return last ? toFix(last) : null;
+}
+
+/**
+ * The integrity check a phone can send. Expo Go and development builds have none (Play Integrity and App Attest need
+ * a store build), so they say so and the API shows that grey, not amber; store builds will send the real verdict.
+ */
+export const integrityVerdict = (): string | undefined =>
+  __DEV__ || Constants.executionEnvironment === ExecutionEnvironment.StoreClient ? 'not_available' : undefined;
+
+/** The metadata part every item shares (POST /field/submissions); the caller adds discipline_code and details. */
+export function baseMetadata(m: { clientId: string; kind: string; lotId: string; takenAt: Date; fix: Fix; heading?: number | null; weak?: boolean; chainageM?: number | null; deviceId: string; supersedesId?: string | null }) {
+  const verdict = integrityVerdict();
+  return {
+    client_id: m.clientId,
+    kind: m.kind,
+    lot_id: m.lotId,
+    captured_at: localIso(m.takenAt),
+    latitude: m.fix.latitude,
+    longitude: m.fix.longitude,
+    accuracy_m: m.fix.accuracyM,
+    ...(m.heading !== null && m.heading !== undefined ? { heading: Math.round(m.heading) % 360 } : {}),
+    device_id: m.deviceId,
+    mock_location: m.fix.mocked,
+    ...(m.weak ? { weak_location: true } : {}),
+    ...(m.chainageM !== null && m.chainageM !== undefined ? { phone_chainage_m: m.chainageM } : {}),
+    ...(m.supersedesId ? { supersedes_id: m.supersedesId } : {}),
+    ...(verdict ? { integrity_verdict: verdict } : {}),
+  };
 }

@@ -6,9 +6,11 @@
  *   same item twice never makes a duplicate.
  * - Files live in the app's document folder from the moment Send is pressed (the camera and recorder write to the
  *   cache, which the system may empty), and are deleted only after the API has accepted the item.
- * - One item at a time, oldest first. A failure that may pass (no signal, a server error) waits 30 s, 2 min, 10 min,
+ * - One item at a time, oldest first, except that incidents go before everything else. A failure that may pass (no signal, a server error) waits 30 s, 2 min, 10 min,
  *   then every 30 min; a refusal (the API says the item itself is wrong) stops until someone presses Retry.
  * - Items belong to the person who took them: another person signed in on the same phone neither sees nor sends them.
+ * - A security incident leaves the phone once the API has it: no row, no files, so its place is not kept on a phone that
+ *   may be lost or taken.
  * - Older than 24 hours: a warning. Older than 72 hours: too old, not sent (the API would flag it), take it again.
  */
 
@@ -25,6 +27,8 @@ export interface OutboxItem {
   /** The JSON "metadata" part the API needs (client_id, kind, lot_id, captured_at, position, device ...). */
   metadata: Record<string, unknown>;
   photoPath: string | null;
+  /** The second photo of a milestone claim (another angle). */
+  photo2Path: string | null;
   voicePath: string | null;
   thumbPath: string | null;
   status: OutboxStatus;
@@ -76,6 +80,10 @@ export const backoff = (attempts: number) => BACKOFF_MS[Math.min(Math.max(attemp
 
 const UNSENT: OutboxStatus[] = ['queued', 'sending', 'failed', 'too_old'];
 
+/** A security incident: its place is never shown on the phone, and it leaves the phone once sent. */
+export const isSecurityIncident = (item: Pick<OutboxItem, 'kind' | 'metadata'>) =>
+  item.kind === 'incident' && (item.metadata.details as { incident_type?: string } | undefined)?.incident_type === 'security';
+
 interface Row {
   client_id: string;
   user_id: string;
@@ -83,6 +91,7 @@ interface Row {
   lot_id: string;
   metadata: string;
   photo_path: string | null;
+  photo2_path: string | null;
   voice_path: string | null;
   thumb_path: string | null;
   status: OutboxStatus;
@@ -106,6 +115,7 @@ const fromRow = (r: Row): OutboxItem => ({
   lotId: r.lot_id,
   metadata: JSON.parse(r.metadata) as Record<string, unknown>,
   photoPath: r.photo_path,
+  photo2Path: r.photo2_path ?? null,
   voicePath: r.voice_path,
   thumbPath: r.thumb_path,
   status: r.status,
@@ -133,6 +143,7 @@ export interface NewItem {
   supersedesId?: string | null;
   /** Files as the camera, image manipulator and recorder left them (in the cache). */
   photoUri?: string | null;
+  photo2Uri?: string | null;
   thumbUri?: string | null;
   voiceUri?: string | null;
 }
@@ -174,6 +185,9 @@ export class Outbox {
       CREATE INDEX IF NOT EXISTS outbox_user_status_idx ON outbox (user_id, status);
       CREATE TABLE IF NOT EXISTS outbox_sync (user_id TEXT PRIMARY KEY NOT NULL, synced_at TEXT NOT NULL, sent_at INTEGER);
     `);
+    // Tables made before milestone claims lack the second photo's column.
+    const columns = await this.deps.db.getAllAsync<{ name: string }>('PRAGMA table_info(outbox)');
+    if (!columns.some((c) => c.name === 'photo2_path')) await this.deps.db.execAsync('ALTER TABLE outbox ADD COLUMN photo2_path TEXT');
     await this.deps.db.runAsync("UPDATE outbox SET status = 'queued' WHERE status = 'sending'");
   }
 
@@ -192,12 +206,12 @@ export class Outbox {
    */
   async add(item: NewItem): Promise<OutboxItem> {
     const keep = (uri: string | null | undefined, name: string) => (uri ? this.deps.files.keep(uri, item.clientId, name) : Promise.resolve(null));
-    const [photo, thumb, voice] = [await keep(item.photoUri, 'photo.jpg'), await keep(item.thumbUri, 'thumb.jpg'), await keep(item.voiceUri, 'voice.m4a')];
+    const [photo, photo2, thumb, voice] = [await keep(item.photoUri, 'photo.jpg'), await keep(item.photo2Uri, 'photo-2.jpg'), await keep(item.thumbUri, 'thumb.jpg'), await keep(item.voiceUri, 'voice.m4a')];
     const now = this.now();
     await this.deps.db.runAsync(
-      `INSERT INTO outbox (client_id, user_id, kind, lot_id, metadata, photo_path, voice_path, thumb_path, status, attempts, next_try_at, captured_at, created_at, chainage_label, supersedes_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'queued', 0, ?, ?, ?, ?, ?)`,
-      item.clientId, item.userId, item.kind, item.lotId, JSON.stringify(item.metadata), photo, voice, thumb, now, item.capturedAt, now, item.chainageLabel, item.supersedesId ?? null,
+      `INSERT INTO outbox (client_id, user_id, kind, lot_id, metadata, photo_path, photo2_path, voice_path, thumb_path, status, attempts, next_try_at, captured_at, created_at, chainage_label, supersedes_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'queued', 0, ?, ?, ?, ?, ?)`,
+      item.clientId, item.userId, item.kind, item.lotId, JSON.stringify(item.metadata), photo, photo2, voice, thumb, now, item.capturedAt, now, item.chainageLabel, item.supersedesId ?? null,
     );
     this.changed();
     return (await this.get(item.clientId))!;
@@ -242,7 +256,7 @@ export class Outbox {
     await this.markTooOld(userId);
     for (;;) {
       const [row] = await this.deps.db.getAllAsync<Row>(
-        "SELECT * FROM outbox WHERE user_id = ? AND status = 'queued' AND next_try_at <= ? ORDER BY created_at LIMIT 1",
+        "SELECT * FROM outbox WHERE user_id = ? AND status = 'queued' AND next_try_at <= ? ORDER BY kind = 'incident' DESC, created_at LIMIT 1",
         userId,
         this.now(),
       );
@@ -257,13 +271,20 @@ export class Outbox {
         result = { ok: false, retry: true, error: (error as Error).message };
       }
       const attempts = item.attempts + 1;
+      if (result.ok && isSecurityIncident(item)) {
+        await this.deps.db.runAsync('DELETE FROM outbox WHERE client_id = ?', item.clientId);
+        for (const path of [item.photoPath, item.photo2Path, item.voicePath, item.thumbPath]) if (path) await this.deps.files.remove(path).catch(() => undefined);
+        accepted += 1;
+        this.changed();
+        continue;
+      }
       if (result.ok) {
         await this.deps.db.runAsync(
-          "UPDATE outbox SET status = 'sent', attempts = ?, server_id = ?, server_status = COALESCE(server_status, 'pending_re'), sent_at = ?, last_error = NULL, chainage_label = COALESCE(?, chainage_label), photo_path = NULL, voice_path = NULL WHERE client_id = ?",
+          "UPDATE outbox SET status = 'sent', attempts = ?, server_id = ?, server_status = COALESCE(server_status, 'pending_re'), sent_at = ?, last_error = NULL, chainage_label = COALESCE(?, chainage_label), photo_path = NULL, photo2_path = NULL, voice_path = NULL WHERE client_id = ?",
           attempts, result.serverId, this.now(), result.chainageLabel, item.clientId,
         );
         // Only now is the full-size photo (and voice note) deleted; the thumbnail stays until the engineer decides.
-        for (const path of [item.photoPath, item.voicePath]) if (path) await this.deps.files.remove(path).catch(() => undefined);
+        for (const path of [item.photoPath, item.photo2Path, item.voicePath]) if (path) await this.deps.files.remove(path).catch(() => undefined);
         await this.deps.db.runAsync('INSERT INTO outbox_sync (user_id, synced_at, sent_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET sent_at = excluded.sent_at', userId, new Date(0).toISOString(), this.now());
         accepted += 1;
         this.changed();
@@ -320,6 +341,6 @@ export class Outbox {
   /** Bytes this person's items take on the phone. */
   async spaceUsed(userId: string): Promise<number> {
     const items = await this.list(userId);
-    return items.reduce((n, i) => n + [i.photoPath, i.voicePath, i.thumbPath].reduce((m, p) => m + (p ? this.deps.files.size(p) : 0), 0), 0);
+    return items.reduce((n, i) => n + [i.photoPath, i.photo2Path, i.voicePath, i.thumbPath].reduce((m, p) => m + (p ? this.deps.files.size(p) : 0), 0), 0);
   }
 }
