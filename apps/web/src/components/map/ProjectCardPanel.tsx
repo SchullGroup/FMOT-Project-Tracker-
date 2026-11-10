@@ -3,20 +3,19 @@
 import { dayCount, lowerFirst } from '@/lib/format';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { getMediaUrl, getProjectCard } from '@/lib/endpoints';
+import { getProjectCard } from '@/lib/endpoints';
+import { PhotoThumb } from '@/components/project/PhotoThumb';
+import { CorridorSketch } from './CorridorSketch';
 import { CATEGORY_COLOUR, CATEGORY_LABEL, categoryOf, formatKm, formatPhone } from '@/lib/status';
 
 export const CURRENT_PROJECT_KEY = 'fmot.currentProject';
 
+// "Kaduna and Kano"; "Lagos, Ogun and Oyo".
+const listInWords = (items: string[]) => (items.length < 2 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`);
+
 /** W4: the panel that opens when a project is clicked on the map. */
-export function ProjectCardPanel({ id, onClose }: { id: string; onClose: () => void }) {
+export function ProjectCardPanel({ id, onClose, line }: { id: string; onClose: () => void; line?: [number, number][] }) {
   const card = useQuery({ queryKey: ['card', id], queryFn: () => getProjectCard(id) });
-  const photo = useQuery({
-    queryKey: ['media', card.data?.latestPhoto?.mediaId],
-    queryFn: () => getMediaUrl(card.data!.latestPhoto!.mediaId, 'web'),
-    enabled: Boolean(card.data?.latestPhoto),
-    staleTime: 4 * 60_000, // signed links last 5 minutes
-  });
 
   return (
     <aside
@@ -54,7 +53,7 @@ export function ProjectCardPanel({ id, onClose }: { id: string; onClose: () => v
           </div>
 
           <p className="text-base text-ink-muted">
-            {formatKm(card.data.lengthM)} through {card.data.states.join(' and ') || 'states not yet set'}
+            {formatKm(card.data.lengthM)} through {listInWords(card.data.states) || 'states not yet set'}
           </p>
 
           {(card.data.physicalPercent !== null || card.data.disciplines.length > 0) && (
@@ -80,13 +79,18 @@ export function ProjectCardPanel({ id, onClose }: { id: string; onClose: () => v
           )}
 
           <figure className="flex flex-col gap-2">
-            {photo.data ? (
-              // eslint-disable-next-line @next/next/no-img-element -- signed, short-lived URL
-              <img src={photo.data.url} alt="Latest verified site photo" className="aspect-video w-full rounded-md object-cover" />
+            {card.data.latestPhoto ? (
+              <PhotoThumb mediaId={card.data.latestPhoto.mediaId} size="web" alt="Latest verified site photo" className="aspect-video" />
             ) : (
-              <div className="grid aspect-video place-items-center rounded-md bg-canvas text-sm text-ink-muted">
-                {card.data.latestPhoto ? 'Loading photo…' : 'No verified photo yet'}
-              </div>
+              // No site photo yet: the route itself, with a line saying why.
+              <>
+                <CorridorSketch line={line ?? []} name={card.data.name} category={categoryOf(card.data.status, card.data.health)} lengthLabel={formatKm(card.data.lengthM)} />
+                <figcaption className="text-sm text-ink-muted">
+                  {['draft', 'identified', 'funded', 'contracted'].includes(card.data.status)
+                    ? 'No site photos yet: work on site has not started.'
+                    : 'No verified site photo yet.'}
+                </figcaption>
+              </>
             )}
             {card.data.latestPhoto && (
               <figcaption className="text-sm text-ink-muted">

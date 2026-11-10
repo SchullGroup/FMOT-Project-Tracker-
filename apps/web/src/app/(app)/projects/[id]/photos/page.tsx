@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState } from 'react';
+import { NoPhotoTile } from '@/components/project/NoPhotoTile';
 import { PhotoThumb } from '@/components/project/PhotoThumb';
 import { useProjectId } from '@/components/project/ProjectFrame';
 import { Pill, StatusPill } from '@/components/ui/Pill';
@@ -82,7 +83,7 @@ export default function PhotosPage() {
                 {s.mediaId ? (
                   <PhotoThumb mediaId={s.mediaId} alt={`${KIND_LABEL[s.kind]} at ${formatChainage(s.chainageM)}`} />
                 ) : (
-                  <div className="grid aspect-[4/3] place-items-center rounded-md bg-canvas text-sm text-ink-muted">{KIND_LABEL[s.kind]}</div>
+                  <NoPhotoTile kind={s.kind} line={s.kind === 'daily_report' ? s.summary : null} />
                 )}
               </div>
               <div className="min-w-0 flex-1">

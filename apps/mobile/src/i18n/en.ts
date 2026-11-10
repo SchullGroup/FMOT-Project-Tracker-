@@ -289,6 +289,12 @@ export const en = {
     offline: 'No signal now. Photos wait on this phone and send when the signal comes back.',
     kind: { report: 'Daily report', claim: 'Milestone claim', incident: (type: string) => (type ? `Incident: ${type}` : 'Incident') },
   },
+  thumb: {
+    report: 'Report',
+    voice: 'Voice note',
+    photo: 'Photo',
+    loading: 'Photo',
+  },
   sentBackScreen: {
     title: (n: number) => `Sent back · ${n}`,
     intro: 'The resident engineer returned these. Take them again.',

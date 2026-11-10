@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { NoPhotoTile } from '@/components/project/NoPhotoTile';
 import { PhotoThumb } from '@/components/project/PhotoThumb';
 import { useProjectId } from '@/components/project/ProjectFrame';
 import { ReturnSheet } from '@/components/tasks/ReturnSheet';
@@ -88,7 +89,7 @@ export default function FieldItemPage() {
                   ))}
                 </div>
               ) : (
-                <div className="grid aspect-[4/3] place-items-center rounded-md bg-canvas text-ink-muted">No photo with this {KIND_LABEL[s.kind].toLowerCase()}</div>
+                <NoPhotoTile kind={s.kind} line={s.lines.length ? s.lines.filter((l) => l.label !== 'Report for').map((l) => `${l.label}: ${l.value}`).join(' · ') : null} />
               )}
               {s.voiceId && <VoiceNote mediaId={s.voiceId} />}
             </div>

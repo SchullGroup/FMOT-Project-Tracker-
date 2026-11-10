@@ -1,14 +1,17 @@
 import { router } from 'expo-router';
-import { ChevronLeft, Image as ImageIcon } from 'lucide-react-native';
+import { ChevronLeft } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SiteThumb } from '@/components/SiteThumb';
 import { rungOf, StatusChip, type Rung } from '@/components/StatusChip';
 import { Button, Card, Notice, Screen, SupportButton, T } from '@/components/ui';
+import { getMySubmissions } from '@/lib/field';
 import { formatTime } from '@/lib/format';
+import { useLoad } from '@/lib/useLoad';
 import { useOutbox } from '@/outbox/OutboxProvider';
 import { isSecurityIncident, type OutboxItem } from '@/outbox/outbox';
-import { useSession } from '@/session/session';
-import { colour, radius, space, touch } from '@/theme';
+import { api, useSession } from '@/session/session';
+import { colour, space, touch } from '@/theme';
 
 /*
  * M8 Outbox (screens/m8-outbox): what each status means, then every item of this person on the phone with its
@@ -19,6 +22,8 @@ export default function OutboxScreen() {
   const { strings: s, me } = useSession();
   const { outbox, items, online, lastSyncedAt, lastSentAt, syncNow } = useOutbox();
   const [space, setSpace] = useState(0);
+  // The server's photo for items whose copy on the phone is gone (verified, or the thumbnail cleared): client id -> media id.
+  const serverPhotos = useLoad(async () => new Map((await getMySubmissions(api)).items.map((i) => [i.clientId, i.thumbMediaId ?? null] as const)));
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -56,7 +61,7 @@ export default function OutboxScreen() {
 
       {items.length === 0 && <T colour={colour.textSecondary}>{s.outbox.empty}</T>}
       {items.map((item) => (
-        <Row key={item.clientId} item={item} onRetry={() => void outbox?.retry(item.clientId).then(syncNow)} />
+        <Row key={item.clientId} item={item} mediaId={serverPhotos.data?.get(item.clientId) ?? null} onRetry={() => void outbox?.retry(item.clientId).then(syncNow)} />
       ))}
 
       <T variant="small" colour={colour.textSecondary}>{s.outbox.openOnly}</T>
@@ -68,7 +73,7 @@ export default function OutboxScreen() {
   );
 }
 
-function Row({ item, onRetry }: { item: OutboxItem; onRetry: () => void }) {
+function Row({ item, mediaId, onRetry }: { item: OutboxItem; mediaId: string | null; onRetry: () => void }) {
   const s = useSession().strings;
   const { outbox } = useOutbox();
   const rung = rungOf(item);
@@ -93,13 +98,7 @@ function Row({ item, onRetry }: { item: OutboxItem; onRetry: () => void }) {
   return (
     <Card style={styles.item}>
       <View style={styles.itemRow}>
-        {item.thumbPath ? (
-          <Image source={{ uri: item.thumbPath }} style={styles.thumb} accessibilityIgnoresInvertColors />
-        ) : (
-          <View style={[styles.thumb, styles.noThumb]}>
-            <ImageIcon size={24} color={colour.textSecondary} />
-          </View>
-        )}
+        <SiteThumb localUri={item.thumbPath} mediaId={mediaId} kind={item.kind} />
         <View style={styles.flex}>
           <T variant="bodyStrong">{what || s.outbox.title}</T>
           <T variant="small" colour={colour.textSecondary}>{[formatTime(item.capturedAt), state].filter(Boolean).join(' · ')}</T>
@@ -126,6 +125,4 @@ const styles = StyleSheet.create({
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   item: { gap: space.sm },
   itemRow: { flexDirection: 'row', gap: space.md },
-  thumb: { width: 72, height: 72, borderRadius: radius.md, backgroundColor: colour.muted },
-  noThumb: { alignItems: 'center', justifyContent: 'center' },
 });

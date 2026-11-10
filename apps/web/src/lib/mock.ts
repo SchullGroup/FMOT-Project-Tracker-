@@ -5,7 +5,7 @@
  * 000000 and the PIN 4826: each number is that person, with their role's
  * permissions. Coordinates are approximate and for display only.
  */
-import { mockProjectRoute, sampleMembers } from './mock-project';
+import { GATE_NAMES, mockProjectRoute, sampleMembers } from './mock-project';
 import { mockWizard, mockWizardUpload } from './mock-wizard';
 import { mockAct, mockTask, mockTaskInbox, RETURN_REASONS } from './mock-tasks';
 import { mockAdmin } from './mock-admin';
@@ -52,6 +52,57 @@ const projects: MapProjectsResponse = {
   ],
 };
 
+// Sample media ids (m-<key>) and their photo files in public/sample-photos.
+const SAMPLE_PHOTOS: Record<string, string> = {
+  s1: 'kk-s1.jpg', s2: 'kk-s2.jpg', s3: 'kk-s3.jpg', s5: 'kk-s5.jpg', s6: 'kk-s6.jpg', 's6-2': 'kk-s6-2.jpg',
+  s7: 'kk-s7.jpg', s8: 'kk-s8.jpg', s9: 'kk-s9.jpg', ak: 'ak-handover.jpg', li: 'li-handover.jpg', wi: 'wi-handover.jpg',
+  pm: 'pm-makurdi.jpg',
+};
+const handover = (key: string, verifiedBy: string): ProjectCard['latestPhoto'] => ({ mediaId: `m-${key}`, chainageM: null, capturedAt: null, verifiedBy });
+const LINE_PHOTOS: Record<string, ProjectCard['latestPhoto']> = {
+  'p-ak': handover('ak', 'NRC (handover)'),
+  'p-li': handover('li', 'NRC (handover)'),
+  'p-wi': handover('wi', 'NRC (handover)'),
+  // The line being rehabilitated, as it is today (Makurdi).
+  'p-pm': handover('pm', 'NRC (existing line)'),
+};
+
+// Towns at the points of the sample lines that are not in the stations layer.
+const LINE_TOWNS: Array<[string, [number, number]]> = [['Benin City', [5.63, 6.34]], ['Makurdi', [8.54, 7.73]], ['Bauchi', [10.3, 10.6]]];
+
+/**
+ * A project's corridor in sample data: its own line from the map, with a station at each town it passes. Kaduna–Kano
+ * has the full corridor (lots, photos, an incident) in mock-project.ts.
+ */
+function lineCorridor(f: MapProjectsResponse['features'][number]): GeoJSON.FeatureCollection {
+  const towns = [...MAP_LAYERS.stations!.features.map((s) => [s.properties?.name, (s.geometry as GeoJSON.Point).coordinates] as [string, [number, number]]), ...LINE_TOWNS];
+  const at = (c: [number, number]) => towns.find(([, t]) => t[0] === c[0] && t[1] === c[1])?.[0];
+  return {
+    type: 'FeatureCollection',
+    features: [
+      { type: 'Feature', properties: { kind: 'line', name: f.properties.name }, geometry: f.geometry },
+      ...f.geometry.coordinates.flatMap((c) => {
+        const name = at(c);
+        return name ? [{ type: 'Feature' as const, properties: { kind: 'station', name }, geometry: { type: 'Point' as const, coordinates: c } }] : [];
+      }),
+    ],
+  };
+}
+
+// Metres along a line of [longitude, latitude] points (haversine), for the sample cards' lengths.
+function lineLengthM(coordinates: [number, number][]): number {
+  const R = 6_371_000;
+  const rad = (d: number) => (d * Math.PI) / 180;
+  let m = 0;
+  for (let i = 1; i < coordinates.length; i++) {
+    const [lon1, lat1] = coordinates[i - 1]!;
+    const [lon2, lat2] = coordinates[i]!;
+    const a = Math.sin(rad(lat2 - lat1) / 2) ** 2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(rad(lon2 - lon1) / 2) ** 2;
+    m += 2 * R * Math.asin(Math.sqrt(a));
+  }
+  return Math.round(m);
+}
+
 const counters: MapCounters = { onTrack: 4, behind: 1, stalled: 1, drafts: 1 };
 
 const cards: Record<string, ProjectCard> = {
@@ -72,7 +123,7 @@ const cards: Record<string, ProjectCard> = {
     ],
     physicalPercent: 68,
     financialPercent: 71,
-    latestPhoto: null,
+    latestPhoto: { mediaId: 'm-s1', chainageM: 142_300, capturedAt: new Date(Date.now() - 5 * 86_400_000).toISOString(), verifiedBy: 'Engr. R. Nwosu' },
     personInCharge: { name: 'Engr. A. Bello', role: 'Ministry project manager', phone: '+2348030000000' },
     blockers: [{ text: 'Compensation unpaid for 14 parcels, km 140 to 152' }],
   },
@@ -222,7 +273,12 @@ export async function mockFetch(path: string, init: RequestInit): Promise<Respon
   const layer = /^\/map\/layers\/(.+)$/.exec(route);
   if (layer?.[1]) return json(200, MAP_LAYERS[layer[1]] ?? { type: 'FeatureCollection', features: [] });
   if (route === '/tasks') return json(200, mockTaskInbox());
-  if (route.startsWith('/media/')) return json(404);
+  // Photos: the demo's own openly licensed rail photos (public/sample-photos, credits.json beside them).
+  const media = /^\/media\/m-([a-z0-9-]+)$/.exec(route);
+  if (media?.[1]) {
+    const file = SAMPLE_PHOTOS[media[1]];
+    return file ? json(200, { url: `/sample-photos/${file}`, expiresAt: new Date(Date.now() + 300_000).toISOString() }) : json(404, { code: 'not_found', message: 'No such photo' });
+  }
 
   const method = String(init.method ?? 'GET');
   if (!signedIn && !route.startsWith('/auth') && !route.startsWith('/invites')) return json(401);
@@ -255,7 +311,10 @@ export async function mockFetch(path: string, init: RequestInit): Promise<Respon
   const wizard = mockWizard(route, method, body);
   if (wizard) return json(wizard.status, wizard.body);
 
-  const projectData = mockProjectRoute(route);
+  // Every line but Kaduna–Kano gets its own gates, corridor, length and progress, as the map shows it.
+  const projectOf = /^(?:\/field)?\/projects\/([^/]+)\//.exec(route)?.[1];
+  const own = projectOf && projectOf !== 'p-kk' ? projects.features.find((p) => p.properties.id === projectOf) : undefined;
+  const projectData = mockProjectRoute(route, own && { status: own.properties.status, currentGate: own.properties.currentGate, daysAtGate: own.properties.daysAtGate, lengthM: lineLengthM(own.geometry.coordinates), corridor: lineCorridor(own) });
   if (projectData !== undefined) return json(200, projectData);
 
   const cardMatch = /^\/projects\/([^/]+)\/card$/.exec(route);
@@ -264,14 +323,24 @@ export async function mockFetch(path: string, init: RequestInit): Promise<Respon
     if (card) return json(200, card);
     const f = projects.features.find((p) => p.properties.id === cardMatch[1]);
     if (!f) return json(404);
+    // Each line's own figures: its length from its line, its states and gate; progress only once work has started.
+    const operational = f.properties.status === 'operational';
+    const started = operational || f.properties.status === 'under_construction';
     return json(200, {
       ...cards['p-kk']!,
+      // Each line's own photo: the operational lines have their handover photo; lines not yet built have none.
+      latestPhoto: LINE_PHOTOS[f.properties.id] ?? null,
       id: f.properties.id,
       name: f.properties.name,
       status: f.properties.status,
       health: f.properties.health,
-      currentGate: f.properties.currentGate ? { no: f.properties.currentGate, name: `Gate ${f.properties.currentGate}` } : null,
+      lengthM: lineLengthM(f.geometry.coordinates),
+      states: f.properties.states ?? [],
+      currentGate: f.properties.currentGate ? { no: f.properties.currentGate, name: GATE_NAMES[f.properties.currentGate - 1] ?? `Gate ${f.properties.currentGate}` } : null,
       daysAtGate: f.properties.daysAtGate,
+      disciplines: operational ? [] : started ? cards['p-kk']!.disciplines : [],
+      physicalPercent: operational ? 100 : started ? cards['p-kk']!.physicalPercent : null,
+      financialPercent: operational ? 100 : started ? cards['p-kk']!.financialPercent : null,
       blockers: [],
     } satisfies ProjectCard);
   }

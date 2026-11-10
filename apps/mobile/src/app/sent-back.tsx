@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
-import { ChevronLeft, Image as ImageIcon } from 'lucide-react-native';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { ChevronLeft } from 'lucide-react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SiteThumb } from '@/components/SiteThumb';
 import { StatusChip } from '@/components/StatusChip';
 import { Button, Card, Notice, Screen, SupportButton, T } from '@/components/ui';
 import { errorText } from '@/i18n';
@@ -9,7 +10,7 @@ import { formatTime } from '@/lib/format';
 import { useLoad } from '@/lib/useLoad';
 import { useOutbox } from '@/outbox/OutboxProvider';
 import { api, useSession } from '@/session/session';
-import { colour, radius, space, touch } from '@/theme';
+import { colour, space, touch } from '@/theme';
 
 /*
  * M7 Sent back (screens/m7-sent-back): what the resident engineer returned, with the reason. Retake opens the camera
@@ -40,13 +41,7 @@ export default function SentBack() {
         return (
           <Card key={item.id} style={styles.card}>
             <View style={styles.row}>
-              {thumb ? (
-                <Image source={{ uri: thumb }} style={styles.thumb} />
-              ) : (
-                <View style={[styles.thumb, styles.noThumb]}>
-                  <ImageIcon size={24} color={colour.textSecondary} />
-                </View>
-              )}
+              <SiteThumb localUri={thumb} mediaId={item.thumbMediaId} kind={item.kind} />
               <View style={styles.flex}>
                 <T variant="bodyStrong">{[item.chainage, item.discipline].filter(Boolean).join(' · ')}</T>
                 <T variant="small" colour={colour.textSecondary}>{[item.reviewedBy, item.reviewedAt ? formatTime(item.reviewedAt) : null].filter(Boolean).join(' · ')}</T>
@@ -77,6 +72,4 @@ const styles = StyleSheet.create({
   back: { flexDirection: 'row', alignItems: 'center', gap: space.xs, minHeight: touch.min, alignSelf: 'flex-start' },
   card: { gap: space.sm },
   row: { flexDirection: 'row', gap: space.md },
-  thumb: { width: 72, height: 72, borderRadius: radius.md, backgroundColor: colour.muted },
-  noThumb: { alignItems: 'center', justifyContent: 'center' },
 });

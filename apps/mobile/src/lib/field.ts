@@ -73,6 +73,8 @@ export interface MySubmission {
   returnReason: { code: string; label: string } | null;
   /** Daily reports only: the answers, to prefill the next one. */
   details?: ReportDetails;
+  /** The first photo on the server, for when the phone's own copy is gone. */
+  thumbMediaId?: string | null;
 }
 
 export interface ReviewItem {

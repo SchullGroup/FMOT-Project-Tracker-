@@ -1,6 +1,8 @@
 /*
- * Sample data for the project view in NEXT_PUBLIC_API_MOCK=1 mode. Every
- * project returns the Kaduna–Kano data set; names and figures are invented.
+ * Sample data for the project view in NEXT_PUBLIC_API_MOCK=1 mode. Kaduna–Kano
+ * has the full data set; the other lines get their own gates, corridor, length
+ * and progress (SampleLine), and share Kaduna–Kano's other sections. Names and
+ * figures are invented.
  */
 import type {
   ActivityItem,
@@ -34,23 +36,25 @@ export const GATE_NAMES = [
 ];
 const APPROVER = ['director_rail', 'director_rail', 'director_rail', 'director_rail', 'director_rail', 'director_rail', 'director_rail', 'director_rail', 'director_rail', 'director_rail', 'director_rail', 'nrc_project_engineer', 'accounting_officer', 'nrc_project_engineer', 'nrc_project_engineer'];
 
-const gates: GateRow[] = GATE_NAMES.map((name, i) => {
+// The gates of a project now at gate `current` (16: all passed, a line in service) for `days` days.
+const gatesAt = (current: number, days: number | null): GateRow[] => GATE_NAMES.map((name, i) => {
   const no = i + 1;
-  const passed = no <= 12;
+  const passed = no < current;
   return {
     no,
     name,
     kind: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(no) ? 'attach_evidence' : 'approve_in_system',
     approverRole: APPROVER[i]!,
-    status: passed ? 'passed' : no === 13 ? 'in_progress' : 'not_started',
-    enteredAt: no <= 13 ? day(900 - no * 60) : null,
+    status: passed ? 'passed' : no === current ? 'in_progress' : 'not_started',
+    enteredAt: no <= current ? day(900 - no * 60) : null,
     passedAt: passed ? day(880 - no * 60) : null,
-    daysWaiting: no === 13 ? 12 : null,
+    daysWaiting: no === current ? days : null,
     evidence: passed && no <= 11 ? [{ documentId: `d-g${no}`, code: `D${String(no + 1).padStart(2, '0')}`, title: `Evidence for gate ${no}` }] : [],
     uploadedBy: passed && no <= 11 ? 'Engr. A. Bello' : null,
     confirmedBy: passed ? (no >= 12 ? 'Engr. K. Okafor (NRC)' : 'Engr. H. Danjuma') : null,
   };
 });
+const gates = gatesAt(13, 12);
 
 const stripMap: StripMap = {
   lengthM: 203_000,
@@ -123,7 +127,7 @@ const submissions: Submission[] = [
 ];
 
 function sub(id: string, kind: Submission['kind'], status: Submission['status'], flagged: boolean, chainageM: number | null, daysAgo: number, by: string, discipline: string | null, lotName: string, summary: string | null = null, returnReason: string | null = null): Submission {
-  return { id, kind, status, flagged, chainageM, capturedAt: day(daysAgo), submittedBy: by, discipline, lotName, mediaId: kind === 'photo' || kind === 'milestone_claim' ? `m-${id}` : null, summary, returnReason };
+  return { id, kind, status, flagged, chainageM, capturedAt: day(daysAgo), submittedBy: by, discipline, lotName, mediaId: kind === 'daily_report' ? null : `m-${id}`, summary, returnReason };
 }
 
 // W7.4 in sample data: the item's page, and Verify or Send back, which change it for the rest of the session.
@@ -266,11 +270,34 @@ const activity: ActivityItem[] = [
 /** The sample project's own members, before any added in the session. */
 export const sampleMembers = () => people.members;
 
-export function mockProjectRoute(route: string): unknown | undefined {
+/** A sample line other than Kaduna–Kano, as the map draws it. */
+export interface SampleLine {
+  status: string;
+  currentGate: number | null;
+  daysAtGate: number | null;
+  lengthM: number;
+  corridor: GeoJSON.FeatureCollection;
+}
+
+// The sections of such a line that must agree with the map: in service, everything built and paid; otherwise nothing
+// built yet (no lots, no site photos).
+function lineSections(line: SampleLine): Record<string, unknown> {
+  const done = line.status === 'operational';
+  return {
+    gates: gatesAt(line.currentGate ?? 16, line.daysAtGate),
+    'strip-map': { lengthM: line.lengthM, lots: [], disciplines: stripMap.disciplines.map(({ code, name }) => ({ code, name, segments: done ? [{ fromM: 0, toM: line.lengthM, state: 'complete' as const }] : [] })), trackFrontM: null } satisfies StripMap,
+    progress: { physicalPercent: done ? 100 : 0, plannedPercent: done ? 100 : 0, financialPercent: done ? 100 : null, weeksBehind: 0, lots: [], trackKmByMonth: [] } satisfies ProgressSummary,
+    corridor: line.corridor,
+    lots: addedLots(),
+  };
+}
+
+/** `line` is the project's own line when it is not Kaduna–Kano. */
+export function mockProjectRoute(route: string, line?: SampleLine): unknown | undefined {
   const m = /^\/projects\/[^/]+\/(.+)$/.exec(route);
   const lot = /^\/lots\/([^/]+)\/(certificates|design-packages)$/.exec(route);
   if (lot) return lot[2] === 'certificates' ? (certificates[lot[1]!] ?? []) : (design[lot[1]!] ?? []);
-  if (/^\/field\/projects\/[^/]+\/submissions$/.test(route)) return submissions;
+  if (/^\/field\/projects\/[^/]+\/submissions$/.test(route)) return line ? [] : submissions;
   const field = /^\/field\/submissions\/([^/]+)(?:\/(verify|send-back))?$/.exec(route);
   if (field) return mockFieldItem(field[1]!, field[2] as 'verify' | 'send-back' | undefined);
   if (route.startsWith('/documents/')) return { url: '#' };
@@ -303,6 +330,7 @@ export function mockProjectRoute(route: string): unknown | undefined {
     variations,
     people: { ...people, members: [...people.members, ...addedMembers()] },
     activity,
+    ...(line && !isDraft ? lineSections(line) : {}),
   };
   return table[m[1]!];
 }

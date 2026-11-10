@@ -262,7 +262,8 @@ export const getProjectCard = (id: string) =>
       physicalPercent: c.physicalPercent,
       financialPercent: c.financialPercent,
       latestPhoto: c.latestPhoto,
-      personInCharge: c.personInCharge ? { ...c.personInCharge, role: 'ministry_project_manager' } : null,
+      // The project manager is the person in charge: shown by the role's plain name.
+      personInCharge: c.personInCharge ? { ...c.personInCharge, role: roleLabel('ministry_project_manager') } : null,
       blockers: c.blockers.map((b) => ({ text: b.text })),
     };
   });
