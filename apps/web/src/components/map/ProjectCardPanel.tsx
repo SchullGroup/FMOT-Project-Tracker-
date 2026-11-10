@@ -148,8 +148,11 @@ function StatusChip({ status, health }: { status: Parameters<typeof categoryOf>[
   return (
     <span className="inline-flex min-h-8 items-center gap-2 rounded-full border border-line px-3 text-sm font-semibold">
       <span aria-hidden className="size-2.5 rounded-full" style={{ background: CATEGORY_COLOUR[category] }} />
-      {CATEGORY_LABEL[category]}
-      {health === 'behind' && status !== 'draft' && <span className="text-status-construction">, behind</span>}
+      {/* One span, so the chip's gap does not open a space before the comma. */}
+      <span>
+        {CATEGORY_LABEL[category]}
+        {health === 'behind' && status !== 'draft' && <span className="text-status-construction">, behind</span>}
+      </span>
     </span>
   );
 }

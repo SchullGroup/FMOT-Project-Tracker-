@@ -186,7 +186,8 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: space.sm },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   step: { width: touch.large, height: touch.large, borderRadius: radius.md, borderWidth: 2, borderColor: colour.secondaryBorder, backgroundColor: colour.raised, alignItems: 'center', justifyContent: 'center' },
-  count: { flex: 1, minHeight: touch.large, borderWidth: 1, borderColor: colour.borderStrong, borderRadius: radius.md, backgroundColor: colour.raised, textAlign: 'center', color: colour.text },
+  // minWidth 0: a text box keeps its own default width otherwise and pushes the + button off a narrow screen.
+  count: { flex: 1, minWidth: 0, minHeight: touch.large, borderWidth: 1, borderColor: colour.borderStrong, borderRadius: radius.md, backgroundColor: colour.raised, textAlign: 'center', color: colour.text },
   check: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: touch.min },
   box: { width: 28, height: 28, borderRadius: radius.sm, borderWidth: 2, borderColor: colour.borderStrong, alignItems: 'center', justifyContent: 'center', backgroundColor: colour.raised },
   boxOn: { backgroundColor: colour.brand, borderColor: colour.brand },

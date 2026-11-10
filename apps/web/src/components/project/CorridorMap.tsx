@@ -22,12 +22,16 @@ export function CorridorMap({ data, height = 480 }: { data: GeoJSON.FeatureColle
     });
     if (m.getContainer().parentElement) ro.observe(m.getContainer().parentElement!);
     m.addControl(new NavigationControl({ showCompass: false }), 'top-right');
+    // Opens on the line, its lots and stations. Photos and incidents are left out: one sent from far off (a phone
+    // somewhere else) would zoom the map out to the whole country. Only with no line do they set the view.
     const bounds = new LngLatBounds();
-    for (const f of data.features) {
+    const extend = (f: GeoJSON.Feature) => {
       const g = f.geometry;
       if (g.type === 'Point') bounds.extend(g.coordinates as [number, number]);
       if (g.type === 'LineString') g.coordinates.forEach((c) => bounds.extend(c as [number, number]));
-    }
+    };
+    const onLine = data.features.filter((f) => ['line', 'lot', 'station'].includes(f.properties?.kind));
+    (onLine.length ? onLine : data.features).forEach(extend);
     if (!bounds.isEmpty()) m.fitBounds(bounds, { padding: 40, animate: false });
 
     m.on('load', () => {
