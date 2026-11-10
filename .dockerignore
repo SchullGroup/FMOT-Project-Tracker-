@@ -10,6 +10,9 @@
 **/*.tsbuildinfo
 apps/api/storage
 apps/web/public/maplibre
+# The phone app's native projects (expo prebuild, the APK build): large, and no image uses them.
+apps/mobile/android
+apps/mobile/ios
 **/test-results*
 **/playwright-report
 .git

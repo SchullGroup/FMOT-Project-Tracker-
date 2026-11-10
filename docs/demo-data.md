@@ -21,7 +21,7 @@ For demonstrations without a phone at hand, `DEV_SIGNIN_CODE` (six digits, for e
 - A code must still be requested first (Send me a code), so the same rules apply: five tries per code, ten minutes per code, and the request limit when `SIGNIN_CODE_LIMIT` is on (off for now). It is used up like a real code.
 - Anyone who knows it can sign in as any demo person whose number or address they know, so it never goes near real people's accounts. Leave it empty when the demo is not running.
 
-Run the demo API with it, for example: `demo env APP_ENV=demo DEV_SIGNIN_CODE=000000 PORT=4100 SMS_PROVIDER=console node dist/main.js`.
+Run the demo API with it, for example: `demo env APP_ENV=demo NEON_BRANCH=demo DEV_SIGNIN_CODE=000000 PORT=4100 SMS_PROVIDER=console node dist/main.js`. In demo mode the API refuses to start unless `NEON_BRANCH` names a branch other than main. The hosted demo (Fly.io, `deploy/fly/api.demo.toml`) is in docs/operations.md.
 
 ## Loading it
 

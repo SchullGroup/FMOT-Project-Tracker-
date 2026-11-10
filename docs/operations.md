@@ -11,6 +11,7 @@ when staging was prepared but not yet deployed (see "Status" at the end).
 | Demo | branch `demo` (`pnpm db:seed:demo`, docs/demo-data.md) | your machine, pointed at `demo` | console |
 | Staging | branch `main` | Fly.io, Frankfurt (`fra`) | console |
 | Web demo (sample data) | none: the web app's built-in sample data (`NEXT_PUBLIC_API_MOCK=1`) | Vercel, Schulltech team account, `fra1` | none |
+| Hosted demo (being set up) | branch `demo`, never main | API on Fly.io `fra` (`deploy/fly/api.demo.toml`, app `fmot-api-demo`), web on Vercel | console; codes by email for testers added with an address |
 | Production | open | open: must be hosted in Nigeria (Nigeria Data Protection Act) | Termii |
 
 Production hosting in Nigeria is an open question and is not set up. Nothing here is a production plan.
@@ -163,6 +164,48 @@ on sample data, the map with its worker, no policy violations.
 
 Vercel's preview and production links are public unless Deployment Protection is on (Settings, Deployment Protection).
 The sample-data demo holds no real data, but turn protection on before pointing it at the staging API.
+
+## Hosted demo (Fly.io API, Vercel web)
+
+The demo data for testers outside the office: the Vercel web app talks to a demo API on Fly.io, which runs on the Neon
+`demo` branch in demo mode (`APP_ENV=demo`). Every demo account signs in with the shared code (`DEV_SIGNIN_CODE`, a Fly
+secret given only to testers) after "Send me a code", and the PIN `4826`; nobody is texted (`SMS_PROVIDER=console`). The API refuses to start in demo mode unless
+`NEON_BRANCH` names a branch other than main.
+
+Once only (the person who owns the Fly account does steps 1 and 2):
+
+1. A Fly.io account for Schulltech (fly.io, Sign up; Fly asks for a payment card). One `shared-cpu-1x` machine with
+   1 GB of memory and a 1 GB volume, running all the time: about US$6 a month.
+2. On the Mac: `fly auth login` (opens the browser).
+3. The app and its volume (Frankfurt, next to the database):
+   ```sh
+   fly apps create fmot-api-demo
+   fly volumes create fmot_demo_storage --app fmot-api-demo --region fra --size 1 --yes
+   ```
+4. The secrets, typed into Fly and never into a file. The database URLs are the **demo** branch's; the three signing
+   secrets are the demo's own (64 random bytes each, all different), not the local ones:
+   ```sh
+   fly secrets set --app fmot-api-demo --stage \
+     DATABASE_URL="$(neon connection-string demo --project-id wild-paper-65564975 --pooled)" \
+     DATABASE_URL_UNPOOLED="$(neon connection-string demo --project-id wild-paper-65564975)" \
+     JWT_ACCESS_SECRET="$(openssl rand -hex 64)" JWT_REFRESH_SECRET="$(openssl rand -hex 64)" \
+     MEDIA_SIGNING_SECRET="$(openssl rand -hex 64)" \
+     SCHULLTECH_MAIL_URL="<from apps/api/.env>" DEV_SIGNIN_CODE="<six digits, given to testers>"
+   ```
+5. Deploy from the repository root: `fly deploy --config deploy/fly/api.demo.toml --dockerfile apps/api/Dockerfile .`
+   The release step migrates the demo branch; `https://fmot-api-demo.fly.dev/api/health` answers when it is up.
+6. The volume is created owned by root and the API runs as `node`: hand it over once, then copy in the demo's files
+   (photos, documents; they live in `apps/api/storage` where the demo seed wrote them):
+   ```sh
+   fly ssh console --app fmot-api-demo -C "chown -R node:node /data"
+   tar -C apps/api -czf - storage | fly ssh console --app fmot-api-demo -C "tar -xzf - -C /data"
+   ```
+7. Vercel (Settings, Environment Variables, Production): `NEXT_PUBLIC_API_MOCK` = `0`, `API_ORIGIN` =
+   `https://fmot-api-demo.fly.dev`. Both are read at build time, so **redeploy** (Deployments, the latest, Redeploy).
+   The site then signs in against the demo API instead of the sample data.
+
+The phone app for testers elsewhere is a build pointed at `https://fmot-api-demo.fly.dev` (`EXPO_PUBLIC_API_URL`, https,
+so no plain-http setting): apps/mobile/README.md, A Wi-Fi test APK, with that address.
 
 ## Roll back
 
