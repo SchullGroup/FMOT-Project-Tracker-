@@ -9,7 +9,6 @@ import { FilterChip } from '@/components/map/FilterChip';
 import { LayersPanel } from '@/components/map/LayersPanel';
 import { Legend } from '@/components/map/Legend';
 import { CURRENT_PROJECT_KEY, ProjectCardPanel } from '@/components/map/ProjectCardPanel';
-import { TasksPanel } from '@/components/map/TasksPanel';
 import { useCan } from '@/components/Session';
 import { getMapLayer, getMapProjects } from '@/lib/endpoints';
 import { CATEGORY_LABEL, categoryOf, type MapCategory } from '@/lib/status';
@@ -141,15 +140,8 @@ export default function MapHome() {
   }
 
   return (
-    <main className="grid min-h-0 flex-1 grid-rows-[minmax(60vh,1fr)_auto] lg:grid-cols-[360px_1fr] lg:grid-rows-1">
-      <div className="order-2 flex min-h-0 flex-col overflow-y-auto border-line bg-canvas lg:order-1 lg:border-r">
-        <TasksPanel />
-        <div className="mt-auto">
-          <LayersPanel on={layers} onToggle={toggleLayer} canSecurity={canSecurity} failed={failed} />
-        </div>
-      </div>
-
-      <div className="relative order-1 min-h-[60vh] overflow-hidden lg:order-2">
+    <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto lg:overflow-hidden">
+      <div className="relative min-h-[60vh] flex-1 shrink-0 overflow-hidden">
         <MapView data={filtered} overlays={overlays} selectedId={selectedId} focusId={focusId} onSelect={select} />
 
         <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-col gap-3 p-4">
@@ -200,7 +192,7 @@ export default function MapHome() {
 
         {selectedId && (
           <div className="pointer-events-none absolute inset-y-0 right-0 flex p-4 pt-36">
-            <ProjectCardPanel id={selectedId} onClose={() => setSelectedId(null)} />
+            <ProjectCardPanel id={selectedId} onClose={() => setSelectedId(null)} line={all.find((f) => f.properties.id === selectedId)?.geometry.coordinates} />
           </div>
         )}
 
@@ -219,6 +211,11 @@ export default function MapHome() {
         {projects.isError && (
           <p role="alert" className="absolute bottom-8 right-4 rounded-md bg-surface p-3 text-danger shadow">Projects could not be loaded. Retrying…</p>
         )}
+      </div>
+
+      {/* Under the map on a narrow screen, over its bottom-left corner on a wide one. */}
+      <div className="p-4 lg:absolute lg:bottom-0 lg:left-0">
+        <LayersPanel on={layers} onToggle={toggleLayer} canSecurity={canSecurity} failed={failed} />
       </div>
     </main>
   );

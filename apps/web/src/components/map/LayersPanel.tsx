@@ -13,8 +13,8 @@ export const LAYERS: Array<{ name: MapLayerName; label: string; security?: boole
 /** Extra layers on the map, each an on/off switch; the choice is remembered on this device. */
 export function LayersPanel({ on, onToggle, canSecurity, failed }: { on: Set<MapLayerName>; onToggle: (n: MapLayerName) => void; canSecurity: boolean; failed: Set<MapLayerName> }) {
   return (
-    <section aria-labelledby="layers-heading" className="m-5 mt-0 rounded-md bg-surface p-4 ring-1 ring-line">
-      <h2 id="layers-heading" className="mb-2 text-lg font-semibold">Layers</h2>
+    <section aria-labelledby="layers-heading" className="rounded-md lg:w-60 bg-surface/95 p-3 shadow-sm ring-1 ring-line">
+      <h2 id="layers-heading" className="px-1 pb-1 font-semibold">Layers</h2>
       <ul className="flex flex-col">
         {LAYERS.filter((l) => !l.security || canSecurity).map((l) => (
           <li key={l.name}>
