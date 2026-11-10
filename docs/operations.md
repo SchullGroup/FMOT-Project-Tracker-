@@ -1,6 +1,8 @@
 # Operations
 
-How the FMoT Rail Project Tracker is built, deployed, rolled back, restored and kept secure. Written 2 November 2026,
+How the FMoT Rail Project Tracker is built, deployed, rolled back, restored and kept secure. The API and its deploy
+configs (`deploy/fly/api.*.toml`) are in the repository `SchullGroup/FMOT-Project-Tracker-API`, which keeps the
+current copy of this page; this one is kept for the web app and the overview. Written 2 November 2026,
 when staging was prepared but not yet deployed (see "Status" at the end).
 
 ## Environments

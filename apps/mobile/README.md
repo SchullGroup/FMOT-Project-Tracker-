@@ -14,8 +14,8 @@ and the review queue open a "coming in the next step" screen.
    version 58.0.5 of 22 October 2026 does). Expo Go runs one SDK at a time, so an older Expo Go cannot open the app.
 2. **Same Wi-Fi.** Put the phone on the same Wi-Fi as the Mac. Guest networks that keep devices apart do not work;
    a phone hotspot that the Mac joins does.
-3. **The API, on the demo branch.** The demo people (docs/demo-data.md) are on the Neon branch `demo`. In
-   `apps/api`, after `pnpm build`:
+3. **The API, on the demo branch.** The demo people (docs/demo-data.md) are on the Neon branch `demo`. In the API
+   repository (`SchullGroup/FMOT-Project-Tracker-API`, cloned beside this one), in `apps/api`, after `pnpm build`:
 
    ```sh
    DATABASE_URL_UNPOOLED="$(neon connection-string demo --project-id wild-paper-65564975)" \

@@ -2,18 +2,11 @@
   "name": "fmot-rail-tracker",
   "private": true,
   "scripts": {
-    "api": "pnpm --filter api start:dev",
-    "db:generate": "pnpm --filter api db:generate",
-    "db:migrate": "pnpm --filter api db:migrate",
-    "db:seed": "pnpm --filter api db:seed",
-    "db:seed:demo": "pnpm --filter api db:seed:demo",
-    "admin:create": "pnpm --filter api admin:create",
     "build": "pnpm -r build",
-    "db:load-boundaries": "pnpm --filter api db:load-boundaries",
     "web": "pnpm --filter web dev",
-    "dev": "pnpm --parallel --filter api --filter web run dev",
     "tokens": "node tools/tokens-to-css.mjs && node tools/tokens-to-mobile.mjs",
     "mobile": "pnpm --filter mobile start",
-    "api:types": "pnpm --filter api openapi && pnpm --filter @fmot/shared api-types && pnpm --filter @fmot/shared build"
+    "dev": "pnpm --filter web dev",
+    "shared:sync": "sh tools/sync-shared.sh"
   }
 }

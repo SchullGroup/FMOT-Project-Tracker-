@@ -1,5 +1,5 @@
-# Lint, unit tests and the web walkthroughs on every push; on main, after they pass, deploy to staging (Fly.io,
-# Frankfurt). The staging API's migrations run as their own step (Fly's release command) before the new API starts.
+# Types, the field app's unit tests and the web walkthroughs on every push; on main, after they pass, deploy the web
+# app to staging (Fly.io, Frankfurt). The API is in SchullGroup/FMOT-Project-Tracker-API and deploys from there.
 # Setup and secrets: docs/operations.md.
 name: CI
 
@@ -15,7 +15,7 @@ env:
 
 jobs:
   checks:
-    name: Lint, unit tests, types
+    name: Types and field app unit tests
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -29,26 +29,12 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @fmot/shared build
-      - name: Lint the API
-        run: pnpm --filter api lint
-      - name: API unit tests
-        run: pnpm --filter api test
       - name: Typecheck the web app
         run: pnpm --filter web typecheck
       - name: Typecheck the field app
         run: pnpm --filter mobile typecheck
       - name: Field app unit tests
         run: pnpm --filter mobile test
-      - name: OpenAPI document and shared types are up to date
-        # The generator builds the module graph only (no database); config validation still wants well-formed values.
-        run: |
-          export DATABASE_URL=postgresql://ci:ci@localhost:5432/ci DATABASE_URL_UNPOOLED=postgresql://ci:ci@localhost:5432/ci
-          export JWT_ACCESS_SECRET=$(node -e "console.log(require('crypto').randomBytes(64).toString('base64url'))")
-          export JWT_REFRESH_SECRET=$(node -e "console.log(require('crypto').randomBytes(64).toString('base64url'))")
-          export MEDIA_SIGNING_SECRET=$(node -e "console.log(require('crypto').randomBytes(64).toString('base64url'))")
-          pnpm api:types
-          git diff --exit-code -- packages/shared/openapi.json packages/shared/src/api-types.ts \
-            || (echo "::error::Run pnpm api:types and commit the result" && exit 1)
 
   web:
     name: Web walkthroughs (Playwright, sample data)
@@ -96,11 +82,8 @@ jobs:
       - uses: actions/checkout@v4
       # Pin to a commit SHA once the repository is on GitHub.
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - name: Deploy the API (migrations first, as the release command)
-        run: flyctl deploy --config deploy/fly/api.staging.toml --dockerfile apps/api/Dockerfile --remote-only --image-label "git-${GITHUB_SHA::12}" .
       - name: Deploy the web app
         run: flyctl deploy --config deploy/fly/web.staging.toml --dockerfile apps/web/Dockerfile --remote-only --image-label "git-${GITHUB_SHA::12}" .
       - name: Smoke check
         run: |
-          curl --fail --silent --show-error --retry 10 --retry-delay 5 --retry-all-errors https://fmot-api-staging.fly.dev/api/ready
           curl --fail --silent --show-error --retry 10 --retry-delay 5 --retry-all-errors -o /dev/null https://fmot-web-staging.fly.dev/sign-in
