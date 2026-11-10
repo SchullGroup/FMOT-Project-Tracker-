@@ -1,8 +1,9 @@
 /*
  * Sample data for NEXT_PUBLIC_API_MOCK=1, so the screens can be opened and
- * demonstrated without the API. Sign in with any phone, code 123456 and any
- * four-digit PIN that is not an easy one (1111, 1234 and similar are refused,
- * as on the real API). Coordinates are approximate and for display only.
+ * demonstrated without the API. Sign in with one of the test numbers
+ * (src/lib/demo-accounts.ts, the people of docs/demo-data.md), the code
+ * 000000 and the PIN 4826: each number is that person, with their role's
+ * permissions. Coordinates are approximate and for display only.
  */
 import { mockProjectRoute, sampleMembers } from './mock-project';
 import { mockWizard, mockWizardUpload } from './mock-wizard';
@@ -11,17 +12,18 @@ import { mockAdmin } from './mock-admin';
 import { mockReports } from './mock-reports';
 import { mockBaselineUpload, mockForms } from './mock-forms';
 import { mockStep8 } from './mock-step8';
+import { DEMO_CODE, DEMO_PIN, e164, findDemoAccount, permissionsOf, type DemoAccount } from './demo-accounts';
 import type { MapCounters, MapProjectsResponse, Me, ProjectCard, TaskInbox } from './types';
 
-const me: Me = {
-  id: 'u-director',
-  name: 'Engr. H. Danjuma',
-  phone: '+2348030000001',
-  role: 'director_rail',
-  organisation: { id: 'o-fmot', name: 'Federal Ministry of Transportation', type: 'ministry_unit' },
-  // Sample mode shows every area; on the real API only the IT administrator has the admin permissions.
-  permissions: ['projects:create', 'projects:read', 'reports:read', 'reports:generate', 'finance:read_amounts', 'tasks:read', 'admin:users', 'admin:organisations', 'admin:reminders', 'audit:read', 'reports:export_eyemark', 'progress:plan', 'completion:record', 'obligations:manage', 'valuations:submit', 'lots:manage', 'members:manage', 'design:submit', 'security:read_detail'],
-};
+// The person signed in, as the API's /me would describe them.
+const meOf = (a: DemoAccount): Me => ({
+  id: `u-${a.phone.replace(/\D/g, '')}`,
+  name: a.name,
+  phone: e164(a),
+  role: a.role,
+  organisation: { id: `o-${a.organisation.name.toLowerCase().replace(/[^a-z]+/g, '-')}`, ...a.organisation },
+  permissions: permissionsOf(a),
+});
 
 const projects: MapProjectsResponse = {
   type: 'FeatureCollection',
@@ -131,12 +133,21 @@ function task(id: string, type: string, title: string, reason: string, hoursAgo:
 
 const EASY_PINS = /^(\d)\1{3}$|^(0123|1234|2345|3456|4567|5678|6789|9876|8765|7654|6543|5432|4321|3210)$/;
 
-const SIGNED_IN_KEY = 'fmot.mockSignedIn';
-let signedIn = typeof window !== 'undefined' && sessionStorage.getItem(SIGNED_IN_KEY) === '1';
-const setSignedIn = (v: boolean) => {
-  signedIn = v;
-  sessionStorage.setItem(SIGNED_IN_KEY, v ? '1' : '0');
+// Who is signed in (their test number), for this tab: kept across reloads, gone when the tab closes.
+const SIGNED_IN_KEY = 'fmot.mockAccount';
+const stored = () => (typeof window !== 'undefined' ? sessionStorage.getItem(SIGNED_IN_KEY) : null);
+let account: DemoAccount | undefined = findDemoAccount(stored() ?? '');
+let signedIn = !!account;
+const setSignedIn = (a: DemoAccount | undefined) => {
+  account = a;
+  signedIn = !!a;
+  if (a) sessionStorage.setItem(SIGNED_IN_KEY, a.phone);
+  else sessionStorage.removeItem(SIGNED_IN_KEY);
 };
+// Between "Send me a code" and the PIN: the number the code was asked for.
+let pending: DemoAccount | undefined;
+
+const notATestNumber = () => json(400, { code: 'not_a_test_number', message: 'Use one of the test numbers.' });
 
 function json(status: number, body?: unknown): Response {
   return new Response(body === undefined ? null : JSON.stringify(body), {
@@ -151,24 +162,38 @@ export async function mockFetch(path: string, init: RequestInit): Promise<Respon
   const route = path.split('?')[0] ?? path;
 
   switch (route) {
-    case '/auth/otp/request':
+    case '/auth/otp/request': {
+      const a = findDemoAccount(String(body.login ?? ''));
+      if (!a) return notATestNumber();
+      if (a.state === 'invited') return json(403, { code: 'account_not_active', message: 'This account is waiting for the Director to confirm it.' });
+      pending = a;
       return json(204);
+    }
     case '/auth/otp/verify':
-      return body.code === '123456'
-        ? json(200, { ticket: 'mock-ticket', hasPin: false })
-        : json(400, { code: 'code_incorrect', message: 'That code is not right.' });
+      if (!findDemoAccount(String(body.login ?? ''))) return notATestNumber();
+      return body.code === DEMO_CODE
+        ? json(200, { ticket: 'mock-ticket', hasPin: true })
+        : json(401, { code: 'code_incorrect', message: 'That code is not right.' });
+    case '/auth/pin/login': {
+      const a = findDemoAccount(String(body.login ?? '')) ?? pending;
+      if (!a) return notATestNumber();
+      if (a.state === 'locked') return json(423, { code: 'account_locked', message: 'Your account is locked.' });
+      if (body.pin !== DEMO_PIN) return json(401, { code: 'pin_incorrect', message: 'That PIN is not right.' });
+      setSignedIn(a);
+      return json(200, { accessToken: 'mock-access' });
+    }
     case '/auth/pin/set':
-    case '/auth/pin/login':
     case '/invites/accept':
       if (body.pin && EASY_PINS.test(body.pin)) {
         return json(400, { code: 'pin_too_easy', message: 'Choose a PIN that is harder to guess.' });
       }
-      setSignedIn(true);
+      // The sample invite is Musa Garba's.
+      setSignedIn(route === '/invites/accept' ? findDemoAccount('0700 000 0112') : (findDemoAccount(String(body.login ?? '')) ?? pending));
       return json(200, { accessToken: 'mock-access' });
     case '/auth/refresh':
       return signedIn ? json(200, { accessToken: 'mock-access' }) : json(401);
     case '/auth/logout':
-      setSignedIn(false);
+      setSignedIn(undefined);
       return json(204);
     case '/invites/code':
       return json(204);
@@ -191,7 +216,7 @@ export async function mockFetch(path: string, init: RequestInit): Promise<Respon
 
   if (!signedIn) return json(401);
 
-  if (route === '/me') return json(200, me);
+  if (route === '/me') return account ? json(200, meOf(account)) : json(401);
   if (route === '/map/projects') return json(200, projects);
   if (route === '/map/counters') return json(200, counters);
   const layer = /^\/map\/layers\/(.+)$/.exec(route);
@@ -224,9 +249,7 @@ export async function mockFetch(path: string, init: RequestInit): Promise<Respon
     return t ? json(200, t) : json(404, { code: 'task_done', message: 'Already done' });
   }
   if (route === '/auth/pin/confirm') {
-    return EASY_PINS.test(String(body.pin)) || String(body.pin).length !== 4
-      ? json(400, { code: 'pin_incorrect', message: 'Wrong PIN' })
-      : json(200, { token: 'mock-pin-token' });
+    return body.pin === DEMO_PIN ? json(200, { token: 'mock-pin-token' }) : json(401, { code: 'pin_incorrect', message: 'Wrong PIN' });
   }
 
   const wizard = mockWizard(route, method, body);

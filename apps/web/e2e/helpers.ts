@@ -1,21 +1,22 @@
 import { expect, type Page } from '@playwright/test';
 
-// Sample-data sign-in: any phone, code 123456, any PIN that is not an easy one.
-export async function signIn(page: Page, pin = '2580') {
+// The sample-data number that sees every area (src/lib/demo-accounts.ts): the walkthroughs cross several roles.
+export const EVERY_AREA = '0700 000 0199';
+
+// Sample-data sign-in: a test number, the code 000000 and the PIN 4826.
+export async function signIn(page: Page, phone = EVERY_AREA) {
   await page.goto('/sign-in');
-  await page.getByLabel('Your phone number or email address').fill('0803 123 4567');
+  await page.getByLabel('Your phone number or email address').fill(phone);
   await page.getByRole('button', { name: 'Send me a code' }).click();
-  await page.getByLabel('Code').fill('123456');
+  await page.getByLabel('Code').fill('000000');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await choosePin(page, pin);
+  await enterPin(page, '4826');
   await expect(page).not.toHaveURL(/sign-in/);
 }
 
-// A new browser has no PIN yet in sample mode: choose one (typed twice).
-export async function choosePin(page: Page, pin: string) {
-  await page.getByLabel('New PIN').fill(pin);
-  await page.getByLabel('Type the PIN again').fill(pin);
-  await page.getByRole('button', { name: 'Save PIN and sign in' }).click();
+export async function enterPin(page: Page, pin: string) {
+  await page.getByLabel('PIN', { exact: true }).fill(pin);
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 }
 
 // No error text anywhere on the page.

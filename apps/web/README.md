@@ -9,9 +9,12 @@ self-hosted from npm.
     pnpm --filter web dev          # http://localhost:3000, API on :4000
     NEXT_PUBLIC_API_MOCK=1 pnpm --filter web dev   # sample data, no API
 
-Sample-data sign-in: any phone, code 123456, any four-digit PIN that is not
-an easy one (1111, 1234 and similar are refused). The sample project with
-every section filled in is Kaduna–Kano (/projects/p-kk).
+Sample-data sign-in: one of the test numbers listed under "Test accounts" on
+the sign-in page (the people of docs/demo-data.md, src/lib/demo-accounts.ts),
+the code 000000 and the PIN 4826. Each number signs in as that person, with
+their role's permissions; other numbers are refused. The automated
+walkthroughs use 0700 000 0199, an unlisted number that sees every area. The
+sample project with every section filled in is Kaduna–Kano (/projects/p-kk).
 
 ## Map styles
 

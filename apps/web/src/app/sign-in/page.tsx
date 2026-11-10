@@ -6,6 +6,8 @@ import { AuthFrame } from '@/components/AuthFrame';
 import { PinInput } from '@/components/PinInput';
 import { Button } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
+import { MOCK } from '@/lib/api';
+import { DEMO_ACCOUNTS, DEMO_CODE, DEMO_PIN, roleLabelOf, type DemoAccount } from '@/lib/demo-accounts';
 import { getKnownPhone, setKnownPhone } from '@/lib/device';
 import { requestCode, setPin, signInWithPin, verifyCode } from '@/lib/endpoints';
 import { isCode, messageFor } from '@/lib/messages';
@@ -202,7 +204,65 @@ function SignIn() {
           </Button>
         )}
       </form>
+      {MOCK && (
+        <TestAccounts
+          onPick={(a) => {
+            setKnownPhone(null);
+            setPhone(a.phone);
+            setCode('');
+            setPinValue('');
+            setError(null);
+            setNotice(null);
+            setStep('phone');
+          }}
+        />
+      )}
     </AuthFrame>
+  );
+}
+
+/*
+ * Sample-data mode only: the test people, grouped, each with what to try. Choosing one fills the number; everyone signs
+ * in with the same code and PIN.
+ */
+function TestAccounts({ onPick }: { onPick: (a: DemoAccount) => void }) {
+  const shown = DEMO_ACCOUNTS.filter((a) => !a.hidden);
+  const groups = [...new Set(shown.map((a) => a.group))];
+  return (
+    <section aria-labelledby="test-accounts" className="mt-10 border-t border-line pt-6">
+      <h2 id="test-accounts" className="text-xl font-semibold text-brand-900">
+        Test accounts
+      </h2>
+      <p className="mt-1 text-lg">
+        Sample data. Choose a person, then use the code <strong className="tabular">{DEMO_CODE}</strong> and the PIN{' '}
+        <strong className="tabular">{DEMO_PIN}</strong>.
+      </p>
+      {groups.map((g) => (
+        <div key={g} className="mt-5">
+          <h3 className="mb-2 font-semibold text-ink-muted">{g}</h3>
+          <ul className="flex flex-col gap-2">
+            {shown
+              .filter((a) => a.group === g)
+              .map((a) => (
+                <li key={a.phone}>
+                  <button
+                    type="button"
+                    onClick={() => onPick(a)}
+                    className="flex w-full flex-col items-start gap-0.5 rounded-md border-2 border-line px-4 py-3 text-left hover:border-brand-900 hover:bg-brand-50"
+                  >
+                    <span className="font-semibold">
+                      {roleLabelOf(a)}: {a.name}
+                      {a.state && <span className="ml-2 font-normal text-danger">({a.state === 'locked' ? 'locked' : 'not active yet'})</span>}
+                    </span>
+                    <span className="tabular text-base">{a.phone}</span>
+                    <span className="text-base text-ink-muted">{a.tryThis}</span>
+                  </button>
+                </li>
+              ))}
+          </ul>
+        </div>
+      ))}
+    </section>
   );
 }
 

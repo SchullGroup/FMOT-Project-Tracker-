@@ -1,6 +1,6 @@
 // The walkthroughs in HANDOVER.md, on sample data (NEXT_PUBLIC_API_MOCK=1).
 import { expect, test } from '@playwright/test';
-import { choosePin, noErrors, signIn } from './helpers';
+import { enterPin, EVERY_AREA, noErrors, signIn } from './helpers';
 
 // Every walkthrough runs under the Content Security Policy (src/proxy.ts): anything it blocks fails the test.
 let violations: string[] = [];
@@ -14,14 +14,19 @@ test.afterEach(() => expect(violations).toEqual([]));
 
 test('1. sign in, map home, find a project, tasks', async ({ page }) => {
   await page.goto('/sign-in');
+  // Only the test numbers sign in on sample data; the page lists them.
+  await expect(page.getByRole('heading', { name: 'Test accounts' })).toBeVisible();
   await page.getByLabel('Your phone number or email address').fill('0803 123 4567');
   await page.getByRole('button', { name: 'Send me a code' }).click();
-  await page.getByLabel('Code').fill('123456');
+  await expect(page.getByText(/not one of the test numbers/)).toBeVisible();
+  await page.getByLabel('Your phone number or email address').fill(EVERY_AREA);
+  await page.getByRole('button', { name: 'Send me a code' }).click();
+  await page.getByLabel('Code').fill('000000');
   await page.getByRole('button', { name: 'Continue' }).click();
-  // An easy PIN is refused; a good one signs in.
-  await choosePin(page, '1111');
+  // A wrong PIN is refused; 4826 signs in.
+  await enterPin(page, '1111');
   await expect(page.getByRole('alert').first()).toBeVisible();
-  await choosePin(page, '2580');
+  await enterPin(page, '4826');
   await expect(page).not.toHaveURL(/sign-in/);
 
   // The map lists the corridors (also as buttons for keyboard and screen readers).
@@ -92,13 +97,13 @@ test('4. tasks: send back a photo, approve a certificate with the PIN, upload a 
   await page.getByRole('button', { name: /send back/i }).last().click();
   await expect(page.getByText(/sent back with your reason/i).first()).toBeVisible();
 
-  // Certificate 14: an easy PIN on the keypad is refused (four digits send it), then 2580 typed on the keyboard approves it.
+  // Certificate 14: an easy PIN on the keypad is refused (four digits send it), then 4826 typed on the keyboard approves it.
   await page.goto('/tasks?task=t-cert');
   await page.getByRole('button', { name: /approve/i }).first().click();
   const sheet = page.getByRole('dialog');
   for (const d of '1111') await sheet.getByRole('button', { name: d, exact: true }).click();
   await expect(sheet.getByRole('alert')).toBeVisible();
-  await page.keyboard.type('2580');
+  await page.keyboard.type('4826');
   await expect(page.getByText(/approved/i).first()).toBeVisible();
 
   // The upload task needs the file and its date.
@@ -216,7 +221,7 @@ test('7. design requirements, programme revisions, practical completion, obligat
   await lotSection(1).getByLabel('Completed on').fill('2026-10-30');
   await lotSection(1).getByRole('button', { name: /Record practical completion/ }).click();
   await expect(page.getByRole('dialog').getByText('Enter your PIN')).toBeVisible();
-  await page.keyboard.type('2580');
+  await page.keyboard.type('4826');
   await expect(page.getByRole('dialog')).toBeHidden();
   await expect(lotSection(1).getByText('Waiting for the Director')).toBeVisible();
   await noErrors(page);
@@ -383,7 +388,7 @@ test('9. the Penpot design: map filters and layers, task layout, PIN keypad, pay
   await expect(sheet).toContainText('Approve payment certificate 14 · ₦1,785,000,000.00 · Kaduna–Kano SGR');
   for (const d of '1111') await sheet.getByRole('button', { name: d, exact: true }).click();
   await expect(sheet.getByRole('alert')).toBeVisible();
-  await page.keyboard.type('2580');
+  await page.keyboard.type('4826');
   await expect(sheet).toBeHidden();
 
   // Payments: the certificates in one table; IPC 14 opens to its deductions; the contract to date beside it.

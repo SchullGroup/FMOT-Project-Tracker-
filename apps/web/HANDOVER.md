@@ -205,7 +205,7 @@ Portfolio, reports, messages (step 6)
 
 ## Walkthroughs (to turn into Playwright tests)
 
-1. Sign in: phone, code 123456, PIN 1111 is refused, PIN 2580 works, the map
+1. Sign in: a test number, code 000000, PIN 1111 is refused, PIN 4826 works, the map
    shows corridors, "Find" Kaduna-Kano opens its card, Tasks lists four.
 2. Project view: open /projects/p-kk and every section loads with no error.
 3. Wizard: New project, fill basics (Kano to Maradi), choose External loan,

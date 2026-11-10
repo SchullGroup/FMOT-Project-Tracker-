@@ -13,6 +13,9 @@ const MESSAGES: Record<string, string> = {
   pin_incorrect: 'That PIN is not right.',
   pin_too_easy: 'Choose a PIN that is harder to guess. Avoid repeated or running digits like 1111 or 1234.',
   account_locked: 'Your account is locked after too many wrong PINs. Call the IT support desk to unlock it.',
+  // Sample-data mode only (src/lib/mock.ts): the test numbers are the only accounts.
+  not_a_test_number: 'That is not one of the test numbers. Use one from the list of test accounts below.',
+  account_not_active: 'This account is not active yet: it is waiting for the Director to confirm it.',
   device_unknown: 'This device is new. We will send you a code first.',
   invite_expired: 'This invite link or code is not valid, or it has expired. Check it, or ask the IT support desk to send a new one.',
   invite_used: 'This invite has already been used. Sign in with your phone number instead.',
