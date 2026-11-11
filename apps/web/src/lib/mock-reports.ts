@@ -1,12 +1,15 @@
 /*
  * Portfolio, reports and notification settings in NEXT_PUBLIC_API_MOCK=1
  * mode. A requested report is "generating" for a few seconds, then ready,
- * as the real background job would be.
+ * as the real background job would be. Ready reports download real files
+ * (public/sample-reports), made by the API's own report code from the demo
+ * data: October monthly and lender reports for every published line, September
+ * for Kaduna–Kano, the portfolio as PDF and Excel, and the Eyemark export.
  */
 import { mockObligations } from './mock-forms';
 import type { NotificationPreferences, Obligation, PortfolioRow, Report } from './types';
 
-const KEY = 'fmot.mockReports';
+const KEY = 'fmot.mockReports.v2';
 const PREFS = 'fmot.mockPrefs';
 const day = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
 const ahead = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString();
@@ -28,38 +31,64 @@ const obligations: Obligation[] = [
   { id: 'ob4', kind: 'eia_condition', title: 'Quarterly dust and noise monitoring report', expiresOn: ahead(45), owner: 'Engr. A. Bello', documentCode: 'D16' },
 ];
 
-const seedReports = (): Report[] => [
-  { id: 'r-auto-10', kind: 'monthly', period: '2026-10', format: 'pdf', status: 'ready', version: 'finance', createdAt: day(1), requestedBy: null },
-  { id: 'r-auto-09', kind: 'monthly', period: '2026-09', format: 'pdf', status: 'ready', version: 'finance', createdAt: day(31), requestedBy: null },
-  { id: 'r-lender-09', kind: 'lender', period: '2026-09', format: 'pdf', status: 'ready', version: null, createdAt: day(29), requestedBy: 'Engr. A. Bello' },
+// A report and the project it is for (null for portfolio and Eyemark).
+type Stored = Report & { projectId: string | null };
+
+const LINES = ['p-ak', 'p-kk', 'p-lc', 'p-li', 'p-pm', 'p-wi'];
+// Sample files with a period other than October 2026.
+const OTHER_MONTHS = new Set(['monthly-p-kk-2026-09.pdf', 'lender-p-kk-2026-09.pdf']);
+
+const seedReports = (): Stored[] => [
+  ...LINES.map((projectId): Stored => ({ id: `r-auto-10-${projectId}`, projectId, kind: 'monthly', period: '2026-10', format: 'pdf', status: 'ready', version: 'finance', createdAt: day(9), requestedBy: null })),
+  { id: 'r-auto-09-p-kk', projectId: 'p-kk', kind: 'monthly', period: '2026-09', format: 'pdf', status: 'ready', version: 'finance', createdAt: day(40), requestedBy: null },
+  { id: 'r-lender-09-p-kk', projectId: 'p-kk', kind: 'lender', period: '2026-09', format: 'pdf', status: 'ready', version: null, createdAt: day(38), requestedBy: 'Engr. A. Bello' },
+  { id: 'r-portfolio-10', projectId: null, kind: 'portfolio', period: null, format: 'pdf', status: 'ready', version: null, createdAt: day(2), requestedBy: 'Engr. H. Danjuma' },
 ];
 
-const load = (): Report[] => JSON.parse(sessionStorage.getItem(KEY) ?? 'null') ?? seedReports();
-const save = (r: Report[]) => sessionStorage.setItem(KEY, JSON.stringify(r));
+const load = (): Stored[] => JSON.parse(sessionStorage.getItem(KEY) ?? 'null') ?? seedReports();
+const save = (r: Stored[]) => sessionStorage.setItem(KEY, JSON.stringify(r));
+
+/** The sample file a ready report downloads: its own month where there is one, else the line's October report. */
+function sampleFile(r: Stored): string | null {
+  if (r.kind === 'portfolio') return r.format === 'xlsx' ? 'portfolio.xlsx' : 'portfolio.pdf';
+  if (r.kind === 'eyemark') return 'eyemark.csv';
+  if (!r.projectId || !LINES.includes(r.projectId)) return null;
+  const own = `${r.kind}-${r.projectId}-${r.period}.pdf`;
+  return OTHER_MONTHS.has(own) ? own : `${r.kind}-${r.projectId}-2026-10.pdf`;
+}
+
+// What the screens see: the report without the project it was filed under.
+const view = ({ projectId: _projectId, ...r }: Stored): Report => r;
 
 /** Reports turn ready four seconds after they were asked for. */
-const settle = (r: Report): Report => (r.status === 'generating' && Date.now() - new Date(r.createdAt).getTime() > 4000 ? { ...r, status: 'ready' } : r);
+const settle = (r: Stored): Stored => (r.status === 'generating' && Date.now() - new Date(r.createdAt).getTime() > 4000 ? { ...r, status: 'ready' } : r);
 
-function add(kind: Report['kind'], period: string | null, format: Report['format']): Report {
-  const r: Report = { id: `r-${Date.now()}`, kind, period, format, status: 'generating', version: kind === 'monthly' ? 'finance' : null, createdAt: new Date().toISOString(), requestedBy: 'Engr. H. Danjuma' };
+function add(projectId: string | null, kind: Report['kind'], period: string | null, format: Report['format']): Report {
+  const r: Stored = { id: `r-${Date.now()}`, projectId, kind, period, format, status: 'generating', version: kind === 'monthly' ? 'finance' : null, createdAt: new Date().toISOString(), requestedBy: 'Engr. H. Danjuma' };
   save([r, ...load()]);
-  return r;
+  return view(r);
 }
 
 export function mockReports(route: string, method: string, body: Record<string, unknown>): { status: number; body?: unknown } | undefined {
   if (route === '/portfolio') return { status: 200, body: portfolio };
   const ob = mockObligations(route, method, body, obligations);
   if (ob) return ob;
-  if (/^\/projects\/[^/]+\/reports$/.test(route)) {
-    if (method === 'POST') return { status: 201, body: add(body.kind as Report['kind'], String(body.period), 'pdf') };
-    return { status: 200, body: load().filter((r) => r.kind === 'monthly' || r.kind === 'lender').map(settle) };
+  const project = /^\/projects\/([^/]+)\/reports$/.exec(route)?.[1];
+  if (project) {
+    if (method === 'POST') return { status: 201, body: add(project, body.kind as Report['kind'], String(body.period), 'pdf') };
+    return { status: 200, body: load().filter((r) => r.projectId === project).map(settle).map(view) };
   }
   if (route === '/reports/portfolio') {
-    if (method === 'POST') return { status: 201, body: add('portfolio', null, body.format as Report['format']) };
-    return { status: 200, body: load().filter((r) => r.kind === 'portfolio' || r.kind === 'eyemark').map(settle) };
+    if (method === 'POST') return { status: 201, body: add(null, 'portfolio', null, body.format as Report['format']) };
+    return { status: 200, body: load().filter((r) => r.kind === 'portfolio' || r.kind === 'eyemark').map(settle).map(view) };
   }
-  if (route === '/reports/eyemark') return { status: 201, body: add('eyemark', null, 'csv') };
-  if (/^\/reports\/[^/]+\/file$/.test(route)) return { status: 200, body: { url: '#' } };
+  if (route === '/reports/eyemark') return { status: 201, body: add(null, 'eyemark', null, 'csv') };
+  const fileOf = /^\/reports\/([^/]+)\/file$/.exec(route)?.[1];
+  if (fileOf) {
+    const r = load().map(settle).find((x) => x.id === fileOf);
+    const file = r?.status === 'ready' ? sampleFile(r) : null;
+    return file ? { status: 200, body: { url: `/sample-reports/${file}`, expiresAt: new Date(Date.now() + 300_000).toISOString() } } : { status: 404, body: { code: 'not_found', message: 'No such report' } };
+  }
   if (route === '/me/notification-preferences') {
     if (method === 'PUT') {
       sessionStorage.setItem(PREFS, JSON.stringify({ ...body, digestEligible: true }));
