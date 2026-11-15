@@ -68,7 +68,9 @@ The ones that matter for a deployment:
 | `WEB_BASE_URL`, `CORS_ORIGIN` | https://fmot-web-staging.fly.dev | links in SMS |
 | `SHUTDOWN_GRACE_MS` | 20000 | below Fly's `kill_timeout` of 30 s |
 | web `API_ORIGIN` (build) | http://fmot-api-staging.internal:4000 | fixed when the web image is built |
-| web `NEXT_PUBLIC_MAP_STYLE_URL` (build) | OpenFreeMap liberty | its origin is the only outside origin in the CSP |
+| web `NEXT_PUBLIC_MAP_STYLE_URL` (build) | OpenFreeMap liberty | the street map; its origin is in the CSP |
+| web `NEXT_PUBLIC_SATELLITE_STYLE_URL` (build) | MapTiler satellite-hybrid style URL with its key, or empty | satellite on the Map / Satellite switch; its origin is added to the CSP. Empty (and no Esri key): no switch |
+| web `NEXT_PUBLIC_ESRI_IMAGERY_KEY` (build) | optional | ArcGIS key for Esri World Imagery, used for satellite when the MapTiler URL is empty; adds `ibasemaps-api.arcgis.com` to the CSP |
 
 Non-secret values are in `deploy/fly/*.staging.toml`. Secrets are only in Fly (`flyctl secrets`) and in GitHub
 (`FLY_API_TOKEN`), never in the repository.
@@ -155,9 +157,11 @@ Environment variables (Settings, Environment Variables, for Production and Previ
 | Variable | Now (sample-data demo) | Later (against the staging API) |
 | --- | --- | --- |
 | `NEXT_PUBLIC_API_MOCK` | `1` | `0` |
-| `NEXT_PUBLIC_MAP_STYLE_URL` | `https://tiles.openfreemap.org/styles/liberty` (the default street map; a MapTiler satellite style URL with its key when there is one) | same |
+| `NEXT_PUBLIC_MAP_STYLE_URL` | `https://tiles.openfreemap.org/styles/liberty` (the street map) | same |
+| `NEXT_PUBLIC_SATELLITE_STYLE_URL` | `https://api.maptiler.com/maps/hybrid/style.json?key=<MapTiler key>` (the key restricted to the Vercel domains in MapTiler, Account, Keys, Allowed HTTP origins) | same |
+| `NEXT_PUBLIC_ESRI_IMAGERY_KEY` | not needed (optional; only used when the MapTiler URL is empty) | same |
 | `API_ORIGIN` | not needed | the staging API's origin, for example `https://fmot-rail-api-staging.fly.dev` (no `/api`) |
-| `MAP_EXTRA_ORIGINS` | not needed | only if the map style loads tiles from hosts other than its own (comma separated) |
+| `MAP_EXTRA_ORIGINS` | not needed | only if a map style loads tiles from hosts other than its own (comma separated); MapTiler and Esri are added to the CSP from the two settings above |
 
 `NEXT_PUBLIC_*` values and `API_ORIGIN` are read when the app is built (the `/api` proxy is written into the build), so
 changing any of them needs a redeploy (Deployments, the latest one, Redeploy). The Content Security Policy is set per
@@ -300,8 +304,8 @@ the secrets. Every refresh token family then dies on its next use.
   - every error is `{ statusCode, code, message }` with no stack or internals (`apps/api/src/common/errors.ts`).
 - **Web:**
   - a Content Security Policy with a nonce per request (`apps/web/src/proxy.ts`): scripts and styles only from the
-    app with its nonce; images, connections and workers only from the app and the map style's origin (plus
-    `MAP_EXTRA_ORIGINS` if a style needs more); the API is reached through the app's own `/api`; no frames, objects or
+    app with its nonce; images, connections and workers only from the app, the street and satellite styles' origins,
+    Esri's tile host when its key is set (plus `MAP_EXTRA_ORIGINS` if a style needs more); the API is reached through the app's own `/api`; no frames, objects or
     other origins;
   - HSTS, nosniff, `X-Frame-Options: DENY`, a strict referrer policy, a Permissions-Policy denying camera,
     microphone and location, and COOP (`apps/web/next.config.ts`);

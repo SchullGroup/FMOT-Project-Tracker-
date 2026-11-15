@@ -18,19 +18,28 @@ sample project with every section filled in is Kaduna–Kano (/projects/p-kk).
 
 ## Map styles
 
-The maps read any MapLibre style JSON from `NEXT_PUBLIC_MAP_STYLE_URL`. The default is OpenFreeMap's free vector
-style (no key). For the satellite look in the designs, use MapTiler's satellite-hybrid style:
+The street map is any MapLibre style JSON from `NEXT_PUBLIC_MAP_STYLE_URL`. The default is OpenFreeMap's free vector
+style (no key). Satellite, the look in the designs, is a Map / Satellite switch at the top of the Layers panel on the
+national map; the choice is remembered on the browser and applies to every map (national, corridor, the overview's
+mini-map and the wizard's preview). It uses MapTiler's satellite-hybrid style:
 
-    NEXT_PUBLIC_MAP_STYLE_URL=https://api.maptiler.com/maps/hybrid/style.json?key=YOUR_MAPTILER_KEY
+    NEXT_PUBLIC_SATELLITE_STYLE_URL=https://api.maptiler.com/maps/hybrid/style.json?key=YOUR_MAPTILER_KEY
+
+or, when that is empty, Esri World Imagery with an ArcGIS Location Platform key in `NEXT_PUBLIC_ESRI_IMAGERY_KEY`.
+With neither, the switch is hidden. On satellite the credits stay open (with MapTiler's logo for MapTiler), and lines
+keep a white outline so they read on the dark imagery. `/dev/basemaps` (development only; 404 in a production build)
+shows MapTiler and Esri side by side, moving together, on Kaduna–Kano, to compare sharpness; without an Esri key it
+uses Esri's public tile server, which is not for production use.
 
 - Create the key in the MapTiler Cloud account and restrict it to the web app's domains (MapTiler, Account, Keys,
   Allowed HTTP origins), since the key is visible in the browser.
 - The free plan's monthly map loads are enough for development and a pilot; check the usage page before go-live.
-- The content security policy (`src/proxy.ts`) allows the style URL's own origin, so `api.maptiler.com` (styles, tiles, fonts) is allowed by setting the style. A style that loads from other hosts needs them in `MAP_EXTRA_ORIGINS` (comma separated).
+- The content security policy (`src/proxy.ts`) allows each style URL's own origin, so `api.maptiler.com` (styles, tiles, fonts) is allowed by setting the style, and `ibasemaps-api.arcgis.com` by setting the Esri key. A style that loads from other hosts needs them in `MAP_EXTRA_ORIGINS` (comma separated).
 - `public/map-style-plain.json` is an offline style (a plain background) for when no tile server can be reached.
 
 Every map carries the CC BY 4.0 credit for the state boundaries (GRID3 Nigeria via geoBoundaries,
-`docs/data-sources.md`) as custom attribution, set once in `src/lib/map.ts`.
+`docs/data-sources.md`) as custom attribution, set once in `src/lib/map.ts`; `src/lib/basemap.ts` creates every map on
+the chosen basemap and swaps it under the app's own layers.
 
 ## How it is put together
 

@@ -1,9 +1,9 @@
 'use client';
 
-import { ATTRIBUTION, foldCreditOnSmallMaps, STYLE_URL } from '@/lib/map';
+import { createMap, setBasemap, useBasemap, type Basemap } from '@/lib/basemap';
 import {
   LngLatBounds,
-  Map as MlMap,
+  type Map as MlMap,
   NavigationControl,
   setWorkerUrl,
   type ExpressionSpecification,
@@ -42,6 +42,23 @@ const colourExpression = [
   '#6b7280',
 ] as unknown as ExpressionSpecification;
 
+// The state boundaries in grey on the street map, light on the imagery.
+const boundaryColour = (b: Basemap) => (b === 'satellite' ? '#f3f4f6' : '#4a5565');
+
+// Station names need the style to provide fonts (glyphs); the plain offline style and Esri imagery do not.
+function addStationLabels(m: MlMap) {
+  if (!m.getStyle().glyphs || m.getLayer('ov-stations-label')) return;
+  m.addLayer({
+    id: 'ov-stations-label',
+    type: 'symbol',
+    source: 'ov-stations',
+    // Names only once zoomed in to a corridor; at country scale they crowd each other.
+    minzoom: 8,
+    layout: { 'text-field': ['get', 'name'], 'text-size': 13, 'text-offset': [0.8, 0], 'text-anchor': 'left' },
+    paint: { 'text-color': '#1b2430', 'text-halo-color': '#ffffff', 'text-halo-width': 1.6 },
+  });
+}
+
 /*
  * The map of Nigeria with every project the person may see. Lines are
  * coloured by category (the same colours as the legend and cards); drafts
@@ -55,18 +72,21 @@ export function MapView({ data, overlays, selectedId, focusId, onSelect }: Props
   const whenReady = (fn: () => void) => (ready.current ? fn() : pending.current.push(fn));
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
+  const [basemap] = useBasemap();
+  const shownBasemap = useRef(basemap);
 
   useEffect(() => {
     if (!container.current) return;
-    const m = new MlMap({
-      container: container.current,
-      style: STYLE_URL,
-      bounds: NIGERIA,
-      // Room for the top bar of controls; the legend sits over the empty north-west.
-      fitBoundsOptions: { padding: { top: 150, bottom: 30, left: 230, right: 30 } },
-      attributionControl: ATTRIBUTION,
-      cooperativeGestures: false,
-    });
+    const m = createMap(
+      {
+        container: container.current,
+        bounds: NIGERIA,
+        // Room for the top bar of controls; the legend sits over the empty north-west.
+        fitBoundsOptions: { padding: { top: 150, bottom: 30, left: 230, right: 30 } },
+        cooperativeGestures: false,
+      },
+      shownBasemap.current,
+    );
     // Redraw when the box changes size (a map created in a box still being laid out comes out squashed).
     const ro = new ResizeObserver(() => m.resize());
     if (m.getContainer().parentElement) ro.observe(m.getContainer().parentElement!);
@@ -74,10 +94,11 @@ export function MapView({ data, overlays, selectedId, focusId, onSelect }: Props
     map.current = m;
 
     m.on('load', () => {
-      foldCreditOnSmallMaps(m.getContainer());
       const empty: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] };
       for (const n of OVERLAY_NAMES) m.addSource(`ov-${n}`, { type: 'geojson', data: empty });
-      m.addLayer({ id: 'ov-state-boundaries', type: 'line', source: 'ov-state-boundaries', paint: { 'line-color': '#4a5565', 'line-width': 1.2, 'line-dasharray': [3, 2] } });
+      m.addLayer({ id: 'ov-state-boundaries', type: 'line', source: 'ov-state-boundaries', paint: { 'line-color': boundaryColour(shownBasemap.current), 'line-width': 1.2, 'line-dasharray': [3, 2] } });
+      // A white outline under each line keeps it readable on the dark imagery as well as the street map.
+      m.addLayer({ id: 'ov-legacy-lines-casing', type: 'line', source: 'ov-legacy-lines', paint: { 'line-color': '#ffffff', 'line-width': 5, 'line-opacity': 0.85 } });
       m.addLayer({ id: 'ov-legacy-lines', type: 'line', source: 'ov-legacy-lines', paint: { 'line-color': '#8d6e4a', 'line-width': 2.5, 'line-dasharray': [1, 1.5] } });
       m.addSource('projects', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       m.addLayer({
@@ -112,21 +133,11 @@ export function MapView({ data, overlays, selectedId, focusId, onSelect }: Props
         paint: { 'line-color': colourExpression, 'line-width': 5, 'line-dasharray': [2, 1.5] },
       });
 
+      m.addLayer({ id: 'ov-lots-casing', type: 'line', source: 'ov-lots', paint: { 'line-color': '#ffffff', 'line-width': 4, 'line-offset': 7 } });
       m.addLayer({ id: 'ov-lots', type: 'line', source: 'ov-lots', paint: { 'line-color': '#0b2545', 'line-width': 2, 'line-offset': 7 } });
       m.addLayer({ id: 'ov-no-go', type: 'line', source: 'ov-no-go', layout: { 'line-cap': 'round' }, paint: { 'line-color': '#b00020', 'line-width': 12, 'line-opacity': 0.45 } });
       m.addLayer({ id: 'ov-stations', type: 'circle', source: 'ov-stations', paint: { 'circle-radius': 5, 'circle-color': '#ffffff', 'circle-stroke-color': '#0b2545', 'circle-stroke-width': 2 } });
-      // Station names need the style to provide fonts (glyphs); the plain offline style does not.
-      if (m.getStyle().glyphs) {
-        m.addLayer({
-          id: 'ov-stations-label',
-          type: 'symbol',
-          source: 'ov-stations',
-          // Names only once zoomed in to a corridor; at country scale they crowd each other.
-          minzoom: 8,
-          layout: { 'text-field': ['get', 'name'], 'text-size': 13, 'text-offset': [0.8, 0], 'text-anchor': 'left' },
-          paint: { 'text-color': '#1b2430', 'text-halo-color': '#ffffff', 'text-halo-width': 1.6 },
-        });
-      }
+      addStationLabels(m);
 
       for (const layer of ['projects-line', 'projects-draft', 'projects-casing']) {
         m.on('click', layer, (e: MapLayerMouseEvent) => {
@@ -148,6 +159,22 @@ export function MapView({ data, overlays, selectedId, focusId, onSelect }: Props
       map.current = null;
     };
   }, []);
+
+  // Map or satellite under the lines. Updates wait while the new style loads.
+  useEffect(() => {
+    const m = map.current;
+    if (!m || basemap === shownBasemap.current) return;
+    whenReady(() => {
+      shownBasemap.current = basemap;
+      ready.current = false;
+      setBasemap(m, basemap, () => {
+        m.setPaintProperty('ov-state-boundaries', 'line-color', boundaryColour(basemap));
+        addStationLabels(m);
+        ready.current = true;
+        pending.current.splice(0).forEach((fn) => fn());
+      });
+    });
+  }, [basemap]);
 
   // Data and visibility
   useEffect(() => {

@@ -1,16 +1,22 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { STYLE_URL } from '@/lib/map';
+import { ESRI_IMAGERY_KEY, ESRI_KEYED_ORIGIN, ESRI_PUBLIC_ORIGIN, SATELLITE_STYLE_URL, STYLE_URL } from '@/lib/map';
 
-// Origins the maps load from: the style's own host (style, tiles, glyphs and sprites for OpenFreeMap and MapTiler),
-// plus any listed in MAP_EXTRA_ORIGINS (comma separated) for a style that spreads over several hosts.
+// Origins the maps load from: each style's own host (style, tiles, glyphs and sprites for OpenFreeMap and MapTiler),
+// Esri's tile host when its key is set (and both Esri hosts in development, for /dev/basemaps), plus any listed in
+// MAP_EXTRA_ORIGINS (comma separated) for a style that spreads over several hosts.
 const mapOrigins = (() => {
   const list = (process.env.MAP_EXTRA_ORIGINS ?? '').split(',').map((o) => o.trim()).filter(Boolean);
-  try {
-    const style = new URL(STYLE_URL, 'http://self.invalid');
-    if (style.origin !== 'http://self.invalid') list.unshift(style.origin);
-  } catch {
-    // A relative style (public/map-style-plain.json) is 'self'.
+  for (const url of [STYLE_URL, SATELLITE_STYLE_URL]) {
+    if (!url) continue;
+    try {
+      const style = new URL(url, 'http://self.invalid');
+      if (style.origin !== 'http://self.invalid') list.unshift(style.origin);
+    } catch {
+      // A relative style (public/map-style-plain.json) is 'self'.
+    }
   }
+  if (ESRI_IMAGERY_KEY || process.env.NODE_ENV === 'development') list.push(ESRI_KEYED_ORIGIN);
+  if (process.env.NODE_ENV === 'development') list.push(ESRI_PUBLIC_ORIGIN);
   return [...new Set(list)].join(' ');
 })();
 

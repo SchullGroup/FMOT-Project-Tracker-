@@ -1,7 +1,7 @@
 'use client';
 
-import { ATTRIBUTION, foldCreditOnSmallMaps, STYLE_URL } from '@/lib/map';
-import { Map as MlMap, NavigationControl, LngLatBounds, setWorkerUrl, type GeoJSONSource } from 'maplibre-gl';
+import { createMap, setBasemap, useBasemap } from '@/lib/basemap';
+import { NavigationControl, LngLatBounds, setWorkerUrl, type GeoJSONSource, type Map as MlMap } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
 
 setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
@@ -9,10 +9,15 @@ setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
 /** W5.3: one project's corridor with lots, stations, verified photos and incidents. */
 export function CorridorMap({ data, height = 480 }: { data: GeoJSON.FeatureCollection; height?: number }) {
   const box = useRef<HTMLDivElement>(null);
+  const map = useRef<MlMap | null>(null);
+  const ready = useRef(false);
+  const [basemap] = useBasemap();
+  const shownBasemap = useRef(basemap);
 
   useEffect(() => {
     if (!box.current) return;
-    const m = new MlMap({ container: box.current, style: STYLE_URL, attributionControl: ATTRIBUTION });
+    const m = createMap({ container: box.current }, shownBasemap.current);
+    map.current = m;
     // The overview's inset is small: smaller station dots so they do not crowd the line.
     const small = height < 400;
     // Redraw when the box changes size (a map created in a box still being laid out comes out squashed).
@@ -34,11 +39,14 @@ export function CorridorMap({ data, height = 480 }: { data: GeoJSON.FeatureColle
     (onLine.length ? onLine : data.features).forEach(extend);
     if (!bounds.isEmpty()) m.fitBounds(bounds, { padding: 40, animate: false });
 
+    ready.current = false;
     m.on('load', () => {
-      foldCreditOnSmallMaps(m.getContainer());
+      ready.current = true;
       m.addSource('corridor', { type: 'geojson', data });
       (m.getSource('corridor') as GeoJSONSource).setData(data);
-      // The whole line in grey under the lots: the route even where no lot has started (or none exists yet).
+      // The whole line in grey under the lots: the route even where no lot has started (or none exists yet). Lines
+      // have a white outline so they stay readable on the dark imagery.
+      m.addLayer({ id: 'line-casing', type: 'line', source: 'corridor', filter: ['==', ['get', 'kind'], 'line'], layout: { 'line-cap': 'round' }, paint: { 'line-color': '#ffffff', 'line-width': 9 } });
       m.addLayer({ id: 'line', type: 'line', source: 'corridor', filter: ['==', ['get', 'kind'], 'line'], layout: { 'line-cap': 'round' }, paint: { 'line-color': '#8a94a6', 'line-width': 5 } });
       m.addLayer({ id: 'lot-casing', type: 'line', source: 'corridor', filter: ['==', ['get', 'kind'], 'lot'], layout: { 'line-cap': 'round' }, paint: { 'line-color': '#ffffff', 'line-width': 11 } });
       m.addLayer({
@@ -56,8 +64,18 @@ export function CorridorMap({ data, height = 480 }: { data: GeoJSON.FeatureColle
     return () => {
       ro.disconnect();
       m.remove();
+      map.current = null;
     };
   }, [data]);
+
+  // Map or satellite under the line
+  useEffect(() => {
+    const m = map.current;
+    if (!m || basemap === shownBasemap.current) return;
+    shownBasemap.current = basemap;
+    if (ready.current) setBasemap(m, basemap);
+    else m.once('load', () => setBasemap(m, basemap));
+  }, [basemap]);
 
   return (
     <div className="relative overflow-hidden rounded-md ring-1 ring-line" style={{ height }}>

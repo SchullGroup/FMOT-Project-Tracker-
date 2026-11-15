@@ -1,7 +1,7 @@
 'use client';
 
-import { ATTRIBUTION, foldCreditOnSmallMaps, STYLE_URL } from '@/lib/map';
-import { LngLatBounds, Map as MlMap, setWorkerUrl, type GeoJSONSource } from 'maplibre-gl';
+import { createMap, setBasemap, useBasemap } from '@/lib/basemap';
+import { LngLatBounds, setWorkerUrl, type GeoJSONSource, type Map as MlMap } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
 
 setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
@@ -16,16 +16,17 @@ export function PreviewMap({ line, stations }: { line: [number, number][] | null
   const map = useRef<MlMap | null>(null);
   const ready = useRef(false);
   const pending = useRef<(() => void) | null>(null);
+  const [basemap] = useBasemap();
+  const shownBasemap = useRef(basemap);
 
   useEffect(() => {
     if (!box.current) return;
-    const m = new MlMap({ container: box.current, style: STYLE_URL, bounds: [[2.6, 4.2], [14.7, 13.9]], fitBoundsOptions: { padding: 20 }, attributionControl: ATTRIBUTION });
+    const m = createMap({ container: box.current, bounds: [[2.6, 4.2], [14.7, 13.9]], fitBoundsOptions: { padding: 20 } }, shownBasemap.current);
     // Redraw when the box changes size (a map created in a box still being laid out comes out squashed).
     const ro = new ResizeObserver(() => m.resize());
     if (m.getContainer().parentElement) ro.observe(m.getContainer().parentElement!);
     map.current = m;
     m.on('load', () => {
-      foldCreditOnSmallMaps(m.getContainer());
       m.addSource('line', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       m.addSource('stations', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       m.addLayer({ id: 'line-casing', type: 'line', source: 'line', paint: { 'line-color': '#ffffff', 'line-width': 9 } });
@@ -41,6 +42,23 @@ export function PreviewMap({ line, stations }: { line: [number, number][] | null
       m.remove();
     };
   }, []);
+
+  // Map or satellite under the line. The line waits while the new style loads.
+  useEffect(() => {
+    const m = map.current;
+    if (!m || basemap === shownBasemap.current) return;
+    const swap = () => {
+      shownBasemap.current = basemap;
+      ready.current = false;
+      setBasemap(m, basemap, () => {
+        ready.current = true;
+        pending.current?.();
+        pending.current = null;
+      });
+    };
+    if (ready.current) swap();
+    else m.once('load', swap);
+  }, [basemap]);
 
   useEffect(() => {
     const m = map.current;
