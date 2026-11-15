@@ -1,6 +1,6 @@
 'use client';
 
-import { createMap, setBasemap, useBasemap, type Basemap } from '@/lib/basemap';
+import { createMap, LABEL_FONT, LINE_LABEL_FONT, setBasemap, showOnSatellite, useBasemap, type Basemap } from '@/lib/basemap';
 import {
   LngLatBounds,
   type Map as MlMap,
@@ -45,18 +45,32 @@ const colourExpression = [
 // The state boundaries in grey on the street map, light on the imagery.
 const boundaryColour = (b: Basemap) => (b === 'satellite' ? '#f3f4f6' : '#4a5565');
 
-// Station names need the style to provide fonts (glyphs); the plain offline style and Esri imagery do not.
-function addStationLabels(m: MlMap) {
-  if (!m.getStyle().glyphs || m.getLayer('ov-stations-label')) return;
-  m.addLayer({
-    id: 'ov-stations-label',
-    type: 'symbol',
-    source: 'ov-stations',
-    // Names only once zoomed in to a corridor; at country scale they crowd each other.
-    minzoom: 8,
-    layout: { 'text-field': ['get', 'name'], 'text-size': 13, 'text-offset': [0.8, 0], 'text-anchor': 'left' },
-    paint: { 'text-color': '#1b2430', 'text-halo-color': '#ffffff', 'text-halo-width': 1.6 },
-  });
+// Station names and, on satellite, each line's name along it. Labels need the style to provide fonts (glyphs); the
+// plain offline style does not.
+function addLabels(m: MlMap, b: Basemap) {
+  if (!m.getStyle().glyphs) return;
+  if (!m.getLayer('ov-stations-label')) {
+    m.addLayer({
+      id: 'ov-stations-label',
+      type: 'symbol',
+      source: 'ov-stations',
+      // Names only once zoomed in to a corridor; at country scale they crowd each other.
+      minzoom: 8,
+      layout: { 'text-field': ['get', 'name'], 'text-font': LABEL_FONT, 'text-size': 13, 'text-offset': [0.8, 0], 'text-anchor': 'left' },
+      paint: { 'text-color': '#1b2430', 'text-halo-color': '#ffffff', 'text-halo-width': 1.6 },
+    });
+  }
+  if (!m.getLayer('projects-label')) {
+    m.addLayer({
+      id: 'projects-label',
+      type: 'symbol',
+      source: 'projects',
+      minzoom: 6,
+      layout: { 'symbol-placement': 'line', 'text-field': ['get', 'name'], 'text-font': LINE_LABEL_FONT, 'text-size': 13, 'text-offset': [0, -1.1], 'symbol-spacing': 400 },
+      paint: { 'text-color': '#0b2545', 'text-halo-color': '#ffffff', 'text-halo-width': 1.8 },
+    });
+  }
+  showOnSatellite(m, b, ['projects-label']);
 }
 
 /*
@@ -137,7 +151,7 @@ export function MapView({ data, overlays, selectedId, focusId, onSelect }: Props
       m.addLayer({ id: 'ov-lots', type: 'line', source: 'ov-lots', paint: { 'line-color': '#0b2545', 'line-width': 2, 'line-offset': 7 } });
       m.addLayer({ id: 'ov-no-go', type: 'line', source: 'ov-no-go', layout: { 'line-cap': 'round' }, paint: { 'line-color': '#b00020', 'line-width': 12, 'line-opacity': 0.45 } });
       m.addLayer({ id: 'ov-stations', type: 'circle', source: 'ov-stations', paint: { 'circle-radius': 5, 'circle-color': '#ffffff', 'circle-stroke-color': '#0b2545', 'circle-stroke-width': 2 } });
-      addStationLabels(m);
+      addLabels(m, shownBasemap.current);
 
       for (const layer of ['projects-line', 'projects-draft', 'projects-casing']) {
         m.on('click', layer, (e: MapLayerMouseEvent) => {
@@ -169,7 +183,7 @@ export function MapView({ data, overlays, selectedId, focusId, onSelect }: Props
       ready.current = false;
       setBasemap(m, basemap, () => {
         m.setPaintProperty('ov-state-boundaries', 'line-color', boundaryColour(basemap));
-        addStationLabels(m);
+        addLabels(m, basemap);
         ready.current = true;
         pending.current.splice(0).forEach((fn) => fn());
       });

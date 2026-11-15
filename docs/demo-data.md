@@ -1,6 +1,6 @@
 # Demo data
 
-`pnpm db:seed:demo` loads a demo data set that mirrors the web app's sample data (`apps/web/src/lib/mock*.ts`): seven corridors, one person for each of the 18 roles, Kaduna–Kano at gate 13 with lots, certificates, photos, land and open tasks. It is for the Neon branch named `demo` only. The names, amounts and documents are invented. The lines follow the real towns roughly.
+`pnpm db:seed:demo` loads a demo data set that mirrors the web app's sample data (`apps/web/src/lib/mock*.ts`): seven corridors, one person for each of the 18 roles, Kaduna–Kano at gate 13 with lots, certificates, photos, land and open tasks. It is for the Neon branch named `demo` only. The names, amounts and documents are invented. The lines are the real railways from OpenStreetMap (`apps/api/src/database/demo-routes.geojson`), except Lagos–Calabar and Kano–Maradi after Katsina, which are not mapped and keep a sketch through their towns.
 
 Code: `apps/api/src/database/seed-demo.ts` (guard, rows, workflow replay), `demo-data.ts` (people, organisations, corridors) and `demo-files.ts` (placeholder PDFs, baseline CSVs, photos).
 
@@ -55,7 +55,8 @@ Always name the branch (`neon connection-string demo ...`). Without the name, th
 **Dates.** Dates are relative to the first run: certificate 14 was certified "yesterday", and Kaduna–Kano has waited 9 days at gate 13. A second run does not move them. To refresh the dates, reset the branch and load everything again:
 
 ```sh
-neon branches reset demo --parent --project-id wild-paper-65564975
+# keeps the old state as a branch of its own (needed once demo has a child branch)
+neon branches reset demo --parent --preserve-under-name demo-before-<what>-<date> --project-id wild-paper-65564975
 # then the four demo commands above
 ```
 
@@ -98,13 +99,17 @@ The numbers are E.164 `+2347000000101` to `+2347000000122`. They pass `normalise
 
 | Corridor | Status | Funding route | Where it stands |
 | --- | --- | --- | --- |
-| Kaduna–Kano SGR (about 208 km) | under construction | external loan | Gate 13 (Certify and pay) for 9 days, on track |
-| Kano–Katsina–Maradi SGR (about 241 km) | draft by Engr. A. Bello | external loan | Gate 1 awaiting confirmation: sent for publishing an hour ago; visible only to its creator and the Director |
-| Port Harcourt–Maiduguri rehabilitation (narrow gauge, about 1,219 km) | stalled (marked) | external loan | Gate 10 (Right-of-way) for 141 days; the evidence was returned to the project manager |
+| Kaduna–Kano SGR (about 214 km) | under construction | external loan | Gate 13 (Certify and pay) for 9 days, on track |
+| Kano–Katsina–Maradi SGR (about 285 km) | draft by Engr. A. Bello | external loan | Gate 1 awaiting confirmation: sent for publishing an hour ago; visible only to its creator and the Director |
+| Port Harcourt–Maiduguri rehabilitation (narrow gauge, about 1,415 km) | stalled (marked) | external loan | Gate 10 (Right-of-way) for 141 days; the evidence was returned to the project manager |
 | Lagos–Calabar coastal line (about 672 km) | funded | PPP | Gate 6 (BPP no objection) for 63 days, behind; the D11 has waited 3 days for the Director |
 | Abuja–Kaduna SGR, Lagos–Ibadan SGR, Warri–Itakpe SGR | operational | external loan, external loan, budget | All 15 gates passed; one completed lot each (CCECC, CCECC, Julius Berger); stations in service; final account paid |
 
-Alignments are LineStrings in SRID 4326 through the real towns (26 to 105 points). `length_m` is `ST_Length(alignment::geography)` and the states come from `ST_Intersects` with `admin_boundaries`, as in the alignment upload.
+Alignments are LineStrings in SRID 4326: the real railways from OpenStreetMap (© OpenStreetMap contributors, ODbL; 145 to 2,727 points, simplified to 10 m), saved in `apps/api/src/database/demo-routes.geojson` so the seed needs no internet. Lagos–Calabar (not in OpenStreetMap) keeps the sketch through its towns from `demo-data.ts`, and Kano–Katsina–Maradi is OpenStreetMap's to just past Katsina and the sketch from there to Maradi. `length_m` is `ST_Length(alignment::geography)` and the states come from `ST_Intersects` with `admin_boundaries`, as in the alignment upload. Stations are placed where their town meets the line (`ST_LineLocatePoint`).
+
+Kaduna–Kano's chainages (lots, assets, milestones, measurements, photos, sections, parcels, grievances) are written for the sketch line and moved to the same share of the real one (`kk.at` in `seed-demo.ts`), so every lot keeps its share and every photo stays inside its lot; names that state a kilometre (culverts, milestones, parcel references, variations) are worked out from the moved chainage.
+
+To refresh the lines: download the railway ways and run `tools/demo-routes.py` (its header has both commands; standard-library Python), check the lengths and bridged gaps it prints, commit the file and reset the demo branch (below). Gaps, snaps and what is not from OpenStreetMap are listed in docs/data-sources.md.
 
 **Kaduna–Kano** has everything filled:
 

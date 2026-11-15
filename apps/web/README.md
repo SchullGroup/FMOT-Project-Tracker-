@@ -25,9 +25,13 @@ mini-map and the wizard's preview). It uses MapTiler's satellite-hybrid style:
 
     NEXT_PUBLIC_SATELLITE_STYLE_URL=https://api.maptiler.com/maps/hybrid/style.json?key=YOUR_MAPTILER_KEY
 
-or, when that is empty, Esri World Imagery with an ArcGIS Location Platform key in `NEXT_PUBLIC_ESRI_IMAGERY_KEY`.
-With neither, the switch is hidden. On satellite the credits stay open (with MapTiler's logo for MapTiler), and lines
-keep a white outline so they read on the dark imagery. `/dev/basemaps` (development only; 404 in a production build)
+or, when that is empty, Esri World Imagery with an ArcGIS Location Platform key in `NEXT_PUBLIC_ESRI_IMAGERY_KEY`. Esri
+is the provider chosen after comparing the two (15 November 2026), so the deployed app sets only the Esri key. With
+neither, the switch is hidden. On satellite the credits stay open (with MapTiler's logo for MapTiler), lines keep a
+white outline so they read on the dark imagery, and our own labels show on top (station names and each project's
+line name), since Esri imagery has none. The labels use Noto Sans; the app serves the glyph ranges it needs from
+`public/fonts` (Latin, Latin extended with Yorùbá and Igbo marks, and punctuation such as the en dash), from
+OpenFreeMap's font set (SIL Open Font Licence). `/dev/basemaps` (development only; 404 in a production build)
 shows MapTiler and Esri side by side, moving together, on Kaduna–Kano, to compare sharpness; without an Esri key it
 uses Esri's public tile server, which is not for production use.
 
@@ -38,7 +42,8 @@ uses Esri's public tile server, which is not for production use.
 - `public/map-style-plain.json` is an offline style (a plain background) for when no tile server can be reached.
 
 Every map carries the CC BY 4.0 credit for the state boundaries (GRID3 Nigeria via geoBoundaries,
-`docs/data-sources.md`) as custom attribution, set once in `src/lib/map.ts`; `src/lib/basemap.ts` creates every map on
+`docs/data-sources.md`) and the OpenStreetMap credit for the sample and demo railway lines (ODbL) as custom
+attribution, set once in `src/lib/map.ts`; `src/lib/basemap.ts` creates every map on
 the chosen basemap and swaps it under the app's own layers.
 
 ## How it is put together

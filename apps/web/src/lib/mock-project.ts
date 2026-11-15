@@ -24,6 +24,7 @@ import type {
 } from './types';
 
 import { addedLots, addedMembers } from './mock-step8';
+import { KK_SKETCH_M, pointAt, ROUTES, sliceLine, snapToLines } from './sample-routes';
 
 const day = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
 // Kobo as the API sends it: a string of digits.
@@ -95,16 +96,19 @@ const progress: ProgressSummary = {
   ],
 };
 
-const kk: [number, number][] = [[7.43, 10.52], [7.55, 10.78], [7.71, 11.08], [7.9, 11.3], [8.1, 11.55], [8.3, 11.78], [8.52, 12.0]];
+// The real line (sample-routes.ts). Lots, photos and the incident sit at the share of it their chainage gives.
+const kk = ROUTES['p-kk']!;
+const at = (chainageM: number) => pointAt(kk, chainageM / KK_SKETCH_M);
 const corridor: GeoJSON.FeatureCollection = {
   type: 'FeatureCollection',
   features: [
-    { type: 'Feature', properties: { kind: 'lot', name: 'Lot 1', state: 'complete' }, geometry: { type: 'LineString', coordinates: kk.slice(0, 3) } },
-    { type: 'Feature', properties: { kind: 'lot', name: 'Lot 2', state: 'in_progress' }, geometry: { type: 'LineString', coordinates: kk.slice(2, 5) } },
-    { type: 'Feature', properties: { kind: 'lot', name: 'Lot 3', state: 'in_progress' }, geometry: { type: 'LineString', coordinates: kk.slice(4) } },
-    ...[['Kaduna', kk[0]!], ['Zaria', kk[2]!], ['Kano', kk[6]!]].map(([name, c]) => ({ type: 'Feature' as const, properties: { kind: 'station', name: name as string }, geometry: { type: 'Point' as const, coordinates: c as [number, number] } })),
-    ...[kk[1]!, kk[3]!, [8.2, 11.66] as [number, number]].map((c, i) => ({ type: 'Feature' as const, properties: { kind: 'photo', name: `Verified photo ${i + 1}` }, geometry: { type: 'Point' as const, coordinates: c } })),
-    { type: 'Feature', properties: { kind: 'incident', name: 'Community access dispute' }, geometry: { type: 'Point', coordinates: [8.25, 11.72] } },
+    { type: 'Feature', properties: { kind: 'line', name: 'Kaduna–Kano SGR' }, geometry: { type: 'LineString', coordinates: kk } },
+    { type: 'Feature', properties: { kind: 'lot', name: 'Lot 1', state: 'complete' }, geometry: { type: 'LineString', coordinates: sliceLine(kk, 0, 68_000 / KK_SKETCH_M) } },
+    { type: 'Feature', properties: { kind: 'lot', name: 'Lot 2', state: 'in_progress' }, geometry: { type: 'LineString', coordinates: sliceLine(kk, 68_000 / KK_SKETCH_M, 137_000 / KK_SKETCH_M) } },
+    { type: 'Feature', properties: { kind: 'lot', name: 'Lot 3', state: 'in_progress' }, geometry: { type: 'LineString', coordinates: sliceLine(kk, 137_000 / KK_SKETCH_M, 1) } },
+    ...([['Kaduna', kk[0]!], ['Zaria', snapToLines([kk], [7.71, 11.08])!], ['Kano', kk[kk.length - 1]!]] as const).map(([name, c]) => ({ type: 'Feature' as const, properties: { kind: 'station', name }, geometry: { type: 'Point' as const, coordinates: c } })),
+    ...[at(33_700), at(104_350), at(142_300)].map((c, i) => ({ type: 'Feature' as const, properties: { kind: 'photo', name: `Verified photo ${i + 1}` }, geometry: { type: 'Point' as const, coordinates: c } })),
+    { type: 'Feature', properties: { kind: 'incident', name: 'Community access dispute' }, geometry: { type: 'Point', coordinates: at(150_800) } },
   ],
 };
 

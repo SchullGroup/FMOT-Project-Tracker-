@@ -20,5 +20,8 @@ export function esriTiles(key: string | null) {
   return key ? `${ESRI_KEYED_ORIGIN}${path}?token=${encodeURIComponent(key)}` : `${ESRI_PUBLIC_ORIGIN}${path.replace('/arcgis', '/ArcGIS')}`;
 }
 
-// CC BY 4.0 credit for the state boundaries (docs/data-sources.md), shown on every map.
+// Credits shown on every map (docs/data-sources.md): the state boundaries (CC BY 4.0) and the sample and demo railway
+// lines, which come from OpenStreetMap (ODbL).
 export const BOUNDARY_CREDIT = 'State boundaries: GRID3 Nigeria (2022) via geoBoundaries (Runfola et al. 2020), CC BY 4.0';
+export const RAIL_CREDIT = 'Railway lines: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ODbL';
+export const MAP_CREDITS = [BOUNDARY_CREDIT, RAIL_CREDIT];

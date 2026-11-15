@@ -1,10 +1,19 @@
 'use client';
 
-import { createMap, setBasemap, useBasemap } from '@/lib/basemap';
+import { createMap, LABEL_FONT, setBasemap, showOnSatellite, useBasemap, type Basemap } from '@/lib/basemap';
 import { LngLatBounds, setWorkerUrl, type GeoJSONSource, type Map as MlMap } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
 
 setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
+
+// On satellite, the station names (Esri imagery has none). They need the style's fonts.
+function addLabels(m: MlMap, b: Basemap) {
+  if (!m.getStyle().glyphs) return;
+  if (!m.getLayer('stations-label')) {
+    m.addLayer({ id: 'stations-label', type: 'symbol', source: 'stations', layout: { 'text-field': ['get', 'name'], 'text-font': LABEL_FONT, 'text-size': 13, 'text-offset': [0.9, 0], 'text-anchor': 'left' }, paint: { 'text-color': '#1b2430', 'text-halo-color': '#ffffff', 'text-halo-width': 1.6 } });
+  }
+  showOnSatellite(m, b, ['stations-label']);
+}
 
 /*
  * The map beside the wizard. Shows the dashed placeholder between the two
@@ -28,6 +37,7 @@ export function PreviewMap({ line, stations }: { line: [number, number][] | null
     shownBasemap.current = wantedBasemap.current;
     ready.current = false;
     setBasemap(m, shownBasemap.current, () => {
+      addLabels(m, shownBasemap.current);
       ready.current = true;
       followBasemap();
       if (!ready.current) return;
@@ -50,6 +60,7 @@ export function PreviewMap({ line, stations }: { line: [number, number][] | null
       m.addLayer({ id: 'line-casing', type: 'line', source: 'line', paint: { 'line-color': '#ffffff', 'line-width': 9 } });
       m.addLayer({ id: 'line', type: 'line', source: 'line', paint: { 'line-color': '#5b6573', 'line-width': 5, 'line-dasharray': [2, 1.5] } });
       m.addLayer({ id: 'stations', type: 'circle', source: 'stations', paint: { 'circle-radius': 6, 'circle-color': '#ffffff', 'circle-stroke-color': '#0b2545', 'circle-stroke-width': 2.5 } });
+      addLabels(m, shownBasemap.current);
       ready.current = true;
       followBasemap();
       if (!ready.current) return;

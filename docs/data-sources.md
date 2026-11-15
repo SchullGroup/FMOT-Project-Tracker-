@@ -6,6 +6,8 @@ Open data the platform loads, with its licence and how to credit it.
 | --- | --- | --- | --- |
 | State boundaries (36 states and the FCT, ADM1) | [geoBoundaries](https://www.geoboundaries.org) gbOpen NGA ADM1, boundary ID NGA-ADM1-27671186, built 12 December 2023 from GRID3 Nigeria State Boundaries (2022, [source](https://data.grid3.org/datasets/grid3-nigeria-state-boundaries)). File pinned to release commit 9469f09: `geoBoundaries-NGA-ADM1.geojson` | [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) | `pnpm db:load-boundaries` into `admin_boundaries` (level 1) |
 | Satellite base map in the designs | NASA Blue Marble (GIBS) | Public domain | Design files only |
+| Railway lines of the demo projects (six of seven) | [OpenStreetMap](https://www.openstreetmap.org) railway ways (`railway=rail` or `construction`, by gauge) through the Overpass API, base of 15 November 2026, joined into one line per project by `tools/demo-routes.py` (API repository); Lagos–Calabar is not in OpenStreetMap | [Open Database Licence (ODbL) 1.0](https://opendatacommons.org/licenses/odbl/1-0/) | `apps/api/src/database/demo-routes.geojson`, loaded by `pnpm db:seed:demo` (demo branch only); the web app's sample data uses a simplified copy, `apps/web/src/lib/sample-routes.json` |
+| Map label font (Noto Sans Regular and Bold, glyph ranges) | [OpenFreeMap](https://openfreemap.org) font set, `apps/web/public/fonts` (Latin, Latin extended, combining marks, Latin extended additional, punctuation) | [SIL Open Font Licence 1.1](https://openfontlicense.org) | Labels on the satellite map (served by the web app) |
 | Demo site photos (30) | Wikimedia Commons, credits below | CC BY-SA 4.0, one CC0 | `pnpm db:seed:demo` (demo branch only) |
 | Coat of arms of Nigeria (the logo) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Coat_of_arms_of_Nigeria.svg), drawn by Lumia1234, `docs/brand/coat-of-arms-nigeria.svg` | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/); an insignia, its use also governed by Nigerian law | Web header and favicon, field app icon, splash and front screens (docs/brand/README.md) |
 
@@ -16,6 +18,14 @@ CC BY 4.0 requires credit wherever the boundaries are shown or derived data is p
 > State boundaries: GRID3 Nigeria (2022) via geoBoundaries (Runfola et al. 2020), CC BY 4.0.
 
 Reference for geoBoundaries: Runfola, D. et al. (2020) geoBoundaries: A global database of political administrative boundaries. PLoS ONE 15(4): e0231866.
+
+## OpenStreetMap railway lines
+
+The demo and sample lines (Kaduna–Kano, Kano–Katsina–Maradi, Abuja–Kaduna, Lagos–Ibadan, Warri–Itakpe, Port Harcourt–Maiduguri) are the real railways as mapped in OpenStreetMap on 15 November 2026. ODbL requires credit wherever they are shown; every map in the web app carries:
+
+> Railway lines: © OpenStreetMap contributors, ODbL.
+
+How each line was made (`tools/demo-routes.py` in the API repository, which also states the Overpass query): the ways of the line's kind and gauge (1435 mm, rail or under construction, for the standard-gauge lines; 1067 mm, rail, disused or abandoned, for the eastern narrow-gauge line), gaps between way ends bridged with a straight piece, the shortest path through the line's towns, simplified to 10 m. Gaps bridged: Kaduna–Kano one of 443 m; Lagos–Ibadan four of 6 to 595 m; Port Harcourt–Maiduguri five, of 1.8, 2.1, 3.0, 13.8 and 13.1 km (holes in the mapping on the eastern line). Not from OpenStreetMap: Kano–Katsina–Maradi after Katsina (OpenStreetMap stops about 6 km past Katsina; the last 86 km to Maradi are the sketch through Jibia) and the whole Lagos–Calabar coastal line (not mapped; it is still a plan), which keep the sketch through their towns.
 
 ## Notes
 

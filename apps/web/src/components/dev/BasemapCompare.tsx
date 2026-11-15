@@ -2,27 +2,34 @@
 
 import { AttributionControl, Map as MlMap, NavigationControl, setWorkerUrl, type StyleSpecification } from 'maplibre-gl';
 import { useEffect, useRef, useState } from 'react';
-import { esriStyle } from '@/lib/basemap';
-import { ESRI_IMAGERY_KEY, SATELLITE_STYLE_URL } from '@/lib/map';
+import { esriStyle, LABEL_FONT } from '@/lib/basemap';
+import { ESRI_IMAGERY_KEY, MAP_CREDITS, SATELLITE_STYLE_URL } from '@/lib/map';
+import { ROUTES, snapToLines } from '@/lib/sample-routes';
 import { CATEGORY_COLOUR } from '@/lib/status';
 
 setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
 
-// Kaduna–Kano as on the sample map (src/lib/mock.ts), with its towns.
-const LINE: [number, number][] = [[7.43, 10.52], [7.71, 11.08], [8.1, 11.55], [8.52, 12.0]];
+// Kaduna–Kano as on the sample map: the real line from OpenStreetMap (src/lib/sample-routes.ts), with its towns on it.
+const LINE = ROUTES['p-kk']!;
 const TOWNS: Array<{ name: string; at: [number, number] }> = [
-  { name: 'Kaduna', at: [7.43, 10.52] },
-  { name: 'Zaria', at: [7.71, 11.08] },
-  { name: 'Kano', at: [8.52, 12.0] },
+  { name: 'Kaduna', at: LINE[0]! },
+  { name: 'Zaria', at: snapToLines([LINE], [7.71, 11.08])! },
+  { name: 'Kano', at: LINE[LINE.length - 1]! },
 ];
-const WHOLE_LINE: [[number, number], [number, number]] = [[7.43, 10.52], [8.52, 12.0]];
+const WHOLE_LINE: [[number, number], [number, number]] = [
+  [Math.min(...LINE.map((p) => p[0])), Math.min(...LINE.map((p) => p[1]))],
+  [Math.max(...LINE.map((p) => p[0])), Math.max(...LINE.map((p) => p[1]))],
+];
 
 function drawLine(m: MlMap) {
   m.addSource('kk', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: LINE } } });
-  m.addSource('kk-towns', { type: 'geojson', data: { type: 'FeatureCollection', features: TOWNS.map((t) => ({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: t.at } })) } });
+  m.addSource('kk-towns', { type: 'geojson', data: { type: 'FeatureCollection', features: TOWNS.map((t) => ({ type: 'Feature', properties: { name: t.name }, geometry: { type: 'Point', coordinates: t.at } })) } });
   m.addLayer({ id: 'kk-casing', type: 'line', source: 'kk', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#ffffff', 'line-width': 10, 'line-opacity': 0.9 } });
   m.addLayer({ id: 'kk-line', type: 'line', source: 'kk', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': CATEGORY_COLOUR.construction, 'line-width': 6 } });
   m.addLayer({ id: 'kk-towns', type: 'circle', source: 'kk-towns', paint: { 'circle-radius': 6, 'circle-color': '#ffffff', 'circle-stroke-color': '#0b2545', 'circle-stroke-width': 2.5 } });
+  if (m.getStyle().glyphs) {
+    m.addLayer({ id: 'kk-towns-label', type: 'symbol', source: 'kk-towns', layout: { 'text-field': ['get', 'name'], 'text-font': LABEL_FONT, 'text-size': 13, 'text-offset': [0.9, 0], 'text-anchor': 'left' }, paint: { 'text-color': '#1b2430', 'text-halo-color': '#ffffff', 'text-halo-width': 1.6 } });
+  }
 }
 
 /*
@@ -43,7 +50,7 @@ export function BasemapCompare() {
     const made = panes.flatMap(([box, style]) => {
       if (!box || !style) return [];
       const m = new MlMap({ container: box, style, bounds: WHOLE_LINE, fitBoundsOptions: { padding: 60 }, attributionControl: false });
-      m.addControl(new AttributionControl({ compact: false }));
+      m.addControl(new AttributionControl({ compact: false, customAttribution: MAP_CREDITS }));
       m.addControl(new NavigationControl({ showCompass: false }), 'top-right');
       m.on('load', () => drawLine(m));
       return [m];

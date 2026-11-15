@@ -8,7 +8,7 @@ import {
   type StyleSpecification,
 } from 'maplibre-gl';
 import { useCallback, useSyncExternalStore } from 'react';
-import { BOUNDARY_CREDIT, ESRI_CREDIT, ESRI_IMAGERY_KEY, esriTiles, SATELLITE_AVAILABLE, SATELLITE_STYLE_URL, STYLE_URL } from '@/lib/map';
+import { ESRI_CREDIT, MAP_CREDITS, ESRI_IMAGERY_KEY, esriTiles, SATELLITE_AVAILABLE, SATELLITE_STYLE_URL, STYLE_URL } from '@/lib/map';
 
 /*
  * The Map / Satellite choice, shared by every map. It is remembered on this browser; every map on screen follows a
@@ -51,10 +51,24 @@ export function useBasemap(): [Basemap, (b: Basemap) => void] {
   return [basemap, set];
 }
 
-/** Esri World Imagery as a style of its own (raster tiles, no labels, no fonts). */
+/*
+ * Our own labels (station names, the project's line name). Esri imagery has no labels, so on satellite these are the
+ * only names on the map. Noto Sans is in the OpenFreeMap and MapTiler fonts, and the app serves the ranges it needs
+ * (public/fonts) for the Esri style.
+ */
+export const LABEL_FONT = ['Noto Sans Regular'];
+export const LINE_LABEL_FONT = ['Noto Sans Bold'];
+
+/** Labels that only show on satellite (the street map has its own place names). */
+export function showOnSatellite(m: MlMap, b: Basemap, layerIds: string[]) {
+  for (const id of layerIds) if (m.getLayer(id)) m.setLayoutProperty(id, 'visibility', b === 'satellite' ? 'visible' : 'none');
+}
+
+/** Esri World Imagery as a style of its own (raster tiles, no labels), with the app's fonts for our labels. */
 export function esriStyle(key: string | null): StyleSpecification {
   return {
     version: 8,
+    glyphs: `${window.location.origin}/fonts/{fontstack}/{range}.pbf`,
     sources: { 'esri-imagery': { type: 'raster', tiles: [esriTiles(key)], tileSize: 256, maxzoom: 19, attribution: ESRI_CREDIT } },
     layers: [{ id: 'esri-imagery', type: 'raster', source: 'esri-imagery' }],
   };
@@ -93,7 +107,7 @@ interface Extras {
 const extras = new WeakMap<MlMap, Extras>();
 
 /*
- * The credits: the provider's (from the style's sources) and the boundary credit. On satellite they stay open, as
+ * The credits: the provider's (from the style's sources), the boundaries' and OpenStreetMap's for the railway lines. On satellite they stay open, as
  * the imagery providers require; on the street map they fold behind (i) on a small map (under 640 px wide), where
  * they would cover much of it.
  */
@@ -104,7 +118,7 @@ function placeCredits(m: MlMap, b: Basemap) {
     if (old.logo) m.removeControl(old.logo);
   }
   const satellite = b === 'satellite' && SATELLITE_AVAILABLE;
-  const attribution = new AttributionControl({ compact: !satellite, customAttribution: BOUNDARY_CREDIT });
+  const attribution = new AttributionControl({ compact: !satellite, customAttribution: MAP_CREDITS });
   const logo = satellite && SATELLITE_STYLE_URL?.includes('maptiler.com') ? new MapTilerLogo() : undefined;
   if (logo) m.addControl(logo, 'bottom-right');
   m.addControl(attribution, 'bottom-right');

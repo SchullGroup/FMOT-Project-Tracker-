@@ -158,8 +158,8 @@ Environment variables (Settings, Environment Variables, for Production and Previ
 | --- | --- | --- |
 | `NEXT_PUBLIC_API_MOCK` | `1` | `0` |
 | `NEXT_PUBLIC_MAP_STYLE_URL` | `https://tiles.openfreemap.org/styles/liberty` (the street map) | same |
-| `NEXT_PUBLIC_SATELLITE_STYLE_URL` | `https://api.maptiler.com/maps/hybrid/style.json?key=<MapTiler key>` (the key restricted to the Vercel domains in MapTiler, Account, Keys, Allowed HTTP origins) | same |
-| `NEXT_PUBLIC_ESRI_IMAGERY_KEY` | not needed (optional; only used when the MapTiler URL is empty) | same |
+| `NEXT_PUBLIC_ESRI_IMAGERY_KEY` | the ArcGIS Location Platform key for Esri World Imagery, the chosen satellite provider (restrict it to the Vercel domains in the key's referrer settings) | same |
+| `NEXT_PUBLIC_SATELLITE_STYLE_URL` | not set (MapTiler was the alternative; set, it would be used instead of Esri) | same |
 | `API_ORIGIN` | not needed | the staging API's origin, for example `https://fmot-rail-api-staging.fly.dev` (no `/api`) |
 | `MAP_EXTRA_ORIGINS` | not needed | only if a map style loads tiles from hosts other than its own (comma separated); MapTiler and Esri are added to the CSP from the two settings above |
 

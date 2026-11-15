@@ -14,6 +14,7 @@ import { mockBaselineUpload, mockForms } from './mock-forms';
 import { mockStep8 } from './mock-step8';
 import { DEMO_CODE, DEMO_PIN, e164, findDemoAccount, permissionsOf, type DemoAccount } from './demo-accounts';
 import type { MapCounters, MapProjectsResponse, Me, ProjectCard, TaskInbox } from './types';
+import { KK_SKETCH_M, metres, ROUTES, sliceLine, snapToLines } from './sample-routes';
 
 // The person signed in, as the API's /me would describe them.
 const meOf = (a: DemoAccount): Me => ({
@@ -51,6 +52,10 @@ const projects: MapProjectsResponse = {
     ]),
   ],
 };
+// The real lines where OpenStreetMap has them (sample-routes.ts); the points above are the sketch (Lagos–Calabar).
+for (const f of projects.features) f.geometry.coordinates = ROUTES[f.properties.id] ?? f.geometry.coordinates;
+const LINES = projects.features.map((f) => f.geometry.coordinates);
+const KK_LINE = LINES[0]!;
 
 // Sample media ids (m-<key>) and their photo files in public/sample-photos.
 const SAMPLE_PHOTOS: Record<string, string> = {
@@ -67,24 +72,28 @@ const LINE_PHOTOS: Record<string, ProjectCard['latestPhoto']> = {
   'p-pm': handover('pm', 'NRC (existing line)'),
 };
 
-// Towns at the points of the sample lines that are not in the stations layer.
+// Towns on the sample lines that are not in the stations layer.
 const LINE_TOWNS: Array<[string, [number, number]]> = [['Benin City', [5.63, 6.34]], ['Makurdi', [8.54, 7.73]], ['Bauchi', [10.3, 10.6]]];
 
 /**
- * A project's corridor in sample data: its own line from the map, with a station at each town it passes. Kaduna–Kano
- * has the full corridor (lots, photos, an incident) in mock-project.ts.
+ * A project's corridor in sample data: its own line from the map, with a station on the line at each town within
+ * 15 km of it, in order along it. Kaduna–Kano has the full corridor (lots, photos, an incident) in mock-project.ts.
  */
 function lineCorridor(f: MapProjectsResponse['features'][number]): GeoJSON.FeatureCollection {
-  const towns = [...MAP_LAYERS.stations!.features.map((s) => [s.properties?.name, (s.geometry as GeoJSON.Point).coordinates] as [string, [number, number]]), ...LINE_TOWNS];
-  const at = (c: [number, number]) => towns.find(([, t]) => t[0] === c[0] && t[1] === c[1])?.[0];
+  const line = f.geometry.coordinates;
+  const towns = [...STATION_TOWNS, ...LINE_TOWNS];
+  const stations = towns
+    .map(([name, t]) => {
+      const i = line.reduce((best, p, k) => (metres(p, t) < metres(line[best]!, t) ? k : best), 0);
+      return { name, i, near: metres(line[i]!, t) <= 15_000 };
+    })
+    .filter((s, k, all) => s.near && all.findIndex((x) => x.name === s.name) === k)
+    .sort((a, b) => a.i - b.i);
   return {
     type: 'FeatureCollection',
     features: [
       { type: 'Feature', properties: { kind: 'line', name: f.properties.name }, geometry: f.geometry },
-      ...f.geometry.coordinates.flatMap((c) => {
-        const name = at(c);
-        return name ? [{ type: 'Feature' as const, properties: { kind: 'station', name }, geometry: { type: 'Point' as const, coordinates: c } }] : [];
-      }),
+      ...stations.map((s) => ({ type: 'Feature' as const, properties: { kind: 'station', name: s.name }, geometry: { type: 'Point' as const, coordinates: line[s.i]! } })),
     ],
   };
 }
@@ -361,13 +370,20 @@ export async function mockUpload(path: string, fields: Record<string, string>, f
 const line = (name: string, coords: [number, number][], kind = '') => ({ type: 'Feature' as const, properties: { name, kind }, geometry: { type: 'LineString' as const, coordinates: coords } });
 const point = (name: string, c: [number, number]) => ({ type: 'Feature' as const, properties: { name }, geometry: { type: 'Point' as const, coordinates: c } });
 const box = (name: string, w: number, s: number, e: number, n: number) => ({ type: 'Feature' as const, properties: { name }, geometry: { type: 'Polygon' as const, coordinates: [[[w, s], [e, s], [e, n], [w, n], [w, s]]] } });
+const STATION_TOWNS: Array<[string, [number, number]]> = [
+  ['Lagos', [3.38, 6.45]], ['Ibadan', [3.9, 7.38]], ['Abuja', [7.4, 9.05]], ['Kaduna', [7.43, 10.52]], ['Zaria', [7.71, 11.08]], ['Kano', [8.52, 12.0]],
+  ['Katsina', [7.6, 12.99]], ['Maradi', [7.1, 13.5]], ['Warri', [5.75, 5.52]], ['Itakpe', [6.3, 7.62]], ['Port Harcourt', [7.03, 4.82]], ['Enugu', [7.51, 6.44]],
+  ['Jos', [8.89, 9.9]], ['Maiduguri', [13.16, 11.85]], ['Calabar', [8.33, 4.96]],
+];
 const MAP_LAYERS: Record<string, GeoJSON.FeatureCollection> = {
   'legacy-lines': { type: 'FeatureCollection', features: [
     line('Lagos–Kano narrow gauge', [[3.38, 6.45], [3.9, 7.38], [4.55, 8.5], [5.6, 9.4], [7.43, 10.52], [7.71, 11.08], [8.52, 12.0]]),
     line('Port Harcourt–Maiduguri narrow gauge', [[7.03, 4.82], [7.51, 6.44], [8.54, 7.73], [8.89, 9.9], [10.3, 10.6], [13.16, 11.85]]),
   ] },
   'state-boundaries': { type: 'FeatureCollection', features: [box('Kano', 7.7, 10.9, 9.4, 12.6), box('Kaduna', 6.1, 9.0, 8.8, 11.3), box('Katsina', 6.9, 11.1, 8.6, 13.4), box('Lagos', 2.7, 6.3, 4.4, 6.7)] },
-  stations: { type: 'FeatureCollection', features: [point('Lagos', [3.38, 6.45]), point('Ibadan', [3.9, 7.38]), point('Abuja', [7.4, 9.05]), point('Kaduna', [7.43, 10.52]), point('Zaria', [7.71, 11.08]), point('Kano', [8.52, 12.0]), point('Katsina', [7.6, 12.99]), point('Maradi', [7.1, 13.5]), point('Warri', [5.75, 5.52]), point('Itakpe', [6.3, 7.62]), point('Port Harcourt', [7.03, 4.82]), point('Enugu', [7.51, 6.44]), point('Jos', [8.89, 9.9]), point('Maiduguri', [13.16, 11.85]), point('Calabar', [8.33, 4.96])] },
-  lots: { type: 'FeatureCollection', features: [line('Lot 1', [[7.43, 10.52], [7.71, 11.08]]), line('Lot 2', [[7.71, 11.08], [8.1, 11.55]]), line('Lot 3', [[8.1, 11.55], [8.52, 12.0]])] },
-  'no-go': { type: 'FeatureCollection', features: [line('No-go: km 140 to 152', [[8.2, 11.66], [8.3, 11.78]])] },
+  // Stations on the lines: each town moved onto the nearest line within 15 km of it.
+  stations: { type: 'FeatureCollection', features: STATION_TOWNS.map(([name, t]) => point(name, snapToLines(LINES, t) ?? t)) },
+  // Kaduna–Kano's lots and the blocked stretch, at their share of its length (chainages as in mock-project.ts).
+  lots: { type: 'FeatureCollection', features: [line('Lot 1', sliceLine(KK_LINE, 0, 68_000 / KK_SKETCH_M)), line('Lot 2', sliceLine(KK_LINE, 68_000 / KK_SKETCH_M, 137_000 / KK_SKETCH_M)), line('Lot 3', sliceLine(KK_LINE, 137_000 / KK_SKETCH_M, 1))] },
+  'no-go': { type: 'FeatureCollection', features: [line('No-go: km 140 to 152', sliceLine(KK_LINE, 140_000 / KK_SKETCH_M, 152_000 / KK_SKETCH_M))] },
 };

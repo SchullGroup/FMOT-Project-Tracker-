@@ -60,7 +60,7 @@ export const config = {
   matcher: [
     {
       // Pages only: not the API proxy, static files or prefetches.
-      source: '/((?!api|_next/static|_next/image|maplibre|favicon.ico|map-style-plain.json).*)',
+      source: '/((?!api|_next/static|_next/image|maplibre|fonts|favicon.ico|map-style-plain.json).*)',
       missing: [
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },

@@ -1,10 +1,22 @@
 'use client';
 
-import { createMap, setBasemap, useBasemap } from '@/lib/basemap';
+import { createMap, LABEL_FONT, LINE_LABEL_FONT, setBasemap, showOnSatellite, useBasemap, type Basemap } from '@/lib/basemap';
 import { NavigationControl, LngLatBounds, setWorkerUrl, type GeoJSONSource, type Map as MlMap } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
 
 setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
+
+// On satellite, our own names: the stations and the line (Esri imagery has none). They need the style's fonts.
+function addLabels(m: MlMap, b: Basemap) {
+  if (!m.getStyle().glyphs) return;
+  if (!m.getLayer('line-label')) {
+    m.addLayer({ id: 'line-label', type: 'symbol', source: 'corridor', filter: ['==', ['get', 'kind'], 'line'], layout: { 'symbol-placement': 'line', 'text-field': ['get', 'name'], 'text-font': LINE_LABEL_FONT, 'text-size': 13, 'text-offset': [0, -1.2], 'symbol-spacing': 350 }, paint: { 'text-color': '#0b2545', 'text-halo-color': '#ffffff', 'text-halo-width': 1.8 } });
+  }
+  if (!m.getLayer('station-label')) {
+    m.addLayer({ id: 'station-label', type: 'symbol', source: 'corridor', filter: ['==', ['get', 'kind'], 'station'], layout: { 'text-field': ['get', 'name'], 'text-font': LABEL_FONT, 'text-size': 13, 'text-offset': [0.9, 0], 'text-anchor': 'left' }, paint: { 'text-color': '#1b2430', 'text-halo-color': '#ffffff', 'text-halo-width': 1.6 } });
+  }
+  showOnSatellite(m, b, ['line-label', 'station-label']);
+}
 
 /** W5.3: one project's corridor with lots, stations, verified photos and incidents. */
 export function CorridorMap({ data, height = 480 }: { data: GeoJSON.FeatureCollection; height?: number }) {
@@ -23,6 +35,7 @@ export function CorridorMap({ data, height = 480 }: { data: GeoJSON.FeatureColle
     shownBasemap.current = wantedBasemap.current;
     ready.current = false;
     setBasemap(m, shownBasemap.current, () => {
+      addLabels(m, shownBasemap.current);
       ready.current = true;
       followBasemap();
     });
@@ -74,6 +87,7 @@ export function CorridorMap({ data, height = 480 }: { data: GeoJSON.FeatureColle
       m.addLayer({ id: 'station', type: 'circle', source: 'corridor', filter: ['==', ['get', 'kind'], 'station'], paint: { 'circle-radius': small ? 4 : 7, 'circle-color': '#ffffff', 'circle-stroke-color': '#0b2545', 'circle-stroke-width': small ? 1.5 : 2.5 } });
       m.addLayer({ id: 'photo', type: 'circle', source: 'corridor', filter: ['==', ['get', 'kind'], 'photo'], paint: { 'circle-radius': 6, 'circle-color': '#2f6fde', 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 } });
       m.addLayer({ id: 'incident', type: 'circle', source: 'corridor', filter: ['==', ['get', 'kind'], 'incident'], paint: { 'circle-radius': 7, 'circle-color': '#b00020', 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 } });
+      addLabels(m, shownBasemap.current);
       ready.current = true;
       followBasemap();
     });
