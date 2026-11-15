@@ -17,10 +17,28 @@ export function PreviewMap({ line, stations }: { line: [number, number][] | null
   const ready = useRef(false);
   const pending = useRef<(() => void) | null>(null);
   const [basemap] = useBasemap();
+  const wantedBasemap = useRef(basemap);
   const shownBasemap = useRef(basemap);
+
+  // Map or satellite under the line, once the map has loaded and any swap under way is done; only the latest choice
+  // counts. The line waits while the new style loads.
+  const followBasemap = () => {
+    const m = map.current;
+    if (!m || !ready.current || wantedBasemap.current === shownBasemap.current) return;
+    shownBasemap.current = wantedBasemap.current;
+    ready.current = false;
+    setBasemap(m, shownBasemap.current, () => {
+      ready.current = true;
+      followBasemap();
+      if (!ready.current) return;
+      pending.current?.();
+      pending.current = null;
+    });
+  };
 
   useEffect(() => {
     if (!box.current) return;
+    shownBasemap.current = wantedBasemap.current;
     const m = createMap({ container: box.current, bounds: [[2.6, 4.2], [14.7, 13.9]], fitBoundsOptions: { padding: 20 } }, shownBasemap.current);
     // Redraw when the box changes size (a map created in a box still being laid out comes out squashed).
     const ro = new ResizeObserver(() => m.resize());
@@ -33,6 +51,8 @@ export function PreviewMap({ line, stations }: { line: [number, number][] | null
       m.addLayer({ id: 'line', type: 'line', source: 'line', paint: { 'line-color': '#5b6573', 'line-width': 5, 'line-dasharray': [2, 1.5] } });
       m.addLayer({ id: 'stations', type: 'circle', source: 'stations', paint: { 'circle-radius': 6, 'circle-color': '#ffffff', 'circle-stroke-color': '#0b2545', 'circle-stroke-width': 2.5 } });
       ready.current = true;
+      followBasemap();
+      if (!ready.current) return;
       pending.current?.();
       pending.current = null;
     });
@@ -43,21 +63,9 @@ export function PreviewMap({ line, stations }: { line: [number, number][] | null
     };
   }, []);
 
-  // Map or satellite under the line. The line waits while the new style loads.
   useEffect(() => {
-    const m = map.current;
-    if (!m || basemap === shownBasemap.current) return;
-    const swap = () => {
-      shownBasemap.current = basemap;
-      ready.current = false;
-      setBasemap(m, basemap, () => {
-        ready.current = true;
-        pending.current?.();
-        pending.current = null;
-      });
-    };
-    if (ready.current) swap();
-    else m.once('load', swap);
+    wantedBasemap.current = basemap;
+    followBasemap();
   }, [basemap]);
 
   useEffect(() => {

@@ -12,10 +12,25 @@ export function CorridorMap({ data, height = 480 }: { data: GeoJSON.FeatureColle
   const map = useRef<MlMap | null>(null);
   const ready = useRef(false);
   const [basemap] = useBasemap();
+  const wantedBasemap = useRef(basemap);
   const shownBasemap = useRef(basemap);
+
+  // Map or satellite under the line, once the map has loaded and any swap under way is done; only the latest choice
+  // counts.
+  const followBasemap = () => {
+    const m = map.current;
+    if (!m || !ready.current || wantedBasemap.current === shownBasemap.current) return;
+    shownBasemap.current = wantedBasemap.current;
+    ready.current = false;
+    setBasemap(m, shownBasemap.current, () => {
+      ready.current = true;
+      followBasemap();
+    });
+  };
 
   useEffect(() => {
     if (!box.current) return;
+    shownBasemap.current = wantedBasemap.current;
     const m = createMap({ container: box.current }, shownBasemap.current);
     map.current = m;
     // The overview's inset is small: smaller station dots so they do not crowd the line.
@@ -41,7 +56,6 @@ export function CorridorMap({ data, height = 480 }: { data: GeoJSON.FeatureColle
 
     ready.current = false;
     m.on('load', () => {
-      ready.current = true;
       m.addSource('corridor', { type: 'geojson', data });
       (m.getSource('corridor') as GeoJSONSource).setData(data);
       // The whole line in grey under the lots: the route even where no lot has started (or none exists yet). Lines
@@ -60,6 +74,8 @@ export function CorridorMap({ data, height = 480 }: { data: GeoJSON.FeatureColle
       m.addLayer({ id: 'station', type: 'circle', source: 'corridor', filter: ['==', ['get', 'kind'], 'station'], paint: { 'circle-radius': small ? 4 : 7, 'circle-color': '#ffffff', 'circle-stroke-color': '#0b2545', 'circle-stroke-width': small ? 1.5 : 2.5 } });
       m.addLayer({ id: 'photo', type: 'circle', source: 'corridor', filter: ['==', ['get', 'kind'], 'photo'], paint: { 'circle-radius': 6, 'circle-color': '#2f6fde', 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 } });
       m.addLayer({ id: 'incident', type: 'circle', source: 'corridor', filter: ['==', ['get', 'kind'], 'incident'], paint: { 'circle-radius': 7, 'circle-color': '#b00020', 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 } });
+      ready.current = true;
+      followBasemap();
     });
     return () => {
       ro.disconnect();
@@ -68,13 +84,9 @@ export function CorridorMap({ data, height = 480 }: { data: GeoJSON.FeatureColle
     };
   }, [data]);
 
-  // Map or satellite under the line
   useEffect(() => {
-    const m = map.current;
-    if (!m || basemap === shownBasemap.current) return;
-    shownBasemap.current = basemap;
-    if (ready.current) setBasemap(m, basemap);
-    else m.once('load', () => setBasemap(m, basemap));
+    wantedBasemap.current = basemap;
+    followBasemap();
   }, [basemap]);
 
   return (
