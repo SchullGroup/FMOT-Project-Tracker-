@@ -4780,6 +4780,42 @@
         ]
       }
     },
+    "/api/projects/{id}/skyfi/lots/{lotId}": {
+      "get": {
+        "operationId": "SkyfiController_search",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "satellite"
+        ]
+      }
+    },
     "/api/map/satellite": {
       "get": {
         "operationId": "SatelliteMapController_latest",

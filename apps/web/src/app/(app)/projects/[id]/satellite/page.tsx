@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { useProjectId } from '@/components/project/ProjectFrame';
+import { SkyfiPanel } from '@/components/project/SkyfiPanel';
 import { QueryState, Section } from '@/components/ui/Section';
 import { getCorridor, getSatellite } from '@/lib/endpoints';
 import { formatDate } from '@/lib/format';
@@ -107,6 +108,7 @@ export default function SatellitePage() {
           </div>
         )}
       </Section>
+      {timeline.data?.skyfiPreviews && <SkyfiPanel projectId={id} corridor={corridor.data} />}
     </div>
   );
 }

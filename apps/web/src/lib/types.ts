@@ -92,6 +92,45 @@ export interface SatelliteTimeline {
   /** The month's processing units are spent: only parts already viewed show until next month. */
   paused: boolean;
   configured: boolean;
+  /** Show the "SkyFi previews (test)" panel: the project manager or the Director, with SkyFi set up on the API. */
+  skyfiPreviews?: boolean;
+}
+
+/** W5.14 SkyFi previews (test): one picture in SkyFi's archive over a lot's corridor. Nothing is bought. */
+export interface SkyfiResult {
+  archiveId: string;
+  takenAt: string;
+  provider: string;
+  constellation: string;
+  detailCm: number;
+  cloudCoverPercent: number;
+  offNadirDegrees: number | null;
+  /** How much of the lot's corridor the picture covers. */
+  overlapKm2: number;
+  overlapPercent: number;
+  sceneKm2: number;
+  pricePerKm2Usd: number;
+  minOrderKm2: number;
+  fullSceneOnly: boolean;
+  /** SkyFi's list price for the lot's part (at least the minimum order); SkyFi confirms it only on ordering. */
+  estimatedPriceUsd: number;
+  deliveryHours: number;
+  footprint: GeoJSON.Polygon | GeoJSON.MultiPolygon | null;
+  /** Signed links relative to the app: the preview image, and its map tiles ({z}/{x}/{y}). */
+  preview: string | null;
+  tiles: string | null;
+  minZoom: number;
+  maxZoom: number;
+}
+
+export interface SkyfiSearchResult {
+  lot: { id: string; name: string; chainageFromM: number; chainageToM: number };
+  searchedAt: string;
+  fromCache: boolean;
+  filters: { corridorM: number; maxDetailCm: number; maxCloudPercent: number; months: number };
+  areaKm2: number;
+  area: GeoJSON.Polygon | GeoJSON.MultiPolygon;
+  results: SkyfiResult[];
 }
 
 /** W3 Layers panel, "Latest clear picture": each project's newest picture under the cloud limit. */

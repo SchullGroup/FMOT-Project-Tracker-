@@ -39,7 +39,7 @@ function showPicture(m: MlMap, scene: SatelliteScene, p: Pick<Props, 'bounds' | 
 }
 
 // Lots, stations and verified photo pins on top of the picture, with white outlines for the imagery.
-function addOverlays(m: MlMap, corridor: GeoJSON.FeatureCollection) {
+export function addOverlays(m: MlMap, corridor: GeoJSON.FeatureCollection) {
   m.addSource('corridor', { type: 'geojson', data: corridor });
   const kind = (k: string) => ['==', ['get', 'kind'], k] as ['==', ['get', string], string];
   m.addLayer({ id: 'line-casing', type: 'line', source: 'corridor', filter: kind('line'), layout: { 'line-cap': 'round' }, paint: { 'line-color': '#ffffff', 'line-width': 7 } });

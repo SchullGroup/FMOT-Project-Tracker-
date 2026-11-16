@@ -59,6 +59,7 @@ import type {
   MapLayerName,
   SatelliteTimeline,
   SatelliteUsage,
+  SkyfiSearchResult,
   MapProjectsResponse,
   Me,
   NewLot,
@@ -1040,3 +1041,5 @@ export const getMapLayer = (name: MapLayerName) => api<GeoJSON.FeatureCollection
 export const getSatellite = (id: string) => api<SatelliteTimeline>(p(id, '/satellite'));
 export const getLatestPictures = () => api<LatestPictures>('/map/satellite');
 export const getSatelliteUsage = () => api<SatelliteUsage>('/admin/satellite');
+// SkyFi previews (test): one lot's search of SkyFi's archive, kept a day by the API.
+export const getSkyfiPreviews = (id: string, lotId: string) => api<SkyfiSearchResult>(p(id, `/skyfi/lots/${lotId}`));

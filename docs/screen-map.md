@@ -36,7 +36,7 @@ Header: project name, status chip, current gate with days at gate, percent compl
 | W5.11 People | All members; PM edits | Members by organisation and role; the responsibility matrix generated from the gate template (uploader, verifier, approver per gate); contacts with phone numbers; delegations | Add or remove member (request to administrator); delegate a gate (Director) |
 | W5.12 Reports | PM, Director, executives, lender viewer | Generated monthly progress report and lender report for each month; export history | Generate; download; share |
 | W5.13 Activity | Approvers, auditor | Audit trail of every change and approval on this project | Filter; export |
-| W5.14 Satellite | Everyone who sees the project | Free Sentinel-2 pictures of the corridor, newest first with their cloud cover; the chosen picture under the lots, stations and verified photos; "Contains modified Copernicus Sentinel data" | Pick a date; show cloudy pictures; compare two dates with a slider |
+| W5.14 Satellite | Everyone who sees the project | Free Sentinel-2 pictures of the corridor, newest first with their cloud cover; the chosen picture under the lots, stations and verified photos; "Contains modified Copernicus Sentinel data" | Pick a date; show cloudy pictures; compare two dates with a slider. Test, project manager and Director only, when the API has a SkyFi key: "SkyFi previews (test)": pick a lot, list SkyFi's archive pictures (date, detail, cloud, area, price), open one's free preview on the map in its place, labelled "SkyFi preview, not bought, lower quality"; nothing is ordered |
 
 ## Create project (W6)
 
