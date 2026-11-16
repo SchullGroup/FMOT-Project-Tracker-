@@ -97,7 +97,7 @@ export interface SatelliteTimeline {
 }
 
 /** Experimental "Where to look" (IT administrator): automatic flags from the free 10 m pictures, per 500 m segment. */
-/** waiting: a rainy-season change not yet seen on a clear dry-season date; cleared: one gone by then. */
+/** waiting: a rainy-season change not yet settled by two agreeing clear dry-season dates; cleared: one gone on both. */
 export type ChangeFlagStatus = 'changed' | 'waiting' | 'cleared' | 'no_change' | 'not_enough';
 
 export interface ChangeFlagSegment {
@@ -112,7 +112,7 @@ export interface ChangeFlagSegment {
   /** The season the change started in; a rainy-season change waits for a clear dry-season date (low confidence). */
   season: 'dry' | 'rainy' | null;
   lowConfidence: boolean;
-  /** The clear dry-season date that confirmed (changed) or cleared (cleared) a rainy-season change. */
+  /** The second of the two clear dry-season dates that confirmed (changed) or cleared (cleared) a rainy-season change. */
   resolvedOn: string | null;
   steadyMonths: number | null;
   steadySince: string | null;

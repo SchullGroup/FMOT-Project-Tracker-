@@ -22,9 +22,9 @@ const km = (m: number) => (m / 1000).toFixed(1);
 /** How a change stands, in words: when it started and, for a rainy-season change, what the dry season showed. */
 export function changeWords(s: { status: ChangeFlagSegment['status']; since?: string | null; changedSince?: string | null; season: string | null; resolvedOn: string | null }) {
   const since = day(s.since ?? s.changedSince ?? null);
-  if (s.status === 'waiting') return `waiting for confirmation: started ${since} in the rainy season; the next clear dry-season picture confirms or clears it`;
-  if (s.status === 'cleared') return `cleared: a rainy-season change from ${since} that was gone on ${day(s.resolvedOn)}`;
-  if (s.season === 'rainy') return `changed since ${since}, confirmed on ${day(s.resolvedOn)} in the dry season`;
+  if (s.status === 'waiting') return `waiting for confirmation: started ${since} in the rainy season; the next two clear dry-season pictures confirm or clear it when they agree`;
+  if (s.status === 'cleared') return `cleared: a rainy-season change from ${since} that was gone on two clear dry-season pictures (to ${day(s.resolvedOn)})`;
+  if (s.season === 'rainy') return `changed since ${since}, confirmed by two clear dry-season pictures (to ${day(s.resolvedOn)})`;
   return `changed since ${since} (dry season)`;
 }
 

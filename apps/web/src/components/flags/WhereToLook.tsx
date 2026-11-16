@@ -79,7 +79,7 @@ export function WhereToLook({ flags, mapHref }: { flags: ChangeFlags; mapHref: (
                 <span>{km(lengthM)}</span>
               </div>
               <p className="text-sm text-ink-muted">
-                Each 500 m of line: how the 50 m strip either side usually follows the land 150 to 500 m away is fitted over the clear dates, season by season when there are enough, and a segment is flagged when it leaves that pattern on two clear dates in a row. A change that starts in the dry season (November to March) is changed. One that starts in the rainy season (April to October), when the greening alone can do it, waits for the next clear dry-season picture: still there, it is changed; gone, it is cleared. Only dates with {flags.minClearPercent}% of the strip clear of cloud count.
+                Each 500 m of line: how the 50 m strip either side usually follows the land 150 to 500 m away is fitted over the clear dates, season by season when there are enough, and a segment is flagged when it leaves that pattern on two clear dates in a row. A change that starts in the dry season (November to March) is changed. One that starts in the rainy season (April to October), when the greening alone can do it, waits for the next two clear dry-season pictures: still there on both, it is changed; gone on both, it is cleared; if they disagree, it keeps waiting. Only dates with {flags.minClearPercent}% of the strip clear of cloud count.
               </p>
             </div>
 
