@@ -70,6 +70,15 @@ The ministry project manager creates it once the Minister's gate-1 minute exists
 - SMS: task links, digests, reminders, and an end-of-day fallback where no smartphone is on site.
 - Backend: NestJS (TypeScript), PostgreSQL with PostGIS, S3-compatible object storage; Nigerian hosting and the Nigeria Data Protection Act apply.
 
+## Satellite pictures
+
+Free Sentinel-2 pictures (Copernicus, 10 m a pixel, a new pass every few days) let anyone who sees a project watch large changes along its corridor: earthworks, cleared land, new embankments. They are context for the people who decide, never evidence: progress still counts only from verified site photos and the resident engineer's monthly sheets, and nothing is approved from a picture.
+
+- Which pictures: nightly at 02:30 Lagos, for each published project, the Copernicus catalogue is searched over the corridor (the line plus the corridor width each side, `projects.corridor_buffer_m`) and every new picture date is saved. A project's first search fills the last 12 months: the clearest picture of each month and every picture of the last 60 days. Pictures cloudier than `SATELLITE_CLOUD_LIMIT` (30 percent over the corridor) are kept but hidden behind "Show cloudy pictures".
+- Who sees them: anyone who can see the project, on its Satellite section (W5.14) and, for each project's latest clear picture, on the national map's Layers panel. The pictures cover only the corridor, so nothing outside it is shown or paid for.
+- Cost: free within the Copernicus monthly allowance. Drawing uses processing units, counted each month against `SATELLITE_PU_MONTHLY_LIMIT` (27,000 of the free 30,000); above it only parts already drawn are shown until the next month, and the IT administrator sees "New pictures paused until next month". Drawn parts are kept for good.
+- Credit: "Contains modified Copernicus Sentinel data" with the year, on every map that shows them.
+
 ## The one UI pattern
 
 Open the app, see "Your tasks today", tap a task, one screen with only what is needed, one big button, Done. Phone number plus SMS code to log in, then a PIN. Photos and voice notes over typing; everything prefilled from last time; Send back always picks a reason from a list; Call support on every screen.
@@ -87,5 +96,6 @@ Values the platform runs on today as placeholders; each needs a ministry decisio
 | Eyemark: which import template does the M&E unit use? | The tracker's own 21-column layout | `docs/eyemark-export.md`, `EYEMARK_COLUMNS` |
 | Project health on the map: when is a project behind, and when stalled? | Behind after 2 x the current gate's reminder days; stalled after 90 days at one gate | reminder_rules `health.behind_factor`, `health.stalled_days` |
 | Sign-in codes: how many may one phone number or email address ask for in 15 minutes? A limit stops someone running up SMS and email costs or flooding a person's phone; without one, only the 10 requests a minute per network address on the sign-in routes holds them back. | No limit (switched off 4 November 2026; 3 is built and tested) | `SIGNIN_CODE_LIMIT` |
+| Satellite pictures: how cloudy may a picture be and still be listed by default? | 30 percent cloud over the corridor | `SATELLITE_CLOUD_LIMIT` |
 | Email sending: does Schulltech's mailing endpoint have (or will it get) an API key? Today it accepts any caller. | No key; the API sends `x-api-key` only when one is configured | `SCHULLTECH_MAIL_API_KEY` |
 | Email sending: which domain does the ministry want sign-in codes, invites and messages sent from at go-live (it must be verified in the sending SES account)? | `"FMoT Rail Tracker" <noreply@schulltech.com>` | `MAIL_FROM` |

@@ -10,7 +10,7 @@ import { LayersPanel } from '@/components/map/LayersPanel';
 import { Legend } from '@/components/map/Legend';
 import { CURRENT_PROJECT_KEY, ProjectCardPanel } from '@/components/map/ProjectCardPanel';
 import { useCan } from '@/components/Session';
-import { getMapLayer, getMapProjects } from '@/lib/endpoints';
+import { getLatestPictures, getMapLayer, getMapProjects } from '@/lib/endpoints';
 import { CATEGORY_LABEL, categoryOf, type MapCategory } from '@/lib/status';
 import type { MapLayerName, MapProjectProperties, MapProjectsResponse } from '@/lib/types';
 
@@ -84,8 +84,10 @@ export default function MapHome() {
       return next;
     });
 
-  // A remembered no-go choice is ignored for anyone without the security permission (the API would refuse it).
-  const active = [...layers].filter((n) => n !== 'no-go' || canSecurity);
+  // A remembered no-go choice is ignored for anyone without the security permission (the API would refuse it). The
+  // latest pictures are tiles, not GeoJSON: their own request.
+  const active = [...layers].filter((n) => (n !== 'no-go' || canSecurity) && n !== 'latest-picture');
+  const pictures = useQuery({ queryKey: ['map-pictures'], queryFn: getLatestPictures, enabled: layers.has('latest-picture'), staleTime: 10 * 60_000, retry: false });
   const layerQueries = useQueries({
     queries: active.map((n) => ({ queryKey: ['map-layer', n], queryFn: () => getMapLayer(n), staleTime: 10 * 60_000, retry: false })),
   });
@@ -97,7 +99,8 @@ export default function MapHome() {
     });
     return o;
   }, [active.join(), layerQueries]);
-  const failed = new Set(active.filter((_, i) => layerQueries[i]?.isError));
+  const failed = new Set<MapLayerName>(active.filter((_, i) => layerQueries[i]?.isError));
+  if (pictures.isError) failed.add('latest-picture');
 
   const all = projects.data?.features ?? [];
   const cat = (p: MapProjectProperties) => categoryOf(p.status, p.health);
@@ -142,7 +145,7 @@ export default function MapHome() {
   return (
     <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto lg:overflow-hidden">
       <div className="relative min-h-[60vh] flex-1 shrink-0 overflow-hidden">
-        <MapView data={filtered} overlays={overlays} selectedId={selectedId} focusId={focusId} onSelect={select} />
+        <MapView data={filtered} overlays={overlays} pictures={layers.has('latest-picture') ? pictures.data : undefined} selectedId={selectedId} focusId={focusId} onSelect={select} />
 
         <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-col gap-3 p-4">
           <div className="flex flex-wrap items-start gap-2">

@@ -55,7 +55,10 @@ import type {
   InvitePreview,
   Lot,
   MapCounters,
+  LatestPictures,
   MapLayerName,
+  SatelliteTimeline,
+  SatelliteUsage,
   MapProjectsResponse,
   Me,
   NewLot,
@@ -1032,3 +1035,8 @@ export const submitDesignPackage = (lotId: string, discipline: string, title: st
 
 /* Map layers (Web Step 9): each a GeoJSON FeatureCollection in the person's scope; no-go only with security:read_detail. */
 export const getMapLayer = (name: MapLayerName) => api<GeoJSON.FeatureCollection>(`/map/layers/${name}`);
+
+// Satellite pictures (W5.14, W3 Layers panel, the IT administrator's monthly use): the API's shapes as they are.
+export const getSatellite = (id: string) => api<SatelliteTimeline>(p(id, '/satellite'));
+export const getLatestPictures = () => api<LatestPictures>('/map/satellite');
+export const getSatelliteUsage = () => api<SatelliteUsage>('/admin/satellite');

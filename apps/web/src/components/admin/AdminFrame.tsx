@@ -1,9 +1,11 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useCan } from '@/components/Session';
+import { getSatelliteUsage } from '@/lib/endpoints';
 
 const NAV = [
   { href: '/admin/users', label: 'People' },
@@ -18,6 +20,8 @@ const NAV = [
 export function AdminFrame({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const allowed = useCan('admin:users');
+  const canSettings = useCan('admin:reminders');
+  const satellite = useQuery({ queryKey: ['satellite-usage'], queryFn: getSatelliteUsage, enabled: allowed && canSettings, staleTime: 5 * 60_000, retry: false });
   if (!allowed) {
     return <main className="p-6 text-lg">This area is for the IT administrator.</main>;
   }
@@ -38,7 +42,14 @@ export function AdminFrame({ children }: { children: ReactNode }) {
           })}
         </ul>
       </nav>
-      <main className="flex-1 overflow-x-hidden p-5 lg:p-6">{children}</main>
+      <main className="flex-1 overflow-x-hidden p-5 lg:p-6">
+        {satellite.data?.paused && (
+          <p role="status" className="mb-5 rounded-md bg-[#fff4e0] p-4 text-[#7a4a00]">
+            <strong>New pictures paused until next month.</strong> This month&rsquo;s satellite processing units are used up; projects show only the picture tiles already drawn. <Link href="/admin/settings#satellite" className="font-semibold underline underline-offset-4">See the use</Link>
+          </p>
+        )}
+        {children}
+      </main>
     </div>
   );
 }

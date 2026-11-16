@@ -4751,6 +4751,72 @@
           "reports"
         ]
       }
+    },
+    "/api/projects/{id}/satellite": {
+      "get": {
+        "operationId": "SatelliteController_scenes",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "satellite"
+        ]
+      }
+    },
+    "/api/map/satellite": {
+      "get": {
+        "operationId": "SatelliteMapController_latest",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "satellite"
+        ]
+      }
+    },
+    "/api/admin/satellite": {
+      "get": {
+        "operationId": "SatelliteAdminController_usage",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
     }
   },
   "info": {

@@ -12,6 +12,7 @@ import { mockAdmin } from './mock-admin';
 import { mockReports } from './mock-reports';
 import { mockBaselineUpload, mockForms } from './mock-forms';
 import { mockStep8 } from './mock-step8';
+import { mockSatellite } from './mock-satellite';
 import { DEMO_CODE, DEMO_PIN, e164, findDemoAccount, permissionsOf, type DemoAccount } from './demo-accounts';
 import type { MapCounters, MapProjectsResponse, Me, ProjectCard, TaskInbox } from './types';
 import { KK_SKETCH_M, metres, ROUTES, sliceLine, snapToLines } from './sample-routes';
@@ -278,6 +279,8 @@ export async function mockFetch(path: string, init: RequestInit): Promise<Respon
 
   if (route === '/me') return account ? json(200, meOf(account)) : json(401);
   if (route === '/map/projects') return json(200, projects);
+  const satellite = mockSatellite(route);
+  if (satellite) return json(satellite.status, satellite.body);
   if (route === '/map/counters') return json(200, counters);
   const layer = /^\/map\/layers\/(.+)$/.exec(route);
   if (layer?.[1]) return json(200, MAP_LAYERS[layer[1]] ?? { type: 'FeatureCollection', features: [] });

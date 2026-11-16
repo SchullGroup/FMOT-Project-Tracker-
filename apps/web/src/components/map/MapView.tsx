@@ -13,7 +13,7 @@ import {
 } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
 import { CATEGORY_COLOUR, categoryOf } from '@/lib/status';
-import type { MapLayerName, MapProjectsResponse } from '@/lib/types';
+import type { LatestPictures, MapLayerName, MapProjectsResponse } from '@/lib/types';
 
 const NIGERIA: LngLatBoundsLike = [
   [2.6, 4.2],
@@ -28,6 +28,8 @@ interface Props {
   data: MapProjectsResponse | undefined;
   /** Optional layers switched on in the Layers panel. */
   overlays: Partial<Record<MapLayerName, GeoJSON.FeatureCollection>>;
+  /** "Latest clear picture": each project's newest clear satellite picture, under the lines. */
+  pictures?: LatestPictures;
   selectedId: string | null;
   focusId: string | null;
   onSelect: (id: string) => void;
@@ -78,7 +80,7 @@ function addLabels(m: MlMap, b: Basemap) {
  * coloured by category (the same colours as the legend and cards); drafts
  * are dashed. Clicking a line selects the project.
  */
-export function MapView({ data, overlays, selectedId, focusId, onSelect }: Props) {
+export function MapView({ data, overlays, pictures, selectedId, focusId, onSelect }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MlMap | null>(null);
   const ready = useRef(false);
@@ -215,6 +217,30 @@ export function MapView({ data, overlays, selectedId, focusId, onSelect }: Props
       }
     });
   }, [overlays]);
+
+  // Latest clear pictures: one raster source per project, limited to its corridor's box, under the lines.
+  useEffect(() => {
+    const m = map.current;
+    if (!m) return;
+    whenReady(() => {
+      const style = m.getStyle();
+      for (const l of style.layers) if (l.id.startsWith('picture-')) m.removeLayer(l.id);
+      for (const id of Object.keys(style.sources)) if (id.startsWith('picture-')) m.removeSource(id);
+      for (const p of pictures?.pictures ?? []) {
+        const id = `picture-${p.projectId}`;
+        m.addSource(id, {
+          type: 'raster',
+          tiles: [`${window.location.origin}${p.tiles}`],
+          tileSize: 256,
+          minzoom: pictures!.minZoom,
+          maxzoom: pictures!.maxZoom,
+          ...(p.bounds ? { bounds: p.bounds } : {}),
+          attribution: p.attribution,
+        });
+        m.addLayer({ id, type: 'raster', source: id, paint: { 'raster-fade-duration': 0 } }, 'ov-state-boundaries');
+      }
+    });
+  }, [pictures]);
 
   // Selection highlight
   useEffect(() => {

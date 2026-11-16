@@ -67,7 +67,49 @@ export interface MapProjectProperties {
   states?: string[];
 }
 
-export type MapLayerName = 'legacy-lines' | 'state-boundaries' | 'stations' | 'lots' | 'no-go';
+export type MapLayerName = 'legacy-lines' | 'state-boundaries' | 'stations' | 'lots' | 'no-go' | 'latest-picture';
+
+/** W5.14: one Sentinel-2 picture date of a project, with its tile link (signed, valid for a working day). */
+export interface SatelliteScene {
+  id: string;
+  sceneId: string;
+  takenAt: string;
+  cloudCoverPercent: number;
+  coveragePercent: number;
+  hiddenByDefault: boolean;
+  /** A tile URL template ({z}/{x}/{y}), relative to the app. */
+  tiles: string;
+  attribution: string;
+}
+
+export interface SatelliteTimeline {
+  scenes: SatelliteScene[];
+  /** The corridor's box [west, south, east, north]; null without a line. */
+  bounds: [number, number, number, number] | null;
+  cloudLimit: number;
+  minZoom: number;
+  maxZoom: number;
+  /** The month's processing units are spent: only parts already viewed show until next month. */
+  paused: boolean;
+  configured: boolean;
+}
+
+/** W3 Layers panel, "Latest clear picture": each project's newest picture under the cloud limit. */
+export interface LatestPictures {
+  pictures: Array<SatelliteScene & { projectId: string; bounds: [number, number, number, number] | null }>;
+  minZoom: number;
+  maxZoom: number;
+}
+
+export interface SatelliteUsage {
+  configured: boolean;
+  month: string;
+  processingUnits: number;
+  requests: number;
+  tilesDrawn: number;
+  limit: number;
+  paused: boolean;
+}
 
 export interface MapProjectsResponse {
   type: 'FeatureCollection';

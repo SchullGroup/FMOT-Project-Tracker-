@@ -10,6 +10,7 @@ export const LAYERS: Array<{ name: MapLayerName; label: string; security?: boole
   { name: 'stations', label: 'Stations and structures' },
   { name: 'lots', label: 'Lots' },
   { name: 'no-go', label: 'No-go segments', security: true },
+  { name: 'latest-picture', label: 'Latest clear picture' },
 ];
 
 const BASEMAPS: Array<{ value: Basemap; label: string }> = [
@@ -55,6 +56,7 @@ export function LayersPanel({ on, onToggle, canSecurity, failed }: { on: Set<Map
               <span>
                 {l.label}
                 {failed.has(l.name) && <span className="block text-sm text-danger">Could not be loaded</span>}
+                {l.name === 'latest-picture' && on.has(l.name) && !failed.has(l.name) && <span className="block text-sm text-ink-muted">Zoom in on a line to see it</span>}
               </span>
               <span aria-hidden className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${on.has(l.name) ? 'bg-brand-900' : 'bg-line-strong'}`}>
                 <span className={`absolute top-1 size-5 rounded-full bg-white transition-all ${on.has(l.name) ? 'left-6' : 'left-1'}`} />

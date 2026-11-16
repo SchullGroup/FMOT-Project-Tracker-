@@ -12,6 +12,7 @@ export const SECTIONS = [
   { slug: '', label: 'Overview' },
   { slug: 'gates', label: 'Gates' },
   { slug: 'corridor', label: 'Corridor' },
+  { slug: 'satellite', label: 'Satellite' },
   { slug: 'photos', label: 'Photos and reports' },
   { slug: 'progress', label: 'Progress' },
   { slug: 'payments', label: 'Payments' },

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Pill } from '@/components/ui/Pill';
 import { QueryState, Section } from '@/components/ui/Section';
-import { getReminderRules, getSettings, updateReminderRule, updateSetting } from '@/lib/endpoints';
+import { getReminderRules, getSatelliteUsage, getSettings, updateReminderRule, updateSetting } from '@/lib/endpoints';
 import { messageFor } from '@/lib/messages';
 
 /** S7 and settings: the numbers the system works by. Several still need the ministry's decision. */
@@ -13,6 +13,8 @@ export default function SettingsPage() {
   const qc = useQueryClient();
   const settings = useQuery({ queryKey: ['settings'], queryFn: getSettings });
   const rules = useQuery({ queryKey: ['reminder-rules'], queryFn: getReminderRules });
+  const satellite = useQuery({ queryKey: ['satellite-usage'], queryFn: getSatelliteUsage });
+  const usage = satellite.data;
 
   return (
     <div className="flex flex-col gap-5">
@@ -32,6 +34,22 @@ export default function SettingsPage() {
           ))}
         </ul>
       </Section>
+      <div id="satellite">
+        <Section title="Satellite pictures">
+          <QueryState loading={satellite.isPending} error={satellite.isError} />
+          {usage && !usage.configured && <p>No Copernicus account is set up, so no new pictures are looked for or drawn (docs/operations.md).</p>}
+          {usage?.configured && (
+            <div className="flex flex-col gap-3">
+              {usage.paused && <p role="status" className="rounded-md bg-[#fff4e0] p-3 font-semibold text-[#7a4a00]">New pictures paused until next month</p>}
+              <p>
+                This month: <strong className="tabular">{usage.processingUnits.toLocaleString('en-GB')}</strong> of {usage.limit.toLocaleString('en-GB')} processing units used drawing {usage.tilesDrawn.toLocaleString('en-GB')} picture tiles ({usage.requests.toLocaleString('en-GB')} requests to Copernicus).
+              </p>
+              <div aria-hidden className="h-2 overflow-hidden rounded-full bg-line"><div className={`h-full ${usage.paused ? 'bg-status-stalled' : 'bg-brand-900'}`} style={{ width: `${Math.min(100, (100 * usage.processingUnits) / Math.max(1, usage.limit))}%` }} /></div>
+              <p className="text-sm text-ink-muted">Tiles already drawn are kept and always show. Above the limit no new tiles are drawn until the 1st of next month. The limit is SATELLITE_PU_MONTHLY_LIMIT on the server; the free Copernicus plan on this account allows 30,000 a month.</p>
+            </div>
+          )}
+        </Section>
+      </div>
       <Section title="Reminders">
         <QueryState loading={rules.isPending} error={rules.isError} />
         <ul className="flex flex-col divide-y divide-line">
