@@ -97,7 +97,8 @@ export interface SatelliteTimeline {
 }
 
 /** Experimental "Where to look" (IT administrator): automatic flags from the free 10 m pictures, per 500 m segment. */
-export type ChangeFlagStatus = 'changed' | 'no_change' | 'not_enough';
+/** waiting: a rainy-season change not yet seen on a clear dry-season date; cleared: one gone by then. */
+export type ChangeFlagStatus = 'changed' | 'waiting' | 'cleared' | 'no_change' | 'not_enough';
 
 export interface ChangeFlagSegment {
   index: number;
@@ -108,9 +109,11 @@ export interface ChangeFlagSegment {
   /** Changed: the first date of the latest run of 2 or more clear dates off the segment's usual pattern. */
   changedSince: string | null;
   direction: 'barer' | 'greener' | null;
-  /** The season the change started in; rainy-season changes are low confidence. */
+  /** The season the change started in; a rainy-season change waits for a clear dry-season date (low confidence). */
   season: 'dry' | 'rainy' | null;
   lowConfidence: boolean;
+  /** The clear dry-season date that confirmed (changed) or cleared (cleared) a rainy-season change. */
+  resolvedOn: string | null;
   steadyMonths: number | null;
   steadySince: string | null;
   clearDates: number;
@@ -127,9 +130,11 @@ export interface ChangeFlagStretch {
   segments: number;
   lotId: string | null;
   lotName: string | null;
+  status: ChangeFlagStatus;
   since: string | null;
   season: 'dry' | 'rainy' | null;
   lowConfidence: boolean;
+  resolvedOn: string | null;
   steadyMonths: number | null;
   latestRecordedMonth: string | null;
   disciplines: string[];
