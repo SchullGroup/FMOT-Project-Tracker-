@@ -141,13 +141,15 @@ function rememberBase(m: MlMap) {
 }
 
 /**
- * A map on the chosen basemap with its credits. The base style's layers are noted before the caller's 'load'
- * handler adds its own, so a later setBasemap keeps those.
+ * A map on the chosen basemap with its credits. The base style's layers are noted when it first loads ('style.load',
+ * which comes before 'load'), so they never include the layers the caller's 'load' handler adds; a later setBasemap
+ * carries those over. ('load' would not do: MapLibre runs once() listeners after on() ones, so the caller's layers
+ * would already be there and be taken for the background's, then dropped by the first switch.)
  */
 export function createMap(options: Omit<MapOptions, 'style' | 'attributionControl'>, b: Basemap): MlMap {
   const m = new MlMap({ ...options, style: styleFor(b), attributionControl: false });
   extras.set(m, { ...placeCredits(m, b), baseLayers: new Set(), baseSources: new Set() });
-  m.once('load', () => rememberBase(m));
+  m.once('style.load', () => rememberBase(m));
   return m;
 }
 

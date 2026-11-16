@@ -184,7 +184,7 @@ export function MapView({ data, overlays, pictures, selectedId, focusId, onSelec
       shownBasemap.current = basemap;
       ready.current = false;
       setBasemap(m, basemap, () => {
-        m.setPaintProperty('ov-state-boundaries', 'line-color', boundaryColour(basemap));
+        if (m.getLayer('ov-state-boundaries')) m.setPaintProperty('ov-state-boundaries', 'line-color', boundaryColour(basemap));
         addLabels(m, basemap);
         ready.current = true;
         pending.current.splice(0).forEach((fn) => fn());
