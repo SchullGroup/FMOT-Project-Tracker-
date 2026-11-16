@@ -2,9 +2,9 @@
 
 import { createMap, LABEL_FONT } from '@/lib/basemap';
 import { SATELLITE_AVAILABLE } from '@/lib/map';
-import { LngLatBounds, NavigationControl, Popup, setWorkerUrl, type Map as MlMap } from 'maplibre-gl';
+import { NavigationControl, setWorkerUrl, type Map as MlMap } from 'maplibre-gl';
 import { useEffect, useRef, useState } from 'react';
-import type { ChangeFlagSegment, SatelliteScene } from '@/lib/types';
+import type { SatelliteScene } from '@/lib/types';
 
 setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
 
@@ -21,74 +21,6 @@ interface Props {
   maxZoom: number;
   /** The SkyFi previews panel is below, so the zoomed-in note can point to it. */
   skyfiBelow?: boolean;
-  /** "Where to look": each segment's flag, drawn as a band beside the line, with its kilometres and dates on hover. */
-  flags?: ChangeFlagSegment[];
-  /** A stretch to show: the map fits it and marks it. `key` changes when another is picked. */
-  focus?: { key: string; line: GeoJSON.LineString } | null;
-}
-
-export const FLAG_COLOURS: Record<ChangeFlagSegment['status'], string> = { changed: '#b0179a', no_change: '#1f5fd6', not_enough: '#8a94a6' };
-export const FLAG_LABELS: Record<ChangeFlagSegment['status'], string> = { changed: 'Changed', no_change: 'No visible change', not_enough: 'Not enough clear pictures' };
-
-const day = (iso: string | null) => (iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '');
-const km = (m: number) => (m / 1000).toFixed(1);
-
-/** What hovering a segment says: its kilometres, its flag and the clear dates it rests on. */
-export function flagText(s: ChangeFlagSegment) {
-  const what =
-    s.status === 'changed'
-      ? `Changed since ${day(s.changedSince)}`
-      : s.status === 'no_change'
-        ? `No visible change for ${s.steadyMonths} months${s.changedSince ? ` (changed ${day(s.changedSince)}, steady since)` : ''}`
-        : 'Not enough clear pictures';
-  const dates = s.clearDates ? `${s.clearDates} clear date${s.clearDates === 1 ? '' : 's'}, ${day(s.firstDate)} to ${day(s.lastDate)}` : 'no clear dates';
-  return `km ${km(s.fromM)} to ${km(s.toM)}: ${what}. ${dates}.`;
-}
-
-// The flags as a band just beside the line (offset so the line and lots stay readable), white-edged for the imagery.
-function showFlags(m: MlMap, flags: ChangeFlagSegment[] | undefined) {
-  const data: GeoJSON.FeatureCollection = {
-    type: 'FeatureCollection',
-    features: (flags ?? []).map((s) => ({ type: 'Feature', geometry: s.line, properties: { status: s.status, text: flagText(s) } })),
-  };
-  const source = m.getSource('flags') as { setData?: (d: GeoJSON.FeatureCollection) => void } | undefined;
-  if (source?.setData) {
-    source.setData(data);
-    return;
-  }
-  if (!flags?.length) return;
-  m.addSource('flags', { type: 'geojson', data });
-  m.addLayer({ id: 'flags-casing', type: 'line', source: 'flags', layout: { 'line-cap': 'butt' }, paint: { 'line-color': '#ffffff', 'line-width': 8, 'line-offset': 11 } });
-  m.addLayer({
-    id: 'flags',
-    type: 'line',
-    source: 'flags',
-    layout: { 'line-cap': 'butt' },
-    paint: { 'line-color': ['match', ['get', 'status'], 'changed', FLAG_COLOURS.changed, 'no_change', FLAG_COLOURS.no_change, FLAG_COLOURS.not_enough], 'line-width': 5, 'line-offset': 11 },
-  });
-  const popup = new Popup({ closeButton: false, closeOnClick: false, offset: 12, maxWidth: '320px' });
-  m.on('mousemove', 'flags', (e) => {
-    const text = e.features?.[0]?.properties?.text;
-    if (typeof text !== 'string') return;
-    m.getCanvas().style.cursor = 'help';
-    popup.setLngLat(e.lngLat).setText(text).addTo(m);
-  });
-  m.on('mouseleave', 'flags', () => {
-    m.getCanvas().style.cursor = '';
-    popup.remove();
-  });
-}
-
-// The stretch picked from a list: a wide yellow mark under our line, lots and flags, and the map fitted to it.
-function showFocus(m: MlMap, focus: Props['focus']) {
-  if (m.getLayer('focus')) m.removeLayer('focus');
-  if (m.getSource('focus')) m.removeSource('focus');
-  if (!focus) return;
-  m.addSource('focus', { type: 'geojson', data: focus.line });
-  m.addLayer({ id: 'focus', type: 'line', source: 'focus', layout: { 'line-cap': 'round' }, paint: { 'line-color': '#ffd23f', 'line-width': 22, 'line-opacity': 0.85 } }, [...OVERLAYS, 'flags-casing'].find((id) => m.getLayer(id)));
-  const b = new LngLatBounds();
-  for (const p of focus.line.coordinates) b.extend(p as [number, number]);
-  m.fitBounds(b, { padding: 60, maxZoom: 14, duration: 600 });
 }
 
 const OVERLAYS = ['line-casing', 'line', 'lot-casing', 'lot', 'station', 'station-label', 'photo'];
@@ -159,7 +91,7 @@ export function addOverlays(m: MlMap, corridor: GeoJSON.FeatureCollection) {
  * W5.14: one satellite picture over the corridor, on the Esri imagery (the street map when no satellite background is
  * set up). Comparing, a second map with the earlier picture sits on top, cut off at the divider, and both move together.
  */
-export function SatelliteMap({ scene, before, split, corridor, bounds, minZoom, maxZoom, skyfiBelow, flags, focus }: Props) {
+export function SatelliteMap({ scene, before, split, corridor, bounds, minZoom, maxZoom, skyfiBelow }: Props) {
   const mainBox = useRef<HTMLDivElement>(null);
   const beforeBox = useRef<HTMLDivElement>(null);
   const main = useRef<MlMap | null>(null);
@@ -167,9 +99,6 @@ export function SatelliteMap({ scene, before, split, corridor, bounds, minZoom, 
   const loaded = useRef(new WeakSet<MlMap>());
   const [closeIn, setCloseIn] = useState(false);
   const picture = { bounds, minZoom, maxZoom };
-  // The latest flags and focus, for the map's load handler.
-  const latest = useRef({ flags, focus });
-  latest.current = { flags, focus };
 
   const make = (box: HTMLDivElement, onReady: (m: MlMap) => void) => {
     const m = createMap({ container: box, bounds: bounds ?? [[2.6, 4.2], [14.7, 13.9]], fitBoundsOptions: { padding: 30 } }, SATELLITE_AVAILABLE ? 'satellite' : 'map');
@@ -186,11 +115,7 @@ export function SatelliteMap({ scene, before, split, corridor, bounds, minZoom, 
   // The main map (the picture, or the later one when comparing).
   useEffect(() => {
     if (!mainBox.current) return;
-    const { m, stop } = make(mainBox.current, (map) => {
-      showPicture(map, scene, picture);
-      showFlags(map, latest.current.flags);
-      showFocus(map, latest.current.focus);
-    });
+    const { m, stop } = make(mainBox.current, (map) => showPicture(map, scene, picture));
     // Fitted to the whole corridor a long line is too far out to see the strip: start on its middle, close enough.
     const middle = middleOfLine(corridor);
     if (middle && m.getZoom() < OPEN_ZOOM) m.jumpTo({ center: middle, zoom: OPEN_ZOOM });
@@ -210,16 +135,6 @@ export function SatelliteMap({ scene, before, split, corridor, bounds, minZoom, 
     const m = main.current;
     if (m && loaded.current.has(m)) showPicture(m, scene, picture);
   }, [scene.id]);
-
-  useEffect(() => {
-    const m = main.current;
-    if (m && loaded.current.has(m)) showFlags(m, flags);
-  }, [flags]);
-
-  useEffect(() => {
-    const m = main.current;
-    if (m && loaded.current.has(m)) showFocus(m, focus);
-  }, [focus?.key]);
 
   // The earlier picture on top, synced with the main map both ways.
   useEffect(() => {

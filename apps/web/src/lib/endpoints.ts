@@ -60,6 +60,7 @@ import type {
   SatelliteTimeline,
   SatelliteUsage,
   SkyfiSearchResult,
+  ChangeFlagProjects,
   ChangeFlags,
   MapProjectsResponse,
   Me,
@@ -820,6 +821,8 @@ export const getSettings = () =>
       confirmedByMinistry: s.confirmedByMinistry,
     })),
   );
+// A true/false setting (the experimental switches) keeps its type.
+export const updateSwitchSetting = (key: string, value: boolean) => api<void>(`/admin/settings/${encodeURIComponent(key)}`, { method: 'PUT', body: { value } });
 export const updateSetting = (key: string, value: string) =>
   api<void>(`/admin/settings/${encodeURIComponent(key)}`, { method: 'PUT', body: { value: !MOCK && isKobo(key) ? String(BigInt(value) * 100n) : value } });
 
@@ -1042,7 +1045,8 @@ export const getMapLayer = (name: MapLayerName) => api<GeoJSON.FeatureCollection
 export const getSatellite = (id: string) => api<SatelliteTimeline>(p(id, '/satellite'));
 export const getLatestPictures = () => api<LatestPictures>('/map/satellite');
 export const getSatelliteUsage = () => api<SatelliteUsage>('/admin/satellite');
-// "Where to look": change flags from the free pictures (project manager, Director, resident engineer).
-export const getChangeFlags = (id: string) => api<ChangeFlags>(p(id, '/satellite/flags'));
+// Experimental "Where to look" (satellite change flags): the IT administrator only, with the switch on in Settings.
+export const getChangeFlagProjects = () => api<ChangeFlagProjects>('/admin/experimental/change-flags');
+export const getChangeFlags = (projectId: string) => api<ChangeFlags>(`/admin/experimental/change-flags/${projectId}`);
 // SkyFi previews (test): one lot's search of SkyFi's archive, kept a day by the API.
 export const getSkyfiPreviews = (id: string, lotId: string) => api<SkyfiSearchResult>(p(id, `/skyfi/lots/${lotId}`));

@@ -3,12 +3,11 @@
 import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useProjectId } from '@/components/project/ProjectFrame';
 import { SkyfiPanel } from '@/components/project/SkyfiPanel';
-import { WhereToLook } from '@/components/project/WhereToLook';
 import { QueryState, Section } from '@/components/ui/Section';
-import { getChangeFlags, getCorridor, getSatellite } from '@/lib/endpoints';
+import { getCorridor, getSatellite } from '@/lib/endpoints';
 import { formatDate } from '@/lib/format';
 import type { SatelliteScene } from '@/lib/types';
 
@@ -39,15 +38,6 @@ function SatelliteView() {
   const params = useSearchParams();
   const timeline = useQuery({ queryKey: ['satellite', id], queryFn: () => getSatellite(id) });
   const corridor = useQuery({ queryKey: ['corridor', id], queryFn: () => getCorridor(id) });
-  const flags = useQuery({ queryKey: ['satellite-flags', id], queryFn: () => getChangeFlags(id), enabled: !!timeline.data?.changeFlags });
-  // ?look=<from>-<to> (from "Where to look"): that stretch of line, marked and fitted on the map.
-  const look = params.get('look');
-  const focus = useMemo(() => {
-    const [from = NaN, to = NaN] = (look ?? '').split('-').map(Number);
-    const parts = (flags.data?.segments ?? []).filter((s) => s.fromM >= from && s.toM <= to);
-    if (!parts.length) return null;
-    return { key: look!, line: { type: 'LineString' as const, coordinates: parts.flatMap((s, i) => (i ? s.line.coordinates.slice(1) : s.line.coordinates)) } };
-  }, [look, flags.data]);
   const [showCloudy, setShowCloudy] = useState(false);
   const [chosenId, setChosenId] = useState<string | null>(null);
   const [comparing, setComparing] = useState(false);
@@ -124,8 +114,6 @@ function SatelliteView() {
                       minZoom={timeline.data.minZoom}
                       maxZoom={timeline.data.maxZoom}
                       skyfiBelow={!!timeline.data.skyfiPreviews}
-                      flags={flags.data?.segments}
-                      focus={focus}
                     />
                   </div>
                 )}
@@ -141,7 +129,6 @@ function SatelliteView() {
           </div>
         )}
       </Section>
-      {timeline.data?.changeFlags && flags.data && <WhereToLook flags={flags.data} skyfi={!!timeline.data.skyfiPreviews} />}
       {timeline.data?.skyfiPreviews && (
         <div id="skyfi" className="scroll-mt-4">
           <SkyfiPanel projectId={id} corridor={corridor.data} initialLotId={params.get('skyfiLot')} />

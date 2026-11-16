@@ -14,6 +14,7 @@ const NAV = [
   { href: '/admin/settings', label: 'Settings and reminders' },
   { href: '/admin/messages', label: 'Messages sent' },
   { href: '/admin/audit', label: 'Activity record' },
+  { href: '/admin/experimental', label: 'Experimental' },
 ];
 
 /** S1 to S10: the IT administrator's area. No map and no approve buttons here. */

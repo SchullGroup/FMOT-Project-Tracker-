@@ -5,7 +5,9 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Pill } from '@/components/ui/Pill';
 import { QueryState, Section } from '@/components/ui/Section';
-import { getReminderRules, getSatelliteUsage, getSettings, updateReminderRule, updateSetting } from '@/lib/endpoints';
+import Link from 'next/link';
+import { EXPERIMENTAL_LABEL } from '@/components/flags/WhereToLook';
+import { getReminderRules, getSatelliteUsage, getSettings, updateReminderRule, updateSetting, updateSwitchSetting } from '@/lib/endpoints';
 import { messageFor } from '@/lib/messages';
 
 /** S7 and settings: the numbers the system works by. Several still need the ministry's decision. */
@@ -15,6 +17,9 @@ export default function SettingsPage() {
   const rules = useQuery({ queryKey: ['reminder-rules'], queryFn: getReminderRules });
   const satellite = useQuery({ queryKey: ['satellite-usage'], queryFn: getSatelliteUsage });
   const usage = satellite.data;
+  // Experimental switches (true/false) have their own section; the rest are numbers.
+  const isSwitch = (key: string) => key.startsWith('experimental.');
+  const flagsSwitch = settings.data?.find((s) => s.key === 'experimental.change_flags');
 
   return (
     <div className="flex flex-col gap-5">
@@ -22,7 +27,7 @@ export default function SettingsPage() {
       <Section title="Limits and checks">
         <QueryState loading={settings.isPending} error={settings.isError} />
         <ul className="flex flex-col divide-y divide-line">
-          {settings.data?.map((s) => (
+          {settings.data?.filter((s) => !isSwitch(s.key)).map((s) => (
             <NumberRow
               key={s.key}
               label={s.label}
@@ -50,6 +55,22 @@ export default function SettingsPage() {
           )}
         </Section>
       </div>
+      {flagsSwitch && (
+        <div id="experimental" className="scroll-mt-4">
+          <Section title="Experimental" aside={<span className="rounded bg-[#fff4e0] px-2 py-0.5 text-sm font-semibold text-[#7a4a00]">{EXPERIMENTAL_LABEL}</span>}>
+            <ExperimentalSwitch
+              on={flagsSwitch.value === 'true'}
+              label="Where to look: satellite change flags"
+              help={
+                <>
+                  Automatic flags from free 10 m pictures, per 500 m of line, for you only (not the Director, project managers or resident engineers) on <Link href="/admin/experimental" className="font-semibold underline underline-offset-4">Experimental</Link>. While on, the nightly run works them out after new pictures arrive (about two Copernicus requests per 500 m of line each time).
+                </>
+              }
+              onChange={async (v) => { await updateSwitchSetting(flagsSwitch.key, v); await qc.invalidateQueries({ queryKey: ['settings'] }); await qc.invalidateQueries({ queryKey: ['change-flag-projects'] }); }}
+            />
+          </Section>
+        </div>
+      )}
       <Section title="Reminders">
         <QueryState loading={rules.isPending} error={rules.isError} />
         <ul className="flex flex-col divide-y divide-line">
@@ -58,6 +79,30 @@ export default function SettingsPage() {
           ))}
         </ul>
       </Section>
+    </div>
+  );
+}
+
+function ExperimentalSwitch({ on, label, help, onChange }: { on: boolean; label: string; help: React.ReactNode; onChange: (v: boolean) => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        disabled={busy}
+        onClick={async () => { setBusy(true); setError(null); try { await onChange(!on); } catch (e) { setError(messageFor(e)); } finally { setBusy(false); } }}
+        className="flex min-h-12 items-center gap-3 self-start rounded px-1 text-left font-medium hover:bg-brand-50 disabled:opacity-60"
+      >
+        <span aria-hidden className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${on ? 'bg-brand-900' : 'bg-line-strong'}`}>
+          <span className={`absolute top-1 size-5 rounded-full bg-white transition-all ${on ? 'left-6' : 'left-1'}`} />
+        </span>
+        {label}: {on ? 'on' : 'off'}
+      </button>
+      <p className="max-w-2xl text-sm text-ink-muted">{help}</p>
+      {error && <p role="alert" className="text-danger">{error}</p>}
     </div>
   );
 }

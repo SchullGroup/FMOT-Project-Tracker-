@@ -4780,34 +4780,6 @@
         ]
       }
     },
-    "/api/projects/{id}/satellite/flags": {
-      "get": {
-        "operationId": "SatelliteController_changeFlags",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "satellite"
-        ]
-      }
-    },
     "/api/projects/{id}/skyfi/lots/{lotId}": {
       "get": {
         "operationId": "SkyfiController_search",
@@ -4867,6 +4839,53 @@
       "get": {
         "operationId": "SatelliteAdminController_usage",
         "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/experimental/change-flags": {
+      "get": {
+        "operationId": "ChangeFlagsAdminController_projects",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/admin/experimental/change-flags/{projectId}": {
+      "get": {
+        "operationId": "ChangeFlagsAdminController_project",
+        "parameters": [
+          {
+            "name": "projectId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": ""

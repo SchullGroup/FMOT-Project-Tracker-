@@ -94,11 +94,9 @@ export interface SatelliteTimeline {
   configured: boolean;
   /** Show the "SkyFi previews (test)" panel: the project manager or the Director, with SkyFi set up on the API. */
   skyfiPreviews?: boolean;
-  /** Show "Where to look": the project manager, the Director or the resident engineer. */
-  changeFlags?: boolean;
 }
 
-/** W5.14 "Where to look": automatic flags from the free 10 m pictures, per 500 m segment. Never proof of progress. */
+/** Experimental "Where to look" (IT administrator): automatic flags from the free 10 m pictures, per 500 m segment. */
 export type ChangeFlagStatus = 'changed' | 'no_change' | 'not_enough';
 
 export interface ChangeFlagSegment {
@@ -107,9 +105,12 @@ export interface ChangeFlagSegment {
   toM: number;
   line: GeoJSON.LineString;
   status: ChangeFlagStatus;
-  /** The first date of the latest move, also when the segment has been steady since. */
+  /** Changed: the first date of the latest run of 2 or more clear dates off the segment's usual pattern. */
   changedSince: string | null;
   direction: 'barer' | 'greener' | null;
+  /** The season the change started in; rainy-season changes are low confidence. */
+  season: 'dry' | 'rainy' | null;
+  lowConfidence: boolean;
   steadyMonths: number | null;
   steadySince: string | null;
   clearDates: number;
@@ -127,6 +128,8 @@ export interface ChangeFlagStretch {
   lotId: string | null;
   lotName: string | null;
   since: string | null;
+  season: 'dry' | 'rainy' | null;
+  lowConfidence: boolean;
   steadyMonths: number | null;
   latestRecordedMonth: string | null;
   disciplines: string[];
@@ -134,13 +137,29 @@ export interface ChangeFlagStretch {
 }
 
 export interface ChangeFlags {
+  project: { id: string; name: string };
   k: number;
+  methodVersion: number;
   minClearPercent: number;
   lastRun: { ranAt: string; requests: number; processingUnits: number; sensitivity: { judged: number; changes: Array<{ k: number; segmentsChanged: number }>; fragile: boolean } } | null;
   counts: Record<ChangeFlagStatus, number>;
-  agreement: { segmentsWithEarthworksOrTrack: number; ofThoseJudged: number; ofThoseShowingChange: number; segmentsShowingChange: number; ofThoseWithNoRecordedWork: number; segmentsWithoutRecordedWork: number };
+  agreement: {
+    segmentsWithEarthworksOrTrack: number;
+    ofThoseJudged: number;
+    ofThoseShowingChange: number;
+    segmentsShowingChange: number;
+    ofThoseWithNoRecordedWork: number;
+    segmentsWithoutRecordedWork: number;
+    withoutRecordedWorkByStatus: Record<ChangeFlagStatus, number>;
+  };
   lists: { recordedNoChange: ChangeFlagStretch[]; changeNoRecord: ChangeFlagStretch[] };
   segments: ChangeFlagSegment[];
+}
+
+export interface ChangeFlagProjects {
+  /** The experimental switch (Settings): off, the list is empty. */
+  enabled: boolean;
+  projects: Array<{ id: string; name: string; segments: number; lastRunAt: string | null }>;
 }
 
 /** W5.14 SkyFi previews (test): one picture in SkyFi's archive over a lot's corridor. Nothing is bought. */
