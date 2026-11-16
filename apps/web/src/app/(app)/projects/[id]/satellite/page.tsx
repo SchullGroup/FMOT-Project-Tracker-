@@ -94,7 +94,7 @@ export default function SatellitePage() {
                   {comparing && earlier.length === 0 && <p className="pb-2 text-sm">Pick a later date above: there is nothing earlier than this one to compare with.</p>}
                 </div>
                 {timeline.data && (corridor.data || corridor.isError) && (
-                  <SatelliteMap scene={chosen} before={before} split={split} corridor={corridor.data} bounds={timeline.data.bounds} minZoom={timeline.data.minZoom} maxZoom={timeline.data.maxZoom} />
+                  <SatelliteMap scene={chosen} before={before} split={split} corridor={corridor.data} bounds={timeline.data.bounds} minZoom={timeline.data.minZoom} maxZoom={timeline.data.maxZoom} skyfiBelow={!!timeline.data.skyfiPreviews} />
                 )}
                 {before && (
                   <label className="flex flex-col gap-1 text-sm font-medium">

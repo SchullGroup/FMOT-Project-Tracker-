@@ -3,7 +3,7 @@
 import { createMap, LABEL_FONT } from '@/lib/basemap';
 import { SATELLITE_AVAILABLE } from '@/lib/map';
 import { NavigationControl, setWorkerUrl, type Map as MlMap } from 'maplibre-gl';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { SatelliteScene } from '@/lib/types';
 
 setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
@@ -19,9 +19,40 @@ interface Props {
   bounds: [number, number, number, number] | null;
   minZoom: number;
   maxZoom: number;
+  /** The SkyFi previews panel is below, so the zoomed-in note can point to it. */
+  skyfiBelow?: boolean;
 }
 
 const OVERLAYS = ['line-casing', 'line', 'lot-casing', 'lot', 'station', 'station-label', 'photo'];
+
+// Each Sentinel-2 dot is 10 m, a smudge past zoom 14: the picture fades out between 14 and 15 so the sharp background
+// shows when zoomed in close.
+const FADE_FROM = 14;
+const FADE_TO = 15;
+// The section opens close enough for the 1 km corridor strip to read clearly (about 25 px wide at zoom 12).
+const OPEN_ZOOM = 12;
+
+// The point halfway along the line, by distance (flat-earth lengths are close enough for picking a view).
+function middleOfLine(corridor?: GeoJSON.FeatureCollection): [number, number] | null {
+  const line = corridor?.features.find((f) => f.properties?.kind === 'line')?.geometry;
+  const parts = line?.type === 'LineString' ? [line.coordinates] : line?.type === 'MultiLineString' ? line.coordinates : [];
+  const steps: Array<{ a: number[]; b: number[]; d: number }> = [];
+  for (const part of parts) for (let i = 1; i < part.length; i++) {
+    const a = part[i - 1]!;
+    const b = part[i]!;
+    const k = Math.cos((((a[1]! + b[1]!) / 2) * Math.PI) / 180);
+    steps.push({ a, b, d: Math.hypot((b[0]! - a[0]!) * k, b[1]! - a[1]!) });
+  }
+  let left = steps.reduce((n, s) => n + s.d, 0) / 2;
+  for (const { a, b, d } of steps) {
+    if (left <= d) {
+      const t = d ? left / d : 0;
+      return [a[0]! + (b[0]! - a[0]!) * t, a[1]! + (b[1]! - a[1]!) * t];
+    }
+    left -= d;
+  }
+  return null;
+}
 
 // The picture's tiles: the API's template made absolute without encoding its {z}/{x}/{y}.
 function showPicture(m: MlMap, scene: SatelliteScene, p: Pick<Props, 'bounds' | 'minZoom' | 'maxZoom'>) {
@@ -35,7 +66,10 @@ function showPicture(m: MlMap, scene: SatelliteScene, p: Pick<Props, 'bounds' | 
     maxzoom: p.maxZoom,
     ...(p.bounds ? { bounds: p.bounds } : {}),
   });
-  m.addLayer({ id: 'picture', type: 'raster', source: 'picture', paint: { 'raster-fade-duration': 0 } }, OVERLAYS.find((id) => m.getLayer(id)));
+  m.addLayer(
+    { id: 'picture', type: 'raster', source: 'picture', paint: { 'raster-fade-duration': 0, 'raster-opacity': ['interpolate', ['linear'], ['zoom'], FADE_FROM, 1, FADE_TO, 0] } },
+    OVERLAYS.find((id) => m.getLayer(id)),
+  );
 }
 
 // Lots, stations and verified photo pins on top of the picture, with white outlines for the imagery.
@@ -57,12 +91,13 @@ export function addOverlays(m: MlMap, corridor: GeoJSON.FeatureCollection) {
  * W5.14: one satellite picture over the corridor, on the Esri imagery (the street map when no satellite background is
  * set up). Comparing, a second map with the earlier picture sits on top, cut off at the divider, and both move together.
  */
-export function SatelliteMap({ scene, before, split, corridor, bounds, minZoom, maxZoom }: Props) {
+export function SatelliteMap({ scene, before, split, corridor, bounds, minZoom, maxZoom, skyfiBelow }: Props) {
   const mainBox = useRef<HTMLDivElement>(null);
   const beforeBox = useRef<HTMLDivElement>(null);
   const main = useRef<MlMap | null>(null);
   const other = useRef<MlMap | null>(null);
   const loaded = useRef(new WeakSet<MlMap>());
+  const [closeIn, setCloseIn] = useState(false);
   const picture = { bounds, minZoom, maxZoom };
 
   const make = (box: HTMLDivElement, onReady: (m: MlMap) => void) => {
@@ -81,7 +116,13 @@ export function SatelliteMap({ scene, before, split, corridor, bounds, minZoom, 
   useEffect(() => {
     if (!mainBox.current) return;
     const { m, stop } = make(mainBox.current, (map) => showPicture(map, scene, picture));
+    // Fitted to the whole corridor a long line is too far out to see the strip: start on its middle, close enough.
+    const middle = middleOfLine(corridor);
+    if (middle && m.getZoom() < OPEN_ZOOM) m.jumpTo({ center: middle, zoom: OPEN_ZOOM });
     m.addControl(new NavigationControl({ showCompass: false }), 'top-right');
+    const zoomed = () => setCloseIn(m.getZoom() > FADE_FROM);
+    zoomed();
+    m.on('zoom', zoomed);
     main.current = m;
     return () => {
       stop();
@@ -145,6 +186,11 @@ export function SatelliteMap({ scene, before, split, corridor, bounds, minZoom, 
       <p className="pointer-events-none absolute left-2 top-2 rounded bg-surface/90 px-2 py-1 text-[13px] font-medium text-ink shadow-sm">
         Contains modified Copernicus Sentinel data {years}
       </p>
+      {closeIn && (
+        <p role="status" className="pointer-events-none absolute left-2 top-11 max-w-[min(26rem,calc(100%-4rem))] rounded bg-[#fff4e0] px-2 py-1 text-[13px] font-medium text-[#7a4a00] shadow-sm">
+          {skyfiBelow ? 'Free pictures are 10 m detail; zoom out to see them, or see SkyFi previews below for close detail.' : 'Free pictures are 10 m detail; zoom out to see them.'}
+        </p>
+      )}
     </div>
   );
 }
