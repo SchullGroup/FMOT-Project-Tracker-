@@ -60,6 +60,7 @@ import type {
   SatelliteTimeline,
   SatelliteUsage,
   SkyfiSearchResult,
+  ChangeFlags,
   MapProjectsResponse,
   Me,
   NewLot,
@@ -1041,5 +1042,7 @@ export const getMapLayer = (name: MapLayerName) => api<GeoJSON.FeatureCollection
 export const getSatellite = (id: string) => api<SatelliteTimeline>(p(id, '/satellite'));
 export const getLatestPictures = () => api<LatestPictures>('/map/satellite');
 export const getSatelliteUsage = () => api<SatelliteUsage>('/admin/satellite');
+// "Where to look": change flags from the free pictures (project manager, Director, resident engineer).
+export const getChangeFlags = (id: string) => api<ChangeFlags>(p(id, '/satellite/flags'));
 // SkyFi previews (test): one lot's search of SkyFi's archive, kept a day by the API.
 export const getSkyfiPreviews = (id: string, lotId: string) => api<SkyfiSearchResult>(p(id, `/skyfi/lots/${lotId}`));

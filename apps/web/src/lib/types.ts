@@ -94,6 +94,53 @@ export interface SatelliteTimeline {
   configured: boolean;
   /** Show the "SkyFi previews (test)" panel: the project manager or the Director, with SkyFi set up on the API. */
   skyfiPreviews?: boolean;
+  /** Show "Where to look": the project manager, the Director or the resident engineer. */
+  changeFlags?: boolean;
+}
+
+/** W5.14 "Where to look": automatic flags from the free 10 m pictures, per 500 m segment. Never proof of progress. */
+export type ChangeFlagStatus = 'changed' | 'no_change' | 'not_enough';
+
+export interface ChangeFlagSegment {
+  index: number;
+  fromM: number;
+  toM: number;
+  line: GeoJSON.LineString;
+  status: ChangeFlagStatus;
+  /** The first date of the latest move, also when the segment has been steady since. */
+  changedSince: string | null;
+  direction: 'barer' | 'greener' | null;
+  steadyMonths: number | null;
+  steadySince: string | null;
+  clearDates: number;
+  firstDate: string | null;
+  lastDate: string | null;
+  lotId: string | null;
+  lotName: string | null;
+  recorded: { disciplines: string[]; latestMonth: string | null; verifiedPhotos: number };
+}
+
+export interface ChangeFlagStretch {
+  fromM: number;
+  toM: number;
+  segments: number;
+  lotId: string | null;
+  lotName: string | null;
+  since: string | null;
+  steadyMonths: number | null;
+  latestRecordedMonth: string | null;
+  disciplines: string[];
+  line: GeoJSON.LineString;
+}
+
+export interface ChangeFlags {
+  k: number;
+  minClearPercent: number;
+  lastRun: { ranAt: string; requests: number; processingUnits: number; sensitivity: { judged: number; changes: Array<{ k: number; segmentsChanged: number }>; fragile: boolean } } | null;
+  counts: Record<ChangeFlagStatus, number>;
+  agreement: { segmentsWithEarthworksOrTrack: number; ofThoseJudged: number; ofThoseShowingChange: number; segmentsShowingChange: number; ofThoseWithNoRecordedWork: number; segmentsWithoutRecordedWork: number };
+  lists: { recordedNoChange: ChangeFlagStretch[]; changeNoRecord: ChangeFlagStretch[] };
+  segments: ChangeFlagSegment[];
 }
 
 /** W5.14 SkyFi previews (test): one picture in SkyFi's archive over a lot's corridor. Nothing is bought. */

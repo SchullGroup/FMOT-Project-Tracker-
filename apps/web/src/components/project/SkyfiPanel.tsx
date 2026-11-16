@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { QueryState, Section } from '@/components/ui/Section';
 import { ApiError } from '@/lib/api';
 import { getLots, getSkyfiPreviews } from '@/lib/endpoints';
@@ -18,10 +18,17 @@ const km2 = (n: number) => `${n < 1 ? n.toFixed(2) : n < 10 ? n.toFixed(1) : Mat
  * W5.14 SkyFi previews (test): SkyFi's archive of commercial pictures over one lot's corridor, with the free previews.
  * Search and look only: nothing is ordered or paid for. The project manager and the Director, when the API has a key.
  */
-export function SkyfiPanel({ projectId, corridor }: { projectId: string; corridor?: GeoJSON.FeatureCollection }) {
+export function SkyfiPanel({ projectId, corridor, initialLotId }: { projectId: string; corridor?: GeoJSON.FeatureCollection; initialLotId?: string | null }) {
   const lots = useQuery({ queryKey: ['lots', projectId], queryFn: () => getLots(projectId) });
   const [lotId, setLotId] = useState('');
   const [chosenId, setChosenId] = useState<string | null>(null);
+  // A lot named in the link ("SkyFi previews for Lot 3" in Where to look) is searched straight away.
+  useEffect(() => {
+    if (initialLotId) {
+      setLotId(initialLotId);
+      setChosenId(null);
+    }
+  }, [initialLotId]);
   const search = useQuery({ queryKey: ['skyfi', projectId, lotId], queryFn: () => getSkyfiPreviews(projectId, lotId), enabled: !!lotId, retry: false, staleTime: 3_600_000 });
   const data = search.data;
   const chosen = data?.results.find((r) => r.archiveId === chosenId) ?? null;
