@@ -34,6 +34,8 @@ export function TopBar() {
   const me = useMe();
   const canPortfolio = useCan('reports:read');
   const canAdmin = useCan('admin:users');
+  // The public viewer has no tasks: no Tasks link, and no request the API would refuse.
+  const canTasks = useCan('tasks:read');
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -54,12 +56,12 @@ export function TopBar() {
       document.removeEventListener('keydown', close);
     };
   }, []);
-  const tasks = useQuery({ queryKey: ['tasks'], queryFn: getTasks });
+  const tasks = useQuery({ queryKey: ['tasks'], queryFn: getTasks, enabled: canTasks });
   const openCount = tasks.data?.groups.reduce((n, g) => n + g.tasks.length, 0) ?? 0;
 
   const nav = [
     { href: '/', label: 'Map' },
-    { href: '/tasks', label: 'Tasks', count: openCount },
+    ...(canTasks ? [{ href: '/tasks', label: 'Tasks', count: openCount }] : []),
     ...(canPortfolio ? [{ href: '/portfolio', label: 'Portfolio' }] : []),
     ...(canAdmin ? [{ href: '/admin', label: 'Admin' }] : []),
   ];

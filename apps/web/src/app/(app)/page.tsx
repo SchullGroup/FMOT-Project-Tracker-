@@ -9,7 +9,7 @@ import { FilterChip } from '@/components/map/FilterChip';
 import { LayersPanel } from '@/components/map/LayersPanel';
 import { Legend } from '@/components/map/Legend';
 import { CURRENT_PROJECT_KEY, ProjectCardPanel } from '@/components/map/ProjectCardPanel';
-import { useCan } from '@/components/Session';
+import { useCan, useMe } from '@/components/Session';
 import { getLatestPictures, getMapLayer, getMapProjects } from '@/lib/endpoints';
 import { CATEGORY_LABEL, categoryOf, type MapCategory } from '@/lib/status';
 import type { MapLayerName, MapProjectProperties, MapProjectsResponse } from '@/lib/types';
@@ -39,11 +39,20 @@ const FUNDING = [
 
 const LAYERS_KEY = 'fmot.mapLayers';
 
+// For a role that cannot see projects (no projects:read): what the map says instead of projects, counters and filters.
+const NO_PROJECTS_NOTE: Record<string, string> = {
+  it_administrator: "Your role manages people and settings; projects aren't shown",
+  contractor_site_manager: "Your role works from the field app; projects aren't shown here",
+};
+
 /** W3 Map home: Nigeria with every project the person may see, with the design's filters and layers. */
 export default function MapHome() {
+  const me = useMe();
   const canCreate = useCan('projects:create');
   const canSecurity = useCan('security:read_detail');
-  const projects = useQuery({ queryKey: ['map-projects'], queryFn: getMapProjects });
+  // Every project request and project layer needs projects:read; without it none is asked for (the API would refuse).
+  const canSeeProjects = useCan('projects:read');
+  const projects = useQuery({ queryKey: ['map-projects'], queryFn: getMapProjects, enabled: canSeeProjects });
 
   const [status, setStatus] = useState<Set<string>>(new Set());
   const [phase, setPhase] = useState<Set<string>>(new Set());
@@ -59,7 +68,7 @@ export default function MapHome() {
 
   useEffect(() => {
     const current = new URLSearchParams(window.location.search).get('focus') ?? localStorage.getItem(CURRENT_PROJECT_KEY);
-    if (current) {
+    if (current && canSeeProjects) {
       setSelectedId(current);
       setFocusId(current);
     }
@@ -86,8 +95,8 @@ export default function MapHome() {
 
   // A remembered no-go choice is ignored for anyone without the security permission (the API would refuse it). The
   // latest pictures are tiles, not GeoJSON: their own request.
-  const active = [...layers].filter((n) => (n !== 'no-go' || canSecurity) && n !== 'latest-picture');
-  const pictures = useQuery({ queryKey: ['map-pictures'], queryFn: getLatestPictures, enabled: layers.has('latest-picture'), staleTime: 10 * 60_000, retry: false });
+  const active = canSeeProjects ? [...layers].filter((n) => (n !== 'no-go' || canSecurity) && n !== 'latest-picture') : [];
+  const pictures = useQuery({ queryKey: ['map-pictures'], queryFn: getLatestPictures, enabled: canSeeProjects && layers.has('latest-picture'), staleTime: 10 * 60_000, retry: false });
   const layerQueries = useQueries({
     queries: active.map((n) => ({ queryKey: ['map-layer', n], queryFn: () => getMapLayer(n), staleTime: 10 * 60_000, retry: false })),
   });
@@ -145,55 +154,65 @@ export default function MapHome() {
   return (
     <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto lg:overflow-hidden">
       <div className="relative min-h-[60vh] flex-1 shrink-0 overflow-hidden">
-        <MapView data={filtered} overlays={overlays} pictures={layers.has('latest-picture') ? pictures.data : undefined} selectedId={selectedId} focusId={focusId} onSelect={select} />
+        <MapView data={filtered} overlays={overlays} pictures={canSeeProjects && layers.has('latest-picture') ? pictures.data : undefined} selectedId={selectedId} focusId={focusId} onSelect={select} />
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-col gap-3 p-4">
-          <div className="flex flex-wrap items-start gap-2">
-            <form onSubmit={onSearch} role="search" className="pointer-events-auto flex flex-col gap-1">
-              <label htmlFor="map-search" className="sr-only">Find a project, town or state</label>
-              <div className="flex">
-                <input id="map-search" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search project, town or state" className="min-h-11 w-64 rounded-l-md border-2 border-r-0 border-line-strong bg-surface px-4" />
-                <button type="submit" className="min-h-11 rounded-r-md bg-brand-900 px-4 font-semibold text-white">Find</button>
+        {!canSeeProjects && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 p-4">
+            <p role="status" className="w-fit max-w-xl rounded-md bg-surface/95 px-4 py-3 shadow-sm ring-1 ring-line">
+              {NO_PROJECTS_NOTE[me.role] ?? "Your role doesn't include projects; they aren't shown"}.
+            </p>
+          </div>
+        )}
+
+        {canSeeProjects && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-col gap-3 p-4">
+            <div className="flex flex-wrap items-start gap-2">
+              <form onSubmit={onSearch} role="search" className="pointer-events-auto flex flex-col gap-1">
+                <label htmlFor="map-search" className="sr-only">Find a project, town or state</label>
+                <div className="flex">
+                  <input id="map-search" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search project, town or state" className="min-h-11 w-64 rounded-l-md border-2 border-r-0 border-line-strong bg-surface px-4" />
+                  <button type="submit" className="min-h-11 rounded-r-md bg-brand-900 px-4 font-semibold text-white">Find</button>
+                </div>
+                {searchMessage && <p role="status" className="rounded bg-surface px-3 py-1 text-sm">{searchMessage}</p>}
+              </form>
+              <div className="pointer-events-auto flex flex-wrap gap-2" role="group" aria-label="Filter projects">
+                <FilterChip label="Status" options={CATEGORIES.filter((c) => c !== 'draft').map((c) => ({ value: c, label: CATEGORY_LABEL[c] }))} chosen={status} onChange={setStatus} />
+                <FilterChip label="Phase" options={PHASES.map(({ value, label }) => ({ value, label }))} chosen={phase} onChange={setPhase} />
+                <FilterChip label="Funding" options={FUNDING} chosen={funding} onChange={setFunding} />
+                <FilterChip label="Contractor" options={options((p) => p.contractors)} chosen={contractor} onChange={setContractor} />
+                <FilterChip label="State" options={options((p) => p.states)} chosen={state} onChange={setState} />
               </div>
-              {searchMessage && <p role="status" className="rounded bg-surface px-3 py-1 text-sm">{searchMessage}</p>}
-            </form>
-            <div className="pointer-events-auto flex flex-wrap gap-2" role="group" aria-label="Filter projects">
-              <FilterChip label="Status" options={CATEGORIES.filter((c) => c !== 'draft').map((c) => ({ value: c, label: CATEGORY_LABEL[c] }))} chosen={status} onChange={setStatus} />
-              <FilterChip label="Phase" options={PHASES.map(({ value, label }) => ({ value, label }))} chosen={phase} onChange={setPhase} />
-              <FilterChip label="Funding" options={FUNDING} chosen={funding} onChange={setFunding} />
-              <FilterChip label="Contractor" options={options((p) => p.contractors)} chosen={contractor} onChange={setContractor} />
-              <FilterChip label="State" options={options((p) => p.states)} chosen={state} onChange={setState} />
+            </div>
+            <div className="pointer-events-auto flex flex-wrap items-center gap-3">
+              <Counters />
+              {filtering && (
+                <p role="status" className="rounded-md bg-surface/95 px-3 py-2 shadow-sm ring-1 ring-line">
+                  Showing {shown.filter((f) => cat(f.properties) !== 'draft').length} of {all.filter((f) => cat(f.properties) !== 'draft').length} projects.{' '}
+                  <button type="button" className="font-semibold text-brand-900 underline underline-offset-4" onClick={() => { setStatus(new Set()); setPhase(new Set()); setFunding(new Set()); setContractor(new Set()); setState(new Set()); }}>
+                    Clear filters
+                  </button>
+                </p>
+              )}
+              <div className="pointer-events-auto ml-auto flex gap-2">
+                {drafts > 0 && (
+                  <button type="button" aria-pressed={showDrafts} onClick={() => setShowDrafts((v) => !v)} className={`min-h-11 rounded-full border-2 border-dashed px-4 font-medium shadow-sm ${showDrafts ? 'border-status-draft bg-surface' : 'border-line bg-canvas text-ink-muted line-through'}`}>
+                    Drafts ({drafts})
+                  </button>
+                )}
+                {canCreate && (
+                  <Link href="/projects/new" className="inline-flex min-h-11 items-center rounded-md bg-brand-900 px-5 font-semibold text-white shadow-sm hover:bg-brand-800">
+                    New project
+                  </Link>
+                )}
+              </div>
+            </div>
+            <div className="pointer-events-auto w-fit">
+              <Legend categories={CATEGORIES.filter((c) => c !== 'draft' || drafts > 0)} />
             </div>
           </div>
-          <div className="pointer-events-auto flex flex-wrap items-center gap-3">
-            <Counters />
-            {filtering && (
-              <p role="status" className="rounded-md bg-surface/95 px-3 py-2 shadow-sm ring-1 ring-line">
-                Showing {shown.filter((f) => cat(f.properties) !== 'draft').length} of {all.filter((f) => cat(f.properties) !== 'draft').length} projects.{' '}
-                <button type="button" className="font-semibold text-brand-900 underline underline-offset-4" onClick={() => { setStatus(new Set()); setPhase(new Set()); setFunding(new Set()); setContractor(new Set()); setState(new Set()); }}>
-                  Clear filters
-                </button>
-              </p>
-            )}
-            <div className="pointer-events-auto ml-auto flex gap-2">
-              {drafts > 0 && (
-                <button type="button" aria-pressed={showDrafts} onClick={() => setShowDrafts((v) => !v)} className={`min-h-11 rounded-full border-2 border-dashed px-4 font-medium shadow-sm ${showDrafts ? 'border-status-draft bg-surface' : 'border-line bg-canvas text-ink-muted line-through'}`}>
-                  Drafts ({drafts})
-                </button>
-              )}
-              {canCreate && (
-                <Link href="/projects/new" className="inline-flex min-h-11 items-center rounded-md bg-brand-900 px-5 font-semibold text-white shadow-sm hover:bg-brand-800">
-                  New project
-                </Link>
-              )}
-            </div>
-          </div>
-          <div className="pointer-events-auto w-fit">
-            <Legend categories={CATEGORIES.filter((c) => c !== 'draft' || drafts > 0)} />
-          </div>
-        </div>
+        )}
 
-        {selectedId && (
+        {canSeeProjects && selectedId && (
           <div className="pointer-events-none absolute inset-y-0 right-0 flex p-4 pt-36">
             <ProjectCardPanel id={selectedId} onClose={() => setSelectedId(null)} line={all.find((f) => f.properties.id === selectedId)?.geometry.coordinates} />
           </div>
@@ -218,7 +237,7 @@ export default function MapHome() {
 
       {/* Under the map on a narrow screen, over its bottom-left corner on a wide one. */}
       <div className="p-4 lg:absolute lg:bottom-0 lg:left-0">
-        <LayersPanel on={layers} onToggle={toggleLayer} canSecurity={canSecurity} failed={failed} />
+        <LayersPanel on={layers} onToggle={toggleLayer} canSecurity={canSecurity} projectLayers={canSeeProjects} failed={failed} />
       </div>
     </main>
   );

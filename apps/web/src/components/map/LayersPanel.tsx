@@ -20,10 +20,24 @@ const BASEMAPS: Array<{ value: Basemap; label: string }> = [
 
 /**
  * Map or satellite under every map (hidden when no satellite imagery is set up), then the extra layers, each an
- * on/off switch. Both choices are remembered on this device.
+ * on/off switch. Both choices are remembered on this device. The layers come from the projects the person may see, so
+ * a role without projects (`projectLayers` false) gets the background switch only, or no panel at all.
  */
-export function LayersPanel({ on, onToggle, canSecurity, failed }: { on: Set<MapLayerName>; onToggle: (n: MapLayerName) => void; canSecurity: boolean; failed: Set<MapLayerName> }) {
+export function LayersPanel({
+  on,
+  onToggle,
+  canSecurity,
+  projectLayers = true,
+  failed,
+}: {
+  on: Set<MapLayerName>;
+  onToggle: (n: MapLayerName) => void;
+  canSecurity: boolean;
+  projectLayers?: boolean;
+  failed: Set<MapLayerName>;
+}) {
   const [basemap, setBasemap] = useBasemap();
+  if (!projectLayers && !SATELLITE_AVAILABLE) return null;
   return (
     <section aria-labelledby="layers-heading" className="rounded-md lg:w-60 bg-surface/95 p-3 shadow-sm ring-1 ring-line">
       <h2 id="layers-heading" className="px-1 pb-1 font-semibold">Layers</h2>
@@ -44,7 +58,7 @@ export function LayersPanel({ on, onToggle, canSecurity, failed }: { on: Set<Map
         </div>
       )}
       <ul className="flex flex-col">
-        {LAYERS.filter((l) => !l.security || canSecurity).map((l) => (
+        {LAYERS.filter((l) => projectLayers && (!l.security || canSecurity)).map((l) => (
           <li key={l.name}>
             <button
               type="button"
